@@ -2,6 +2,8 @@
 
 A command-line tool that generates interactive DAG (Directed Acyclic Graph) visualizations from T.A.S.K.S specification JSON files. Designed for LLM invocation with structured JSON output.
 
+![DAG Viewer Example](./example.png)
+
 ## Overview
 
 The DAG Viewer transforms T.A.S.K.S project planning data (tasks, features, dependencies, and waves) into an interactive HTML visualization using the dagre layout algorithm and D3.js for rendering. The output is a standalone HTML file that can be viewed in any modern web browser without requiring a server.

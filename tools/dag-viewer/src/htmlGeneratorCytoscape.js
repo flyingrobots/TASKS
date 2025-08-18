@@ -446,14 +446,16 @@ export default class HTMLGeneratorCytoscape {
                         selector: 'edge',
                         style: {
                             'width': 2,
-                            'line-color': data => {
-                                if (data.confidenceLevel === 'high') return '#22c55e';
-                                if (data.confidenceLevel === 'medium') return '#f97316';
+                            'line-color': function(ele) {
+                                const level = ele.data('confidenceLevel');
+                                if (level === 'high') return '#22c55e';
+                                if (level === 'medium') return '#f97316';
                                 return '#ef4444';
                             },
-                            'target-arrow-color': data => {
-                                if (data.confidenceLevel === 'high') return '#22c55e';
-                                if (data.confidenceLevel === 'medium') return '#f97316';
+                            'target-arrow-color': function(ele) {
+                                const level = ele.data('confidenceLevel');
+                                if (level === 'high') return '#22c55e';
+                                if (level === 'medium') return '#f97316';
                                 return '#ef4444';
                             },
                             'target-arrow-shape': 'triangle',
