@@ -1,0 +1,1229 @@
+{
+  "meta": {
+    "min_confidence": 0.7,
+    "notes": "Air-gapped admin separation with complete removal from main site",
+    "autonormalization": {
+      "split": [],
+      "merged": []
+    }
+  },
+  "generated": {
+    "by": "T.A.S.K.S v1",
+    "timestamp": "2025-01-20T00:00:00Z",
+    "contentHash": "b8f4e9d7c3b2a8f5e4d3a7f3d9e2c5b8"
+  },
+  "tasks": [
+    {
+      "id": "P1.T001",
+      "feature_id": "F001",
+      "title": "Create admin-web environment configuration",
+      "description": "Set up .env.local with Supabase service role key and production URL for direct database access",
+      "category": "foundation",
+      "skillsRequired": ["backend", "devops"],
+      "duration": {
+        "optimistic": 1,
+        "mostLikely": 2,
+        "pessimistic": 3
+      },
+      "durationUnits": "hours",
+      "interfaces_produced": ["AdminConfig:v1"],
+      "interfaces_consumed": [],
+      "acceptance_checks": [
+        {
+          "type": "artifact",
+          "path": "/apps/admin-web/.env.local",
+          "expect": {
+            "exists": true
+          }
+        },
+        {
+          "type": "command",
+          "cmd": "grep SUPABASE_SERVICE_ROLE_KEY /apps/admin-web/.env.local",
+          "expect": {
+            "passRateGte": 1.0
+          }
+        }
+      ],
+      "source_evidence": [
+        {
+          "quote": "Configure admin-web for air-gapped local-only operation",
+          "loc": {
+            "start": 100,
+            "end": 156
+          },
+          "section": "Phase 1.1",
+          "startLine": 10,
+          "endLine": 10
+        }
+      ],
+      "contentHash": "c1d2e3f4g5h6i7j8"
+    },
+    {
+      "id": "P1.T002",
+      "feature_id": "F001",
+      "title": "Update gitignore for admin environment files",
+      "description": "Prevent sensitive admin configuration files from being committed to repository",
+      "category": "foundation",
+      "skillsRequired": ["devops"],
+      "duration": {
+        "optimistic": 0.25,
+        "mostLikely": 0.5,
+        "pessimistic": 1
+      },
+      "durationUnits": "hours",
+      "interfaces_produced": [],
+      "interfaces_consumed": [],
+      "acceptance_checks": [
+        {
+          "type": "command",
+          "cmd": "git status | grep -v .env.local",
+          "expect": {
+            "passRateGte": 1.0
+          }
+        }
+      ],
+      "source_evidence": [
+        {
+          "quote": "Add .gitignore entries to prevent admin-web env files from being committed",
+          "loc": {
+            "start": 200,
+            "end": 276
+          },
+          "section": "Phase 1.1",
+          "startLine": 20,
+          "endLine": 20
+        }
+      ],
+      "contentHash": "d2e3f4g5h6i7j8k9"
+    },
+    {
+      "id": "P1.T003",
+      "feature_id": "F001",
+      "title": "Configure database connection with service role",
+      "description": "Update admin-web database connection to use service role key bypassing RLS",
+      "category": "implementation",
+      "skillsRequired": ["backend", "database"],
+      "duration": {
+        "optimistic": 2,
+        "mostLikely": 3,
+        "pessimistic": 4
+      },
+      "durationUnits": "hours",
+      "interfaces_produced": ["AdminDB:v1"],
+      "interfaces_consumed": ["AdminConfig:v1"],
+      "acceptance_checks": [
+        {
+          "type": "command",
+          "cmd": "cd /apps/admin-web && npm test -- --testNamePattern='database.*admin'",
+          "expect": {
+            "passRateGte": 0.95
+          }
+        }
+      ],
+      "source_evidence": [
+        {
+          "quote": "Configure admin-web database connection",
+          "loc": {
+            "start": 300,
+            "end": 340
+          },
+          "section": "Phase 1.1",
+          "startLine": 30,
+          "endLine": 30
+        }
+      ],
+      "contentHash": "e3f4g5h6i7j8k9l0"
+    },
+    {
+      "id": "P1.T004",
+      "feature_id": "F001",
+      "title": "Implement local-only authentication",
+      "description": "Create independent authentication system for admin-web that verifies admin role directly",
+      "category": "implementation",
+      "skillsRequired": ["backend", "security"],
+      "duration": {
+        "optimistic": 3,
+        "mostLikely": 4,
+        "pessimistic": 6
+      },
+      "durationUnits": "hours",
+      "interfaces_produced": ["AdminAuth:v1"],
+      "interfaces_consumed": ["AdminDB:v1"],
+      "acceptance_checks": [
+        {
+          "type": "artifact",
+          "path": "/apps/admin-web/lib/auth/local-auth.js",
+          "expect": {
+            "exists": true
+          }
+        },
+        {
+          "type": "command",
+          "cmd": "cd /apps/admin-web && npm test -- --testNamePattern='auth.*admin'",
+          "expect": {
+            "passRateGte": 0.95
+          }
+        }
+      ],
+      "source_evidence": [
+        {
+          "quote": "Implement local-only authentication",
+          "loc": {
+            "start": 400,
+            "end": 436
+          },
+          "section": "Phase 1.2",
+          "startLine": 40,
+          "endLine": 40
+        }
+      ],
+      "contentHash": "f4g5h6i7j8k9l0m1"
+    },
+    {
+      "id": "P1.T005",
+      "feature_id": "F001",
+      "title": "Add admin role verification middleware",
+      "description": "Create and apply middleware to verify user role equals admin for all admin routes",
+      "category": "implementation",
+      "skillsRequired": ["backend", "security"],
+      "duration": {
+        "optimistic": 1.5,
+        "mostLikely": 2,
+        "pessimistic": 3
+      },
+      "durationUnits": "hours",
+      "interfaces_produced": ["AdminMiddleware:v1"],
+      "interfaces_consumed": ["AdminAuth:v1"],
+      "acceptance_checks": [
+        {
+          "type": "command",
+          "cmd": "curl -X GET http://localhost:3001/admin -H 'Cookie: session=invalid' | grep -q '401\\|redirect'",
+          "expect": {
+            "passRateGte": 1.0
+          }
+        }
+      ],
+      "source_evidence": [
+        {
+          "quote": "Add admin role verification",
+          "loc": {
+            "start": 500,
+            "end": 528
+          },
+          "section": "Phase 1.2",
+          "startLine": 50,
+          "endLine": 50
+        }
+      ],
+      "contentHash": "g5h6i7j8k9l0m1n2"
+    },
+    {
+      "id": "P1.T006",
+      "feature_id": "F001",
+      "title": "Verify admin pages functionality",
+      "description": "Ensure all five admin sections are accessible and functional in admin-web",
+      "category": "integration",
+      "skillsRequired": ["frontend", "testing"],
+      "duration": {
+        "optimistic": 1.5,
+        "mostLikely": 2,
+        "pessimistic": 3
+      },
+      "durationUnits": "hours",
+      "interfaces_produced": [],
+      "interfaces_consumed": ["AdminAuth:v1", "AdminMiddleware:v1"],
+      "acceptance_checks": [
+        {
+          "type": "command",
+          "cmd": "cd /apps/admin-web && npm run dev & sleep 10 && curl -s http://localhost:3001/admin | grep -q 'Dashboard'",
+          "expect": {
+            "passRateGte": 1.0
+          }
+        }
+      ],
+      "source_evidence": [
+        {
+          "quote": "Verify all admin pages exist in admin-web",
+          "loc": {
+            "start": 600,
+            "end": 642
+          },
+          "section": "Phase 1.3",
+          "startLine": 60,
+          "endLine": 60
+        }
+      ],
+      "contentHash": "h6i7j8k9l0m1n2o3"
+    },
+    {
+      "id": "P1.T007",
+      "feature_id": "F001",
+      "title": "Copy missing API routes to admin-web",
+      "description": "Ensure all admin API endpoints from main site exist in admin-web",
+      "category": "implementation",
+      "skillsRequired": ["backend"],
+      "duration": {
+        "optimistic": 2,
+        "mostLikely": 3,
+        "pessimistic": 4
+      },
+      "durationUnits": "hours",
+      "interfaces_produced": ["AdminAPI:v1"],
+      "interfaces_consumed": ["AdminDB:v1"],
+      "acceptance_checks": [
+        {
+          "type": "command",
+          "cmd": "ls /apps/admin-web/app/api/admin/users/\\[id\\]/route.js",
+          "expect": {
+            "passRateGte": 1.0
+          }
+        }
+      ],
+      "source_evidence": [
+        {
+          "quote": "Copy missing API routes to admin-web",
+          "loc": {
+            "start": 700,
+            "end": 737
+          },
+          "section": "Phase 1.3",
+          "startLine": 70,
+          "endLine": 70
+        }
+      ],
+      "contentHash": "i7j8k9l0m1n2o3p4"
+    },
+    {
+      "id": "P1.T008",
+      "feature_id": "F001",
+      "title": "Test pet image upload functionality",
+      "description": "Verify admin-web can upload pet images using service role key",
+      "category": "integration",
+      "skillsRequired": ["frontend", "backend", "storage"],
+      "duration": {
+        "optimistic": 1.5,
+        "mostLikely": 2,
+        "pessimistic": 3
+      },
+      "durationUnits": "hours",
+      "interfaces_produced": [],
+      "interfaces_consumed": ["AdminAPI:v1", "AdminDB:v1"],
+      "acceptance_checks": [
+        {
+          "type": "command",
+          "cmd": "cd /apps/admin-web && npm test -- --testNamePattern='image.*upload'",
+          "expect": {
+            "passRateGte": 0.95
+          }
+        }
+      ],
+      "source_evidence": [
+        {
+          "quote": "Test admin-web pet image upload",
+          "loc": {
+            "start": 800,
+            "end": 832
+          },
+          "section": "Phase 1.3",
+          "startLine": 80,
+          "endLine": 80
+        }
+      ],
+      "contentHash": "j8k9l0m1n2o3p4q5"
+    },
+    {
+      "id": "P2.T001",
+      "feature_id": "F002",
+      "title": "Delete admin page directories",
+      "description": "Remove all admin page directories from main website app folder",
+      "category": "implementation",
+      "skillsRequired": ["frontend"],
+      "duration": {
+        "optimistic": 0.5,
+        "mostLikely": 1,
+        "pessimistic": 1.5
+      },
+      "durationUnits": "hours",
+      "interfaces_produced": [],
+      "interfaces_consumed": [],
+      "acceptance_checks": [
+        {
+          "type": "command",
+          "cmd": "ls /app/admin 2>&1 | grep -q 'No such file or directory'",
+          "expect": {
+            "passRateGte": 1.0
+          }
+        }
+      ],
+      "source_evidence": [
+        {
+          "quote": "Delete admin page directories",
+          "loc": {
+            "start": 900,
+            "end": 930
+          },
+          "section": "Phase 2.1",
+          "startLine": 90,
+          "endLine": 90
+        }
+      ],
+      "contentHash": "k9l0m1n2o3p4q5r6"
+    },
+    {
+      "id": "P2.T002",
+      "feature_id": "F002",
+      "title": "Delete admin API routes",
+      "description": "Remove all admin API route directories from main website",
+      "category": "implementation",
+      "skillsRequired": ["backend"],
+      "duration": {
+        "optimistic": 0.5,
+        "mostLikely": 1,
+        "pessimistic": 1.5
+      },
+      "durationUnits": "hours",
+      "interfaces_produced": [],
+      "interfaces_consumed": [],
+      "acceptance_checks": [
+        {
+          "type": "command",
+          "cmd": "ls /app/api/admin 2>&1 | grep -q 'No such file or directory'",
+          "expect": {
+            "passRateGte": 1.0
+          }
+        }
+      ],
+      "source_evidence": [
+        {
+          "quote": "Delete admin API directories",
+          "loc": {
+            "start": 1000,
+            "end": 1029
+          },
+          "section": "Phase 2.2",
+          "startLine": 100,
+          "endLine": 100
+        }
+      ],
+      "contentHash": "l0m1n2o3p4q5r6s7"
+    },
+    {
+      "id": "P2.T003",
+      "feature_id": "F002",
+      "title": "Delete admin components directory",
+      "description": "Remove entire admin components directory from main website",
+      "category": "implementation",
+      "skillsRequired": ["frontend"],
+      "duration": {
+        "optimistic": 0.5,
+        "mostLikely": 1,
+        "pessimistic": 1.5
+      },
+      "durationUnits": "hours",
+      "interfaces_produced": [],
+      "interfaces_consumed": [],
+      "acceptance_checks": [
+        {
+          "type": "command",
+          "cmd": "grep -r 'components/admin' app/ | wc -l | grep -q '^0$'",
+          "expect": {
+            "passRateGte": 1.0
+          }
+        }
+      ],
+      "source_evidence": [
+        {
+          "quote": "Delete admin components directory",
+          "loc": {
+            "start": 1100,
+            "end": 1134
+          },
+          "section": "Phase 2.3",
+          "startLine": 110,
+          "endLine": 110
+        }
+      ],
+      "contentHash": "m1n2o3p4q5r6s7t8"
+    },
+    {
+      "id": "P2.T004",
+      "feature_id": "F002",
+      "title": "Update middleware to remove admin protection",
+      "description": "Remove all admin route protection from middleware.js",
+      "category": "implementation",
+      "skillsRequired": ["backend", "security"],
+      "duration": {
+        "optimistic": 1.5,
+        "mostLikely": 2,
+        "pessimistic": 3
+      },
+      "durationUnits": "hours",
+      "interfaces_produced": ["PublicMiddleware:v1"],
+      "interfaces_consumed": [],
+      "acceptance_checks": [
+        {
+          "type": "command",
+          "cmd": "grep -q '/admin' /middleware.js || echo 'SUCCESS'",
+          "expect": {
+            "passRateGte": 1.0
+          }
+        }
+      ],
+      "source_evidence": [
+        {
+          "quote": "Remove admin route protection from middleware",
+          "loc": {
+            "start": 1200,
+            "end": 1246
+          },
+          "section": "Phase 2.4",
+          "startLine": 120,
+          "endLine": 120
+        }
+      ],
+      "contentHash": "n2o3p4q5r6s7t8u9"
+    },
+    {
+      "id": "P2.T005",
+      "feature_id": "F002",
+      "title": "Remove admin links from user menu",
+      "description": "Remove all admin UI elements from user menu component",
+      "category": "implementation",
+      "skillsRequired": ["frontend"],
+      "duration": {
+        "optimistic": 1.5,
+        "mostLikely": 2,
+        "pessimistic": 3
+      },
+      "durationUnits": "hours",
+      "interfaces_produced": [],
+      "interfaces_consumed": [],
+      "acceptance_checks": [
+        {
+          "type": "command",
+          "cmd": "grep -q 'isAdmin' /components/auth/user-menu.js || echo 'SUCCESS'",
+          "expect": {
+            "passRateGte": 1.0
+          }
+        }
+      ],
+      "source_evidence": [
+        {
+          "quote": "Remove admin links from user menu",
+          "loc": {
+            "start": 1300,
+            "end": 1334
+          },
+          "section": "Phase 2.5",
+          "startLine": 130,
+          "endLine": 130
+        }
+      ],
+      "contentHash": "o3p4q5r6s7t8u9v0"
+    },
+    {
+      "id": "P2.T006",
+      "feature_id": "F002",
+      "title": "Remove isAdmin from auth provider",
+      "description": "Remove all admin role checking logic from auth provider",
+      "category": "implementation",
+      "skillsRequired": ["frontend", "security"],
+      "duration": {
+        "optimistic": 2,
+        "mostLikely": 3,
+        "pessimistic": 4
+      },
+      "durationUnits": "hours",
+      "interfaces_produced": ["PublicAuth:v1"],
+      "interfaces_consumed": [],
+      "acceptance_checks": [
+        {
+          "type": "command",
+          "cmd": "grep -r 'isAdmin' components/ | wc -l | grep -q '^0$'",
+          "expect": {
+            "passRateGte": 1.0
+          }
+        }
+      ],
+      "source_evidence": [
+        {
+          "quote": "Remove isAdmin from auth provider",
+          "loc": {
+            "start": 1400,
+            "end": 1434
+          },
+          "section": "Phase 2.5",
+          "startLine": 140,
+          "endLine": 140
+        }
+      ],
+      "contentHash": "p4q5r6s7t8u9v0w1"
+    },
+    {
+      "id": "P2.T007",
+      "feature_id": "F002",
+      "title": "Clean up unused admin imports",
+      "description": "Remove all imports of deleted admin components and services",
+      "category": "implementation",
+      "skillsRequired": ["frontend", "backend"],
+      "duration": {
+        "optimistic": 1.5,
+        "mostLikely": 2,
+        "pessimistic": 3
+      },
+      "durationUnits": "hours",
+      "interfaces_produced": [],
+      "interfaces_consumed": [],
+      "acceptance_checks": [
+        {
+          "type": "command",
+          "cmd": "npm run build",
+          "expect": {
+            "passRateGte": 1.0
+          }
+        }
+      ],
+      "source_evidence": [
+        {
+          "quote": "Remove unused admin imports",
+          "loc": {
+            "start": 1500,
+            "end": 1528
+          },
+          "section": "Phase 2.6",
+          "startLine": 150,
+          "endLine": 150
+        }
+      ],
+      "contentHash": "q5r6s7t8u9v0w1x2"
+    },
+    {
+      "id": "P3.T001",
+      "feature_id": "F003",
+      "title": "Update admin-web package.json for local-only",
+      "description": "Add build prevention scripts to ensure admin-web never builds for production",
+      "category": "implementation",
+      "skillsRequired": ["devops"],
+      "duration": {
+        "optimistic": 0.5,
+        "mostLikely": 1,
+        "pessimistic": 1.5
+      },
+      "durationUnits": "hours",
+      "interfaces_produced": [],
+      "interfaces_consumed": [],
+      "acceptance_checks": [
+        {
+          "type": "command",
+          "cmd": "cd /apps/admin-web && npm run build 2>&1 | grep -q 'local-only'",
+          "expect": {
+            "passRateGte": 1.0
+          }
+        }
+      ],
+      "source_evidence": [
+        {
+          "quote": "Update admin-web package.json",
+          "loc": {
+            "start": 1600,
+            "end": 1630
+          },
+          "section": "Phase 3.1",
+          "startLine": 160,
+          "endLine": 160
+        }
+      ],
+      "contentHash": "r6s7t8u9v0w1x2y3"
+    },
+    {
+      "id": "P3.T002",
+      "feature_id": "F003",
+      "title": "Create admin-web README documentation",
+      "description": "Document local-only nature, setup instructions, and security warnings",
+      "category": "implementation",
+      "skillsRequired": ["documentation"],
+      "duration": {
+        "optimistic": 1.5,
+        "mostLikely": 2,
+        "pessimistic": 3
+      },
+      "durationUnits": "hours",
+      "interfaces_produced": [],
+      "interfaces_consumed": [],
+      "acceptance_checks": [
+        {
+          "type": "artifact",
+          "path": "/apps/admin-web/README.md",
+          "expect": {
+            "exists": true
+          }
+        }
+      ],
+      "source_evidence": [
+        {
+          "quote": "Create admin-web README",
+          "loc": {
+            "start": 1700,
+            "end": 1724
+          },
+          "section": "Phase 3.1",
+          "startLine": 170,
+          "endLine": 170
+        }
+      ],
+      "contentHash": "s7t8u9v0w1x2y3z4"
+    },
+    {
+      "id": "P3.T003",
+      "feature_id": "F003",
+      "title": "Verify no admin code in main build",
+      "description": "Build main site and verify zero admin references in output",
+      "category": "integration",
+      "skillsRequired": ["devops", "testing"],
+      "duration": {
+        "optimistic": 1.5,
+        "mostLikely": 2,
+        "pessimistic": 3
+      },
+      "durationUnits": "hours",
+      "interfaces_produced": [],
+      "interfaces_consumed": ["PublicMiddleware:v1", "PublicAuth:v1"],
+      "acceptance_checks": [
+        {
+          "type": "command",
+          "cmd": "npm run build && grep -r 'admin' .next/ | wc -l | grep -q '^0$'",
+          "expect": {
+            "passRateGte": 1.0
+          }
+        }
+      ],
+      "source_evidence": [
+        {
+          "quote": "Verify no admin code in main build",
+          "loc": {
+            "start": 1800,
+            "end": 1835
+          },
+          "section": "Phase 3.2",
+          "startLine": 180,
+          "endLine": 180
+        }
+      ],
+      "contentHash": "t8u9v0w1x2y3z4a5"
+    },
+    {
+      "id": "P3.T004",
+      "feature_id": "F003",
+      "title": "Test main site has no admin access",
+      "description": "Comprehensive testing to ensure complete absence of admin functionality",
+      "category": "integration",
+      "skillsRequired": ["testing", "security"],
+      "duration": {
+        "optimistic": 2,
+        "mostLikely": 3,
+        "pessimistic": 4
+      },
+      "durationUnits": "hours",
+      "interfaces_produced": [],
+      "interfaces_consumed": ["PublicMiddleware:v1", "PublicAuth:v1"],
+      "acceptance_checks": [
+        {
+          "type": "command",
+          "cmd": "curl -s http://localhost:3000/admin | grep -q '404'",
+          "expect": {
+            "passRateGte": 1.0
+          }
+        },
+        {
+          "type": "command",
+          "cmd": "curl -s http://localhost:3000/api/admin/dashboard | grep -q '404'",
+          "expect": {
+            "passRateGte": 1.0
+          }
+        }
+      ],
+      "source_evidence": [
+        {
+          "quote": "Test main site has no admin access",
+          "loc": {
+            "start": 1900,
+            "end": 1935
+          },
+          "section": "Phase 3.2",
+          "startLine": 190,
+          "endLine": 190
+        }
+      ],
+      "contentHash": "u9v0w1x2y3z4a5b6"
+    },
+    {
+      "id": "P3.T005",
+      "feature_id": "F003",
+      "title": "Verify RLS policies enforcement",
+      "description": "Ensure main site respects RLS while admin-web bypasses it",
+      "category": "integration",
+      "skillsRequired": ["database", "security"],
+      "duration": {
+        "optimistic": 1.5,
+        "mostLikely": 2,
+        "pessimistic": 3
+      },
+      "durationUnits": "hours",
+      "interfaces_produced": [],
+      "interfaces_consumed": ["AdminDB:v1"],
+      "acceptance_checks": [
+        {
+          "type": "command",
+          "cmd": "npm test -- --testNamePattern='rls.*enforcement'",
+          "expect": {
+            "passRateGte": 0.95
+          }
+        }
+      ],
+      "source_evidence": [
+        {
+          "quote": "Verify RLS policies remain intact",
+          "loc": {
+            "start": 2000,
+            "end": 2034
+          },
+          "section": "Phase 3.3",
+          "startLine": 200,
+          "endLine": 200
+        }
+      ],
+      "contentHash": "v0w1x2y3z4a5b6c7"
+    },
+    {
+      "id": "P3.T006",
+      "feature_id": "F003",
+      "title": "Add deployment prevention checks",
+      "description": "Create CI/CD checks to prevent admin-web from deploying to production",
+      "category": "implementation",
+      "skillsRequired": ["devops", "ci-cd"],
+      "duration": {
+        "optimistic": 1.5,
+        "mostLikely": 2,
+        "pessimistic": 3
+      },
+      "durationUnits": "hours",
+      "interfaces_produced": [],
+      "interfaces_consumed": [],
+      "acceptance_checks": [
+        {
+          "type": "artifact",
+          "path": "/.github/workflows/deploy-check.yml",
+          "expect": {
+            "exists": true
+          }
+        }
+      ],
+      "source_evidence": [
+        {
+          "quote": "Add deployment checks",
+          "loc": {
+            "start": 2100,
+            "end": 2121
+          },
+          "section": "Phase 3.3",
+          "startLine": 210,
+          "endLine": 210
+        }
+      ],
+      "contentHash": "w1x2y3z4a5b6c7d8"
+    },
+    {
+      "id": "P3.T007",
+      "feature_id": "F003",
+      "title": "End-to-end testing of separation",
+      "description": "Test both applications work fully in isolation",
+      "category": "integration",
+      "skillsRequired": ["testing", "frontend", "backend"],
+      "duration": {
+        "optimistic": 3,
+        "mostLikely": 4,
+        "pessimistic": 5
+      },
+      "durationUnits": "hours",
+      "interfaces_produced": [],
+      "interfaces_consumed": ["AdminAPI:v1", "PublicAuth:v1"],
+      "acceptance_checks": [
+        {
+          "type": "command",
+          "cmd": "npm test -- --testNamePattern='e2e.*separation'",
+          "expect": {
+            "passRateGte": 0.95
+          }
+        }
+      ],
+      "source_evidence": [
+        {
+          "quote": "End-to-end testing",
+          "loc": {
+            "start": 2200,
+            "end": 2218
+          },
+          "section": "Phase 3.4",
+          "startLine": 220,
+          "endLine": 220
+        }
+      ],
+      "contentHash": "x2y3z4a5b6c7d8e9"
+    },
+    {
+      "id": "P3.T008",
+      "feature_id": "F003",
+      "title": "Update project documentation",
+      "description": "Document the air-gapped architecture and admin access procedures",
+      "category": "implementation",
+      "skillsRequired": ["documentation"],
+      "duration": {
+        "optimistic": 1.5,
+        "mostLikely": 2,
+        "pessimistic": 3
+      },
+      "durationUnits": "hours",
+      "interfaces_produced": [],
+      "interfaces_consumed": [],
+      "acceptance_checks": [
+        {
+          "type": "artifact",
+          "path": "/README.md",
+          "expect": {
+            "exists": true
+          }
+        }
+      ],
+      "source_evidence": [
+        {
+          "quote": "Update project documentation",
+          "loc": {
+            "start": 2300,
+            "end": 2329
+          },
+          "section": "Phase 3.4",
+          "startLine": 230,
+          "endLine": 230
+        }
+      ],
+      "contentHash": "y3z4a5b6c7d8e9f0"
+    }
+  ],
+  "dependencies": [
+    {
+      "from": "P1.T001",
+      "to": "P1.T003",
+      "type": "technical",
+      "reason": "Database connection requires environment configuration",
+      "evidence": [
+        {
+          "type": "doc",
+          "reason": "Service role key must be configured before database connection",
+          "confidence": 0.95
+        }
+      ],
+      "confidence": 0.95,
+      "isHard": true
+    },
+    {
+      "from": "P1.T003",
+      "to": "P1.T004",
+      "type": "technical",
+      "reason": "Authentication requires database connection",
+      "evidence": [
+        {
+          "type": "doc",
+          "reason": "Auth system needs to verify admin role from database",
+          "confidence": 0.95
+        }
+      ],
+      "confidence": 0.95,
+      "isHard": true
+    },
+    {
+      "from": "P1.T004",
+      "to": "P1.T005",
+      "type": "technical",
+      "reason": "Middleware requires authentication system",
+      "evidence": [
+        {
+          "type": "doc",
+          "reason": "Middleware uses auth to verify admin role",
+          "confidence": 0.95
+        }
+      ],
+      "confidence": 0.95,
+      "isHard": true
+    },
+    {
+      "from": "P1.T005",
+      "to": "P1.T006",
+      "type": "sequential",
+      "reason": "Pages need middleware protection before testing",
+      "evidence": [
+        {
+          "type": "doc",
+          "reason": "Admin pages require middleware to be in place",
+          "confidence": 0.9
+        }
+      ],
+      "confidence": 0.9,
+      "isHard": true
+    },
+    {
+      "from": "P1.T003",
+      "to": "P1.T007",
+      "type": "technical",
+      "reason": "API routes need database connection",
+      "evidence": [
+        {
+          "type": "doc",
+          "reason": "Admin API endpoints require database access",
+          "confidence": 0.9
+        }
+      ],
+      "confidence": 0.9,
+      "isHard": true
+    },
+    {
+      "from": "P1.T007",
+      "to": "P1.T008",
+      "type": "technical",
+      "reason": "Image upload uses API routes",
+      "evidence": [
+        {
+          "type": "doc",
+          "reason": "Pet image upload functionality depends on API",
+          "confidence": 0.85
+        }
+      ],
+      "confidence": 0.85,
+      "isHard": true
+    },
+    {
+      "from": "P1.T008",
+      "to": "P2.T001",
+      "type": "sequential",
+      "reason": "Admin-web must be fully functional before removing from main",
+      "evidence": [
+        {
+          "type": "doc",
+          "reason": "Phase 1 must complete before Phase 2",
+          "confidence": 1.0
+        }
+      ],
+      "confidence": 1.0,
+      "isHard": true
+    },
+    {
+      "from": "P2.T001",
+      "to": "P2.T002",
+      "type": "sequential",
+      "reason": "Remove pages then API routes",
+      "evidence": [
+        {
+          "type": "doc",
+          "reason": "Logical removal order",
+          "confidence": 0.8
+        }
+      ],
+      "confidence": 0.8,
+      "isHard": false
+    },
+    {
+      "from": "P2.T002",
+      "to": "P2.T003",
+      "type": "sequential",
+      "reason": "Remove API then components",
+      "evidence": [
+        {
+          "type": "doc",
+          "reason": "Logical removal order",
+          "confidence": 0.8
+        }
+      ],
+      "confidence": 0.8,
+      "isHard": false
+    },
+    {
+      "from": "P2.T003",
+      "to": "P2.T004",
+      "type": "sequential",
+      "reason": "Remove components before updating middleware",
+      "evidence": [
+        {
+          "type": "doc",
+          "reason": "Middleware update should come after removals",
+          "confidence": 0.85
+        }
+      ],
+      "confidence": 0.85,
+      "isHard": true
+    },
+    {
+      "from": "P2.T004",
+      "to": "P2.T005",
+      "type": "sequential",
+      "reason": "Update middleware before UI elements",
+      "evidence": [
+        {
+          "type": "doc",
+          "reason": "Protection removal before UI cleanup",
+          "confidence": 0.85
+        }
+      ],
+      "confidence": 0.85,
+      "isHard": true
+    },
+    {
+      "from": "P2.T005",
+      "to": "P2.T006",
+      "type": "technical",
+      "reason": "User menu cleanup before auth provider",
+      "evidence": [
+        {
+          "type": "doc",
+          "reason": "UI elements depend on auth provider",
+          "confidence": 0.9
+        }
+      ],
+      "confidence": 0.9,
+      "isHard": true
+    },
+    {
+      "from": "P2.T006",
+      "to": "P2.T007",
+      "type": "sequential",
+      "reason": "Clean imports after all removals",
+      "evidence": [
+        {
+          "type": "doc",
+          "reason": "Import cleanup is final step",
+          "confidence": 0.95
+        }
+      ],
+      "confidence": 0.95,
+      "isHard": true
+    },
+    {
+      "from": "P2.T007",
+      "to": "P3.T001",
+      "type": "sequential",
+      "reason": "Phase 2 must complete before Phase 3",
+      "evidence": [
+        {
+          "type": "doc",
+          "reason": "Complete removal before hardening",
+          "confidence": 1.0
+        }
+      ],
+      "confidence": 1.0,
+      "isHard": true
+    },
+    {
+      "from": "P3.T001",
+      "to": "P3.T002",
+      "type": "sequential",
+      "reason": "Package.json update before documentation",
+      "evidence": [
+        {
+          "type": "doc",
+          "reason": "Document the configuration changes",
+          "confidence": 0.8
+        }
+      ],
+      "confidence": 0.8,
+      "isHard": false
+    },
+    {
+      "from": "P2.T007",
+      "to": "P3.T003",
+      "type": "technical",
+      "reason": "Build verification after all removals",
+      "evidence": [
+        {
+          "type": "doc",
+          "reason": "Can only verify build after cleanup",
+          "confidence": 0.95
+        }
+      ],
+      "confidence": 0.95,
+      "isHard": true
+    },
+    {
+      "from": "P3.T003",
+      "to": "P3.T004",
+      "type": "sequential",
+      "reason": "Build verification before runtime testing",
+      "evidence": [
+        {
+          "type": "doc",
+          "reason": "Test after build verification",
+          "confidence": 0.9
+        }
+      ],
+      "confidence": 0.9,
+      "isHard": true
+    },
+    {
+      "from": "P1.T003",
+      "to": "P3.T005",
+      "type": "technical",
+      "reason": "RLS verification needs admin DB setup",
+      "evidence": [
+        {
+          "type": "doc",
+          "reason": "Test RLS bypass with service role",
+          "confidence": 0.85
+        }
+      ],
+      "confidence": 0.85,
+      "isHard": true
+    },
+    {
+      "from": "P3.T001",
+      "to": "P3.T006",
+      "type": "sequential",
+      "reason": "Deployment checks after package.json update",
+      "evidence": [
+        {
+          "type": "doc",
+          "reason": "CI/CD checks based on package configuration",
+          "confidence": 0.85
+        }
+      ],
+      "confidence": 0.85,
+      "isHard": true
+    },
+    {
+      "from": "P3.T004",
+      "to": "P3.T007",
+      "type": "sequential",
+      "reason": "Individual tests before end-to-end",
+      "evidence": [
+        {
+          "type": "doc",
+          "reason": "E2E testing is final validation",
+          "confidence": 0.95
+        }
+      ],
+      "confidence": 0.95,
+      "isHard": true
+    },
+    {
+      "from": "P3.T007",
+      "to": "P3.T008",
+      "type": "sequential",
+      "reason": "Documentation after all testing complete",
+      "evidence": [
+        {
+          "type": "doc",
+          "reason": "Document the verified architecture",
+          "confidence": 0.9
+        }
+      ],
+      "confidence": 0.9,
+      "isHard": true
+    }
+  ]
+}
