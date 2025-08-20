@@ -27,7 +27,7 @@ import {
 function App() {
   const { dagData, taskStates, agents, gitStats, handleWebSocketMessage, setDagData, setWsConnected } = useStore()
   const { isConnected } = useWebSocket({
-    url: 'ws://localhost:3456',
+    url: 'ws://localhost:8080',
     onMessage: handleWebSocketMessage,
     onOpen: () => {
       setWsConnected(true)

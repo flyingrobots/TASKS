@@ -494,7 +494,7 @@ export const DAGViewer: React.FC<DAGViewerProps> = ({ dagData, taskStates, class
             <HoverCardTrigger asChild>
               <div />
             </HoverCardTrigger>
-            <HoverCardContent className="w-96 max-h-[600px] overflow-y-auto" align="center" side="right">
+            <HoverCardContent className="w-96 max-h-[600px] overflow-y-auto bg-background border shadow-xl" align="center" side="right">
               <div className="space-y-3">
                 {/* Header with ID and Title */}
                 <div>
