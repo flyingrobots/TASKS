@@ -1,0 +1,1164 @@
+{
+  "meta": {
+    "min_confidence": 0.7,
+    "notes": "Professional quality code refactor with magic link authentication",
+    "autonormalization": {
+      "split": [],
+      "merged": []
+    }
+  },
+  "generated": {
+    "by": "T.A.S.K.S v1",
+    "timestamp": "2025-08-19T15:35:00Z",
+    "contentHash": "b2c3d4e5f6789012345678901234567890abcdef"
+  },
+  "tasks": [
+    {
+      "id": "P1.T001",
+      "feature_id": "F001",
+      "title": "Create AppConfig base class",
+      "description": "Build abstract base class for configuration with validation methods and type safety",
+      "category": "foundation",
+      "skillsRequired": ["javascript", "node", "architecture"],
+      "duration": {
+        "optimistic": 3,
+        "mostLikely": 4,
+        "pessimistic": 6
+      },
+      "durationUnits": "hours",
+      "interfaces_produced": ["AppConfig:v1"],
+      "interfaces_consumed": [],
+      "acceptance_checks": [
+        {
+          "type": "artifact",
+          "path": "packages/shared/lib/config/AppConfig.js",
+          "expect": { "exists": true }
+        },
+        {
+          "type": "command",
+          "cmd": "npm test -- AppConfig",
+          "expect": { "passRateGte": 0.95 }
+        }
+      ],
+      "source_evidence": [
+        {
+          "quote": "ScriptAppConfig.fromEnv() with full validation",
+          "loc": { "start": 1100, "end": 1150 },
+          "section": "Configuration Management",
+          "startLine": 45,
+          "endLine": 47
+        }
+      ],
+      "contentHash": "abc123def456"
+    },
+    {
+      "id": "P1.T002",
+      "feature_id": "F001",
+      "title": "Implement ScriptAppConfig class",
+      "description": "Create configuration class for scripts with fromEnv() method and environment validation",
+      "category": "foundation",
+      "skillsRequired": ["javascript", "node"],
+      "duration": {
+        "optimistic": 3,
+        "mostLikely": 4,
+        "pessimistic": 5
+      },
+      "durationUnits": "hours",
+      "interfaces_produced": ["ScriptAppConfig:v1"],
+      "interfaces_consumed": ["AppConfig:v1"],
+      "acceptance_checks": [
+        {
+          "type": "artifact",
+          "path": "scripts/lib/config/ScriptAppConfig.js",
+          "expect": { "exists": true }
+        }
+      ],
+      "source_evidence": [
+        {
+          "quote": "ScriptAppConfig.fromEnv()",
+          "loc": { "start": 3100, "end": 3150 },
+          "section": "Script Context",
+          "startLine": 125,
+          "endLine": 127
+        }
+      ],
+      "contentHash": "def789ghi012"
+    },
+    {
+      "id": "P1.T003",
+      "feature_id": "F001",
+      "title": "Implement WebAppConfig class",
+      "description": "Create configuration class for web application with environment validation",
+      "category": "foundation",
+      "skillsRequired": ["javascript", "node"],
+      "duration": {
+        "optimistic": 3,
+        "mostLikely": 4,
+        "pessimistic": 5
+      },
+      "durationUnits": "hours",
+      "interfaces_produced": ["WebAppConfig:v1"],
+      "interfaces_consumed": ["AppConfig:v1"],
+      "acceptance_checks": [
+        {
+          "type": "artifact",
+          "path": "apps/web/lib/config/WebAppConfig.js",
+          "expect": { "exists": true }
+        }
+      ],
+      "source_evidence": [
+        {
+          "quote": "WebAppConfig and AdminAppConfig for different contexts",
+          "loc": { "start": 1120, "end": 1180 },
+          "section": "Configuration Management",
+          "startLine": 46,
+          "endLine": 48
+        }
+      ],
+      "contentHash": "ghi345jkl678"
+    },
+    {
+      "id": "P1.T004",
+      "feature_id": "F002",
+      "title": "Create ServiceFactory base implementation",
+      "description": "Build ServiceFactory class with static factory methods and connection management",
+      "category": "foundation",
+      "skillsRequired": ["javascript", "patterns", "architecture"],
+      "duration": {
+        "optimistic": 5,
+        "mostLikely": 6,
+        "pessimistic": 8
+      },
+      "durationUnits": "hours",
+      "interfaces_produced": ["ServiceFactory:v1"],
+      "interfaces_consumed": [],
+      "acceptance_checks": [
+        {
+          "type": "artifact",
+          "path": "apps/web/lib/di/ServiceFactory.js",
+          "expect": { "exists": true }
+        }
+      ],
+      "source_evidence": [
+        {
+          "quote": "ServiceFactory with static factory methods",
+          "loc": { "start": 1320, "end": 1380 },
+          "section": "Dependency Injection Framework",
+          "startLine": 53,
+          "endLine": 55
+        }
+      ],
+      "contentHash": "jkl901mno234"
+    },
+    {
+      "id": "P1.T005",
+      "feature_id": "F002",
+      "title": "Implement service factory methods",
+      "description": "Add CreateSupabaseAuthService, CreateMagicService, and other factory methods",
+      "category": "implementation",
+      "skillsRequired": ["javascript", "patterns"],
+      "duration": {
+        "optimistic": 6,
+        "mostLikely": 8,
+        "pessimistic": 10
+      },
+      "durationUnits": "hours",
+      "interfaces_produced": ["ServiceFactoryMethods:v1"],
+      "interfaces_consumed": ["ServiceFactory:v1"],
+      "acceptance_checks": [
+        {
+          "type": "command",
+          "cmd": "npm test -- ServiceFactory",
+          "expect": { "passRateGte": 0.95 }
+        }
+      ],
+      "source_evidence": [
+        {
+          "quote": "CreateSupabaseAuthService, CreateMagicService",
+          "loc": { "start": 3200, "end": 3300 },
+          "section": "Service Factory Pattern",
+          "startLine": 140,
+          "endLine": 150
+        }
+      ],
+      "contentHash": "mno567pqr890"
+    },
+    {
+      "id": "P1.T006",
+      "feature_id": "F003",
+      "title": "Create DatabaseConnectionManager",
+      "description": "Implement singleton connection manager with pooling support",
+      "category": "foundation",
+      "skillsRequired": ["javascript", "database", "patterns"],
+      "duration": {
+        "optimistic": 6,
+        "mostLikely": 8,
+        "pessimistic": 10
+      },
+      "durationUnits": "hours",
+      "interfaces_produced": ["DatabaseConnectionManager:v1"],
+      "interfaces_consumed": [],
+      "acceptance_checks": [
+        {
+          "type": "artifact",
+          "path": "apps/web/lib/database/DatabaseConnectionManager.js",
+          "expect": { "exists": true }
+        }
+      ],
+      "source_evidence": [
+        {
+          "quote": "DatabaseConnectionManager with pooling",
+          "loc": { "start": 1520, "end": 1580 },
+          "section": "Database Connection Management",
+          "startLine": 61,
+          "endLine": 63
+        }
+      ],
+      "contentHash": "pqr123stu456"
+    },
+    {
+      "id": "P1.T007",
+      "feature_id": "F003",
+      "title": "Implement connection pooling",
+      "description": "Add connection pool management with configurable limits and reuse",
+      "category": "implementation",
+      "skillsRequired": ["database", "javascript"],
+      "duration": {
+        "optimistic": 4,
+        "mostLikely": 6,
+        "pessimistic": 8
+      },
+      "durationUnits": "hours",
+      "interfaces_produced": ["ConnectionPool:v1"],
+      "interfaces_consumed": ["DatabaseConnectionManager:v1"],
+      "acceptance_checks": [
+        {
+          "type": "metric",
+          "name": "connection_reuse_rate",
+          "expect": { "gte": 0.8 }
+        }
+      ],
+      "source_evidence": [
+        {
+          "quote": "connection pooling",
+          "loc": { "start": 1540, "end": 1560 },
+          "section": "Database Connection Management",
+          "startLine": 62,
+          "endLine": 62
+        }
+      ],
+      "contentHash": "stu789vwx012"
+    },
+    {
+      "id": "P1.T008",
+      "feature_id": "F003",
+      "title": "Add WeakRef cleanup mechanism",
+      "description": "Implement automatic resource cleanup using WeakRef for memory management",
+      "category": "implementation",
+      "skillsRequired": ["javascript", "memory-management"],
+      "duration": {
+        "optimistic": 3,
+        "mostLikely": 4,
+        "pessimistic": 5
+      },
+      "durationUnits": "hours",
+      "interfaces_produced": ["WeakRefCleanup:v1"],
+      "interfaces_consumed": ["DatabaseConnectionManager:v1"],
+      "acceptance_checks": [
+        {
+          "type": "command",
+          "cmd": "npm test -- WeakRef",
+          "expect": { "passRateGte": 1.0 }
+        }
+      ],
+      "source_evidence": [
+        {
+          "quote": "WeakRef-based automatic cleanup",
+          "loc": { "start": 1550, "end": 1570 },
+          "section": "Database Connection Management",
+          "startLine": 63,
+          "endLine": 63
+        }
+      ],
+      "contentHash": "vwx345yza678"
+    },
+    {
+      "id": "P1.T009",
+      "feature_id": "F004",
+      "title": "Create MagicService class",
+      "description": "Build core MagicService with RegisterAsAdminWhenClicked pattern",
+      "category": "implementation",
+      "skillsRequired": ["javascript", "security", "auth"],
+      "duration": {
+        "optimistic": 6,
+        "mostLikely": 8,
+        "pessimistic": 10
+      },
+      "durationUnits": "hours",
+      "interfaces_produced": ["MagicService:v1"],
+      "interfaces_consumed": ["ServiceFactory:v1"],
+      "acceptance_checks": [
+        {
+          "type": "artifact",
+          "path": "packages/shared/lib/services/MagicService.js",
+          "expect": { "exists": true }
+        }
+      ],
+      "source_evidence": [
+        {
+          "quote": "MagicService with RegisterAsAdminWhenClicked pattern",
+          "loc": { "start": 1720, "end": 1780 },
+          "section": "Magic Link Authentication System",
+          "startLine": 70,
+          "endLine": 72
+        }
+      ],
+      "contentHash": "yza901bcd234"
+    },
+    {
+      "id": "P1.T010",
+      "feature_id": "F004",
+      "title": "Implement token generation",
+      "description": "Create secure token generation with 256-bit entropy",
+      "category": "implementation",
+      "skillsRequired": ["security", "cryptography"],
+      "duration": {
+        "optimistic": 3,
+        "mostLikely": 4,
+        "pessimistic": 5
+      },
+      "durationUnits": "hours",
+      "interfaces_produced": ["TokenGenerator:v1"],
+      "interfaces_consumed": ["MagicService:v1"],
+      "acceptance_checks": [
+        {
+          "type": "metric",
+          "name": "token_entropy_bits",
+          "expect": { "gte": 256 }
+        }
+      ],
+      "source_evidence": [
+        {
+          "quote": "256-bit entropy tokens",
+          "loc": { "start": 1740, "end": 1760 },
+          "section": "Magic Link Authentication System",
+          "startLine": 71,
+          "endLine": 71
+        }
+      ],
+      "contentHash": "bcd567efg890"
+    },
+    {
+      "id": "P1.T011",
+      "feature_id": "F004",
+      "title": "Create MagicLinkRepository",
+      "description": "Build repository for storing and retrieving magic link tokens",
+      "category": "implementation",
+      "skillsRequired": ["database", "javascript"],
+      "duration": {
+        "optimistic": 4,
+        "mostLikely": 6,
+        "pessimistic": 8
+      },
+      "durationUnits": "hours",
+      "interfaces_produced": ["MagicLinkRepository:v1"],
+      "interfaces_consumed": ["BaseRepository:v1"],
+      "acceptance_checks": [
+        {
+          "type": "artifact",
+          "path": "packages/shared/lib/repositories/MagicLinkRepository.js",
+          "expect": { "exists": true }
+        }
+      ],
+      "source_evidence": [
+        {
+          "quote": "MagicLinkRepository",
+          "loc": { "start": 3250, "end": 3280 },
+          "section": "Service Factory Pattern",
+          "startLine": 148,
+          "endLine": 149
+        }
+      ],
+      "contentHash": "efg123hij456"
+    },
+    {
+      "id": "P1.T012",
+      "feature_id": "F005",
+      "title": "Create BaseRepository abstract class",
+      "description": "Build abstract repository with CRUD operations and transaction support",
+      "category": "foundation",
+      "skillsRequired": ["javascript", "patterns", "database"],
+      "duration": {
+        "optimistic": 5,
+        "mostLikely": 6,
+        "pessimistic": 8
+      },
+      "durationUnits": "hours",
+      "interfaces_produced": ["BaseRepository:v1"],
+      "interfaces_consumed": ["DatabaseConnectionManager:v1"],
+      "acceptance_checks": [
+        {
+          "type": "artifact",
+          "path": "packages/shared/lib/repositories/BaseRepository.js",
+          "expect": { "exists": true }
+        }
+      ],
+      "source_evidence": [
+        {
+          "quote": "BaseRepository abstract class with CRUD operations",
+          "loc": { "start": 1920, "end": 1980 },
+          "section": "Repository Pattern Implementation",
+          "startLine": 79,
+          "endLine": 81
+        }
+      ],
+      "contentHash": "hij789klm012"
+    },
+    {
+      "id": "P1.T013",
+      "feature_id": "F005",
+      "title": "Refactor UserRepository",
+      "description": "Update UserRepository to extend BaseRepository and remove client leakage",
+      "category": "implementation",
+      "skillsRequired": ["javascript", "database"],
+      "duration": {
+        "optimistic": 3,
+        "mostLikely": 4,
+        "pessimistic": 5
+      },
+      "durationUnits": "hours",
+      "interfaces_produced": ["UserRepository:v2"],
+      "interfaces_consumed": ["BaseRepository:v1"],
+      "acceptance_checks": [
+        {
+          "type": "command",
+          "cmd": "npm test -- UserRepository",
+          "expect": { "passRateGte": 0.95 }
+        }
+      ],
+      "source_evidence": [
+        {
+          "quote": "no database client leakage to services",
+          "loc": { "start": 1960, "end": 1990 },
+          "section": "Repository Pattern Implementation",
+          "startLine": 82,
+          "endLine": 83
+        }
+      ],
+      "contentHash": "klm345nop678"
+    },
+    {
+      "id": "P1.T014",
+      "feature_id": "F005",
+      "title": "Refactor PetRepository",
+      "description": "Update PetRepository to extend BaseRepository with proper encapsulation",
+      "category": "implementation",
+      "skillsRequired": ["javascript", "database"],
+      "duration": {
+        "optimistic": 3,
+        "mostLikely": 4,
+        "pessimistic": 5
+      },
+      "durationUnits": "hours",
+      "interfaces_produced": ["PetRepository:v2"],
+      "interfaces_consumed": ["BaseRepository:v1"],
+      "acceptance_checks": [
+        {
+          "type": "command",
+          "cmd": "npm test -- PetRepository",
+          "expect": { "passRateGte": 0.95 }
+        }
+      ],
+      "source_evidence": [
+        {
+          "quote": "Fix broken repository pattern",
+          "loc": { "start": 1900, "end": 1920 },
+          "section": "Repository Pattern Implementation",
+          "startLine": 78,
+          "endLine": 79
+        }
+      ],
+      "contentHash": "nop901qrs234"
+    },
+    {
+      "id": "P1.T015",
+      "feature_id": "F006",
+      "title": "Refactor UserService with DI",
+      "description": "Update UserService with explicit constructor and dependency injection",
+      "category": "implementation",
+      "skillsRequired": ["javascript", "patterns"],
+      "duration": {
+        "optimistic": 5,
+        "mostLikely": 6,
+        "pessimistic": 8
+      },
+      "durationUnits": "hours",
+      "interfaces_produced": ["UserService:v2"],
+      "interfaces_consumed": ["UserRepository:v2", "ServiceFactory:v1"],
+      "acceptance_checks": [
+        {
+          "type": "command",
+          "cmd": "npm test -- UserService",
+          "expect": { "passRateGte": 0.95 }
+        }
+      ],
+      "source_evidence": [
+        {
+          "quote": "Explicit constructors with dependency injection",
+          "loc": { "start": 2120, "end": 2160 },
+          "section": "Service Layer Refactoring",
+          "startLine": 87,
+          "endLine": 88
+        }
+      ],
+      "contentHash": "qrs567tuv890"
+    },
+    {
+      "id": "P1.T016",
+      "feature_id": "F006",
+      "title": "Add JSDoc to all services",
+      "description": "Document all service methods with comprehensive JSDoc including types and examples",
+      "category": "implementation",
+      "skillsRequired": ["javascript", "documentation"],
+      "duration": {
+        "optimistic": 6,
+        "mostLikely": 8,
+        "pessimistic": 10
+      },
+      "durationUnits": "hours",
+      "interfaces_produced": ["ServiceDocs:v1"],
+      "interfaces_consumed": [],
+      "acceptance_checks": [
+        {
+          "type": "command",
+          "cmd": "npm run docs:coverage",
+          "expect": { "passRateGte": 0.95 }
+        }
+      ],
+      "source_evidence": [
+        {
+          "quote": "Complete JSDoc documentation",
+          "loc": { "start": 2180, "end": 2200 },
+          "section": "Service Layer Refactoring",
+          "startLine": 91,
+          "endLine": 92
+        }
+      ],
+      "contentHash": "tuv123wxy456"
+    },
+    {
+      "id": "P1.T017",
+      "feature_id": "F007",
+      "title": "Create user migration script",
+      "description": "Build script to migrate existing users from custom table to Supabase Auth",
+      "category": "implementation",
+      "skillsRequired": ["database", "migration", "supabase"],
+      "duration": {
+        "optimistic": 6,
+        "mostLikely": 8,
+        "pessimistic": 10
+      },
+      "durationUnits": "hours",
+      "interfaces_produced": ["UserMigration:v1"],
+      "interfaces_consumed": ["DatabaseConnectionManager:v1"],
+      "acceptance_checks": [
+        {
+          "type": "artifact",
+          "path": "scripts/migrate-users.js",
+          "expect": { "exists": true }
+        }
+      ],
+      "source_evidence": [
+        {
+          "quote": "Map existing users to Supabase Auth",
+          "loc": { "start": 2320, "end": 2360 },
+          "section": "Supabase Auth Migration",
+          "startLine": 95,
+          "endLine": 96
+        }
+      ],
+      "contentHash": "wxy789zab012"
+    },
+    {
+      "id": "P1.T018",
+      "feature_id": "F007",
+      "title": "Update authentication flows",
+      "description": "Replace all password-based auth with Supabase Auth magic links",
+      "category": "implementation",
+      "skillsRequired": ["auth", "javascript", "supabase"],
+      "duration": {
+        "optimistic": 6,
+        "mostLikely": 8,
+        "pessimistic": 10
+      },
+      "durationUnits": "hours",
+      "interfaces_produced": ["AuthFlow:v2"],
+      "interfaces_consumed": ["MagicService:v1", "SupabaseAuth:v1"],
+      "acceptance_checks": [
+        {
+          "type": "command",
+          "cmd": "npm test -- auth",
+          "expect": { "passRateGte": 1.0 }
+        }
+      ],
+      "source_evidence": [
+        {
+          "quote": "Replace all password-based auth with magic links",
+          "loc": { "start": 1700, "end": 1720 },
+          "section": "Magic Link Authentication System",
+          "startLine": 69,
+          "endLine": 70
+        }
+      ],
+      "contentHash": "zab345cde678"
+    },
+    {
+      "id": "P1.T019",
+      "feature_id": "F008",
+      "title": "Remove terminal-ui components",
+      "description": "Delete all terminal-ui related code and dependencies",
+      "category": "optimization",
+      "skillsRequired": ["javascript"],
+      "duration": {
+        "optimistic": 1,
+        "mostLikely": 2,
+        "pessimistic": 3
+      },
+      "durationUnits": "hours",
+      "interfaces_produced": [],
+      "interfaces_consumed": [],
+      "acceptance_checks": [
+        {
+          "type": "command",
+          "cmd": "grep -r 'terminal-ui' . | wc -l",
+          "expect": { "lte": 0 }
+        }
+      ],
+      "source_evidence": [
+        {
+          "quote": "remove terminal-ui components",
+          "loc": { "start": 2520, "end": 2540 },
+          "section": "Dead Code Elimination",
+          "startLine": 103,
+          "endLine": 104
+        }
+      ],
+      "contentHash": "cde901fgh234"
+    },
+    {
+      "id": "P1.T020",
+      "feature_id": "F008",
+      "title": "Remove password utilities",
+      "description": "Delete all password hashing, validation, and reset code",
+      "category": "optimization",
+      "skillsRequired": ["javascript"],
+      "duration": {
+        "optimistic": 3,
+        "mostLikely": 4,
+        "pessimistic": 5
+      },
+      "durationUnits": "hours",
+      "interfaces_produced": [],
+      "interfaces_consumed": [],
+      "acceptance_checks": [
+        {
+          "type": "command",
+          "cmd": "grep -r 'password' . --include='*.js' | wc -l",
+          "expect": { "lte": 5 }
+        }
+      ],
+      "source_evidence": [
+        {
+          "quote": "remove password-related code",
+          "loc": { "start": 2560, "end": 2580 },
+          "section": "Dead Code Elimination",
+          "startLine": 106,
+          "endLine": 107
+        }
+      ],
+      "contentHash": "fgh567ijk890"
+    },
+    {
+      "id": "P1.T021",
+      "feature_id": "F009",
+      "title": "Create error hierarchy",
+      "description": "Build PurrfectFirsError base class and error type hierarchy",
+      "category": "foundation",
+      "skillsRequired": ["javascript", "error-handling"],
+      "duration": {
+        "optimistic": 3,
+        "mostLikely": 4,
+        "pessimistic": 5
+      },
+      "durationUnits": "hours",
+      "interfaces_produced": ["ErrorHierarchy:v1"],
+      "interfaces_consumed": [],
+      "acceptance_checks": [
+        {
+          "type": "artifact",
+          "path": "packages/shared/lib/errors/index.js",
+          "expect": { "exists": true }
+        }
+      ],
+      "source_evidence": [
+        {
+          "quote": "Custom error hierarchy with PurrfectFirsError base",
+          "loc": { "start": 2720, "end": 2760 },
+          "section": "Error Handling System",
+          "startLine": 110,
+          "endLine": 112
+        }
+      ],
+      "contentHash": "ijk123lmn456"
+    },
+    {
+      "id": "P1.T022",
+      "feature_id": "F009",
+      "title": "Implement custom error types",
+      "description": "Create specific error classes with context for different failure scenarios",
+      "category": "implementation",
+      "skillsRequired": ["javascript", "error-handling"],
+      "duration": {
+        "optimistic": 5,
+        "mostLikely": 6,
+        "pessimistic": 8
+      },
+      "durationUnits": "hours",
+      "interfaces_produced": ["CustomErrors:v1"],
+      "interfaces_consumed": ["ErrorHierarchy:v1"],
+      "acceptance_checks": [
+        {
+          "type": "command",
+          "cmd": "npm test -- errors",
+          "expect": { "passRateGte": 1.0 }
+        }
+      ],
+      "source_evidence": [
+        {
+          "quote": "context-rich error types",
+          "loc": { "start": 2740, "end": 2780 },
+          "section": "Error Handling System",
+          "startLine": 111,
+          "endLine": 113
+        }
+      ],
+      "contentHash": "lmn789opq012"
+    },
+    {
+      "id": "P1.T023",
+      "feature_id": "F010",
+      "title": "Add JSDoc to repositories",
+      "description": "Document all repository methods with JSDoc including parameters and return types",
+      "category": "implementation",
+      "skillsRequired": ["javascript", "documentation"],
+      "duration": {
+        "optimistic": 5,
+        "mostLikely": 6,
+        "pessimistic": 8
+      },
+      "durationUnits": "hours",
+      "interfaces_produced": ["RepositoryDocs:v1"],
+      "interfaces_consumed": [],
+      "acceptance_checks": [
+        {
+          "type": "metric",
+          "name": "jsdoc_coverage",
+          "expect": { "gte": 0.95 }
+        }
+      ],
+      "source_evidence": [
+        {
+          "quote": "JSDoc for all public APIs",
+          "loc": { "start": 2920, "end": 2960 },
+          "section": "Documentation and Standards",
+          "startLine": 118,
+          "endLine": 119
+        }
+      ],
+      "contentHash": "opq345rst678"
+    },
+    {
+      "id": "P1.T024",
+      "feature_id": "F010",
+      "title": "Create architecture documentation",
+      "description": "Write comprehensive architecture decision records and system design docs",
+      "category": "implementation",
+      "skillsRequired": ["documentation", "architecture"],
+      "duration": {
+        "optimistic": 5,
+        "mostLikely": 6,
+        "pessimistic": 8
+      },
+      "durationUnits": "hours",
+      "interfaces_produced": ["ArchitectureDocs:v1"],
+      "interfaces_consumed": [],
+      "acceptance_checks": [
+        {
+          "type": "artifact",
+          "path": "docs/architecture/README.md",
+          "expect": { "exists": true }
+        }
+      ],
+      "source_evidence": [
+        {
+          "quote": "architecture decision records",
+          "loc": { "start": 2960, "end": 2980 },
+          "section": "Documentation and Standards",
+          "startLine": 120,
+          "endLine": 121
+        }
+      ],
+      "contentHash": "rst901uvw234"
+    },
+    {
+      "id": "P1.T025",
+      "feature_id": "F004",
+      "title": "Implement admin-add script",
+      "description": "Rewrite admin-add.js script using new MagicService and clean architecture",
+      "category": "implementation",
+      "skillsRequired": ["javascript", "scripting"],
+      "duration": {
+        "optimistic": 3,
+        "mostLikely": 4,
+        "pessimistic": 5
+      },
+      "durationUnits": "hours",
+      "interfaces_produced": ["AdminAddScript:v2"],
+      "interfaces_consumed": ["MagicService:v1", "ServiceFactory:v1", "ScriptAppConfig:v1"],
+      "acceptance_checks": [
+        {
+          "type": "command",
+          "cmd": "node scripts/admin-add.js test@example.com --dry-run",
+          "expect": { "passRateGte": 1.0 }
+        }
+      ],
+      "source_evidence": [
+        {
+          "quote": "admin-add.js script using new MagicService",
+          "loc": { "start": 3100, "end": 3150 },
+          "section": "Script Context",
+          "startLine": 125,
+          "endLine": 128
+        }
+      ],
+      "contentHash": "uvw567xyz890"
+    }
+  ],
+  "dependencies": [
+    {
+      "from": "P1.T001",
+      "to": "P1.T002",
+      "type": "technical",
+      "reason": "ScriptAppConfig extends AppConfig base class",
+      "evidence": [
+        {
+          "type": "doc",
+          "reason": "ScriptAppConfig needs AppConfig interface",
+          "confidence": 0.95
+        }
+      ],
+      "confidence": 0.95,
+      "isHard": true
+    },
+    {
+      "from": "P1.T001",
+      "to": "P1.T003",
+      "type": "technical",
+      "reason": "WebAppConfig extends AppConfig base class",
+      "evidence": [
+        {
+          "type": "doc",
+          "reason": "WebAppConfig needs AppConfig interface",
+          "confidence": 0.95
+        }
+      ],
+      "confidence": 0.95,
+      "isHard": true
+    },
+    {
+      "from": "P1.T004",
+      "to": "P1.T005",
+      "type": "sequential",
+      "reason": "Factory methods require base factory class",
+      "evidence": [
+        {
+          "type": "doc",
+          "reason": "Methods added to ServiceFactory",
+          "confidence": 0.9
+        }
+      ],
+      "confidence": 0.9,
+      "isHard": true
+    },
+    {
+      "from": "P1.T006",
+      "to": "P1.T007",
+      "type": "sequential",
+      "reason": "Connection pooling built on DatabaseConnectionManager",
+      "evidence": [
+        {
+          "type": "doc",
+          "reason": "Pooling extends connection manager",
+          "confidence": 0.9
+        }
+      ],
+      "confidence": 0.9,
+      "isHard": true
+    },
+    {
+      "from": "P1.T006",
+      "to": "P1.T008",
+      "type": "sequential",
+      "reason": "WeakRef cleanup added to DatabaseConnectionManager",
+      "evidence": [
+        {
+          "type": "doc",
+          "reason": "WeakRef integrated into manager",
+          "confidence": 0.85
+        }
+      ],
+      "confidence": 0.85,
+      "isHard": true
+    },
+    {
+      "from": "P1.T004",
+      "to": "P1.T009",
+      "type": "technical",
+      "reason": "MagicService created via ServiceFactory",
+      "evidence": [
+        {
+          "type": "doc",
+          "reason": "Factory pattern creates services",
+          "confidence": 0.9
+        }
+      ],
+      "confidence": 0.9,
+      "isHard": true
+    },
+    {
+      "from": "P1.T009",
+      "to": "P1.T010",
+      "type": "sequential",
+      "reason": "Token generation part of MagicService",
+      "evidence": [
+        {
+          "type": "doc",
+          "reason": "Tokens generated by service",
+          "confidence": 0.95
+        }
+      ],
+      "confidence": 0.95,
+      "isHard": true
+    },
+    {
+      "from": "P1.T012",
+      "to": "P1.T011",
+      "type": "technical",
+      "reason": "MagicLinkRepository extends BaseRepository",
+      "evidence": [
+        {
+          "type": "doc",
+          "reason": "Repository inheritance",
+          "confidence": 0.9
+        }
+      ],
+      "confidence": 0.9,
+      "isHard": true
+    },
+    {
+      "from": "P1.T006",
+      "to": "P1.T012",
+      "type": "technical",
+      "reason": "BaseRepository uses DatabaseConnectionManager",
+      "evidence": [
+        {
+          "type": "doc",
+          "reason": "Repositories need connections",
+          "confidence": 0.95
+        }
+      ],
+      "confidence": 0.95,
+      "isHard": true
+    },
+    {
+      "from": "P1.T012",
+      "to": "P1.T013",
+      "type": "technical",
+      "reason": "UserRepository extends BaseRepository",
+      "evidence": [
+        {
+          "type": "doc",
+          "reason": "Repository refactoring",
+          "confidence": 0.95
+        }
+      ],
+      "confidence": 0.95,
+      "isHard": true
+    },
+    {
+      "from": "P1.T012",
+      "to": "P1.T014",
+      "type": "technical",
+      "reason": "PetRepository extends BaseRepository",
+      "evidence": [
+        {
+          "type": "doc",
+          "reason": "Repository refactoring",
+          "confidence": 0.95
+        }
+      ],
+      "confidence": 0.95,
+      "isHard": true
+    },
+    {
+      "from": "P1.T013",
+      "to": "P1.T015",
+      "type": "technical",
+      "reason": "UserService depends on refactored UserRepository",
+      "evidence": [
+        {
+          "type": "doc",
+          "reason": "Service uses repository",
+          "confidence": 0.95
+        }
+      ],
+      "confidence": 0.95,
+      "isHard": true
+    },
+    {
+      "from": "P1.T004",
+      "to": "P1.T015",
+      "type": "technical",
+      "reason": "UserService created via ServiceFactory",
+      "evidence": [
+        {
+          "type": "doc",
+          "reason": "DI pattern",
+          "confidence": 0.9
+        }
+      ],
+      "confidence": 0.9,
+      "isHard": true
+    },
+    {
+      "from": "P1.T015",
+      "to": "P1.T016",
+      "type": "sequential",
+      "reason": "JSDoc added after service refactoring",
+      "evidence": [
+        {
+          "type": "doc",
+          "reason": "Documentation follows implementation",
+          "confidence": 0.8
+        }
+      ],
+      "confidence": 0.8,
+      "isHard": false
+    },
+    {
+      "from": "P1.T006",
+      "to": "P1.T017",
+      "type": "technical",
+      "reason": "Migration script needs DatabaseConnectionManager",
+      "evidence": [
+        {
+          "type": "doc",
+          "reason": "Script accesses database",
+          "confidence": 0.9
+        }
+      ],
+      "confidence": 0.9,
+      "isHard": true
+    },
+    {
+      "from": "P1.T009",
+      "to": "P1.T018",
+      "type": "technical",
+      "reason": "Auth flows use MagicService",
+      "evidence": [
+        {
+          "type": "doc",
+          "reason": "Magic links replace passwords",
+          "confidence": 0.95
+        }
+      ],
+      "confidence": 0.95,
+      "isHard": true
+    },
+    {
+      "from": "P1.T018",
+      "to": "P1.T020",
+      "type": "sequential",
+      "reason": "Remove passwords after magic link implementation",
+      "evidence": [
+        {
+          "type": "doc",
+          "reason": "Clean up old auth code",
+          "confidence": 0.9
+        }
+      ],
+      "confidence": 0.9,
+      "isHard": true
+    },
+    {
+      "from": "P1.T021",
+      "to": "P1.T022",
+      "type": "sequential",
+      "reason": "Custom errors extend base error hierarchy",
+      "evidence": [
+        {
+          "type": "doc",
+          "reason": "Error inheritance",
+          "confidence": 0.95
+        }
+      ],
+      "confidence": 0.95,
+      "isHard": true
+    },
+    {
+      "from": "P1.T002",
+      "to": "P1.T025",
+      "type": "technical",
+      "reason": "admin-add script uses ScriptAppConfig",
+      "evidence": [
+        {
+          "type": "doc",
+          "reason": "Script configuration",
+          "confidence": 0.95
+        }
+      ],
+      "confidence": 0.95,
+      "isHard": true
+    },
+    {
+      "from": "P1.T009",
+      "to": "P1.T025",
+      "type": "technical",
+      "reason": "admin-add script uses MagicService",
+      "evidence": [
+        {
+          "type": "doc",
+          "reason": "Script uses magic links",
+          "confidence": 0.95
+        }
+      ],
+      "confidence": 0.95,
+      "isHard": true
+    },
+    {
+      "from": "P1.T004",
+      "to": "P1.T025",
+      "type": "technical",
+      "reason": "admin-add script uses ServiceFactory",
+      "evidence": [
+        {
+          "type": "doc",
+          "reason": "Script uses factory pattern",
+          "confidence": 0.95
+        }
+      ],
+      "confidence": 0.95,
+      "isHard": true
+    }
+  ]
+}

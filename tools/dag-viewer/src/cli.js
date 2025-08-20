@@ -24,8 +24,10 @@ program
   .option('-o, --output <path>', 'Output HTML file path', './dag-visualization.html')
   .option('-v, --verbose', 'Enable verbose output', false)
   .option('--no-open', 'Don\'t open the HTML file after generation')
-  .option('-r, --renderer <type>', 'Renderer to use: cytoscape (canvas), modern (d3), or classic', 'cytoscape')
+  .option('-r, --renderer <type>', 'Renderer to use: cytoscape (canvas), modern (d3), live (websocket), or classic', 'cytoscape')
   .option('--classic', 'Use classic HTML generator (deprecated, use --renderer classic instead)')
+  .option('--ws-port <port>', 'WebSocket port for live renderer (default: 8080)', '8080')
+  .option('--ws-host <host>', 'WebSocket host for live renderer (default: localhost)', 'localhost')
   .parse();
 
 const options = program.opts();
@@ -76,7 +78,9 @@ async function main() {
       verbose: options.verbose,
       open: options.open,
       renderer: options.renderer,
-      classic: options.classic
+      classic: options.classic,
+      wsPort: options.wsPort,
+      wsHost: options.wsHost
     });
 
     // Output JSON result

@@ -1,0 +1,159 @@
+{
+  "generated": {
+    "by": "T.A.S.K.S v1",
+    "timestamp": "2025-08-19T15:30:00Z",
+    "contentHash": "a1b2c3d4e5f6789012345678901234567890abcd"
+  },
+  "features": [
+    {
+      "id": "F001",
+      "title": "Configuration Management System",
+      "description": "Create centralized configuration management with validation and type safety. Implement ScriptAppConfig.fromEnv() with full validation, environment variable validation with EnvironmentError on failure.",
+      "priority": "critical",
+      "source_evidence": [
+        {
+          "quote": "Create centralized configuration management with validation and type safety",
+          "loc": { "start": 1100, "end": 1200 },
+          "section": "F1: Configuration Management System",
+          "startLine": 45,
+          "endLine": 50
+        }
+      ]
+    },
+    {
+      "id": "F002",
+      "title": "Dependency Injection Framework",
+      "description": "Build comprehensive DI system with factory patterns. ServiceFactory with static factory methods, automatic dependency resolution, interface-based service contracts.",
+      "priority": "critical",
+      "source_evidence": [
+        {
+          "quote": "Build comprehensive DI system with factory patterns",
+          "loc": { "start": 1300, "end": 1400 },
+          "section": "F2: Dependency Injection Framework",
+          "startLine": 52,
+          "endLine": 58
+        }
+      ]
+    },
+    {
+      "id": "F003",
+      "title": "Database Connection Management",
+      "description": "Implement professional database connection handling with pooling, WeakRef-based automatic cleanup, connection health monitoring, proper transaction support.",
+      "priority": "critical",
+      "source_evidence": [
+        {
+          "quote": "Implement professional database connection handling",
+          "loc": { "start": 1500, "end": 1600 },
+          "section": "F3: Database Connection Management",
+          "startLine": 60,
+          "endLine": 67
+        }
+      ]
+    },
+    {
+      "id": "F004",
+      "title": "Magic Link Authentication System",
+      "description": "Replace all password-based auth with magic links. MagicService with RegisterAsAdminWhenClicked pattern, 256-bit entropy tokens, 15-minute expiration with single use.",
+      "priority": "critical",
+      "source_evidence": [
+        {
+          "quote": "Replace all password-based auth with magic links",
+          "loc": { "start": 1700, "end": 1800 },
+          "section": "F4: Magic Link Authentication System",
+          "startLine": 69,
+          "endLine": 76
+        }
+      ]
+    },
+    {
+      "id": "F005",
+      "title": "Repository Pattern Implementation",
+      "description": "Fix broken repository pattern with proper encapsulation. BaseRepository abstract class with CRUD operations, transaction support, no database client leakage to services.",
+      "priority": "high",
+      "source_evidence": [
+        {
+          "quote": "Fix broken repository pattern with proper encapsulation",
+          "loc": { "start": 1900, "end": 2000 },
+          "section": "F5: Repository Pattern Implementation",
+          "startLine": 78,
+          "endLine": 84
+        }
+      ]
+    },
+    {
+      "id": "F006",
+      "title": "Service Layer Refactoring",
+      "description": "Refactor all services with proper patterns. Explicit constructors with dependency injection, single responsibility per service, proper error handling with context.",
+      "priority": "high",
+      "source_evidence": [
+        {
+          "quote": "Refactor all services with proper patterns",
+          "loc": { "start": 2100, "end": 2200 },
+          "section": "F6: Service Layer Refactoring",
+          "startLine": 86,
+          "endLine": 92
+        }
+      ]
+    },
+    {
+      "id": "F007",
+      "title": "Supabase Auth Migration",
+      "description": "Migrate from custom Users table to Supabase Auth. Map existing users, profile data separation, role-based access with metadata, backward compatibility.",
+      "priority": "high",
+      "source_evidence": [
+        {
+          "quote": "Migrate from custom Users table to Supabase Auth",
+          "loc": { "start": 2300, "end": 2400 },
+          "section": "F7: Supabase Auth Migration",
+          "startLine": 94,
+          "endLine": 100
+        }
+      ]
+    },
+    {
+      "id": "F008",
+      "title": "Dead Code Elimination",
+      "description": "Remove all identified dead code. Delete 919 lines of unused code, remove terminal-ui components, clean up unused factories, remove password-related code.",
+      "priority": "medium",
+      "source_evidence": [
+        {
+          "quote": "Remove all identified dead code",
+          "loc": { "start": 2500, "end": 2600 },
+          "section": "F8: Dead Code Elimination",
+          "startLine": 102,
+          "endLine": 107
+        }
+      ]
+    },
+    {
+      "id": "F009",
+      "title": "Error Handling System",
+      "description": "Implement comprehensive error handling. Custom error hierarchy with PurrfectFirsError base, context-rich error types, proper error propagation.",
+      "priority": "high",
+      "source_evidence": [
+        {
+          "quote": "Implement comprehensive error handling",
+          "loc": { "start": 2700, "end": 2800 },
+          "section": "F9: Error Handling System",
+          "startLine": 109,
+          "endLine": 115
+        }
+      ]
+    },
+    {
+      "id": "F010",
+      "title": "Documentation and Standards",
+      "description": "Add comprehensive documentation. JSDoc for all public APIs, README updates, architecture decision records, code style enforcement with ESLint.",
+      "priority": "medium",
+      "source_evidence": [
+        {
+          "quote": "Add comprehensive documentation",
+          "loc": { "start": 2900, "end": 3000 },
+          "section": "F10: Documentation and Standards",
+          "startLine": 117,
+          "endLine": 123
+        }
+      ]
+    }
+  ]
+}

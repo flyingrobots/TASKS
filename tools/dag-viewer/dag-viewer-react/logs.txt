@@ -1,0 +1,60 @@
+Loaded state from /Users/james/git/TASKS/tools/dag-viewer/dag-state-full.json
+Loaded DAG from /Users/james/git/pf3/docs/plans/professional-quality-code/dag.json
+
+╔════════════════════════════════════════════════════════╗
+║          DAG STATE SERVER - FULL ANALYTICS            ║
+╠════════════════════════════════════════════════════════╣
+║  POST http://localhost:8080/claim-task              ║
+║  POST http://localhost:8080/event                   ║
+║  GET  http://localhost:8080/ready-tasks             ║
+║  GET  http://localhost:8080/leaderboard             ║
+║  GET  http://localhost:8080/git-insights            ║
+║  GET  http://localhost:8080/state                   ║
+║  GET  http://localhost:8080/events                  ║
+║  WS   ws://localhost:8080                           ║
+╚════════════════════════════════════════════════════════╝
+
+Event Types:
+
+Claim Task (ATOMIC):
+curl -X POST http://localhost:8080/claim-task \
+  -H "Content-Type: application/json" \
+  -d '{"agent": "mr_clean", "task": "P1.T003"}'
+
+Task Update (with total tokens):
+curl -X POST http://localhost:8080/event \
+  -H "Content-Type: application/json" \
+  -d '{
+    "event": "task_update",
+    "data": {
+      "agent": "mr_clean",
+      "task": "P1.T003",
+      "status": "completed",
+      "timestamp": 1755646950,
+      "total_tokens": 1234567
+    }
+  }'
+
+Git Commit:
+curl -X POST http://localhost:8080/event \
+  -H "Content-Type: application/json" \
+  -d '{
+    "event": "git_commit",
+    "agent": "mr_clean",
+    "data": {
+      "sha": "abc123",
+      "message": "Fix authentication bug",
+      "branch": "main",
+      "timestamp": 1755646950,
+      "files": [
+        {
+          "path": "src/auth.js",
+          "additions": 45,
+          "deletions": 12
+        }
+      ]
+    }
+  }'
+  
+
+Saving state...
