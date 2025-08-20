@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { toast } from 'sonner'
 
 interface TaskState {
   status: string
@@ -162,6 +163,15 @@ export const useDagStore = create<DagState>((set, get) => ({
       case 'task-update':
         const { task, status, agent, timestamp } = message
         state.updateTaskState(task, { status, agent, timestamp })
+        
+        // Show toast for task updates
+        const statusIcon = status === 'completed' ? '✅' : 
+                          status === 'failed' ? '❌' : 
+                          status === 'started' ? '🚀' : '⚡'
+        toast(`${statusIcon} Task ${task} ${status}`, {
+          description: agent ? `Agent: ${agent}` : undefined,
+          duration: 3000,
+        })
         break
       
       case 'task-claimed':
@@ -171,11 +181,27 @@ export const useDagStore = create<DagState>((set, get) => ({
           agent: claimAgent,
           timestamp: message.timestamp
         })
+        
+        // Show toast for task claimed
+        toast(`🎯 Task ${claimedTask} claimed`, {
+          description: `Agent: ${claimAgent}`,
+          duration: 3000,
+        })
         break
       
       case 'git-commit':
         // Handle git commit updates
         state.addEvent({ type: 'commit', ...message })
+        
+        // Show toast for git commits
+        const commitMessage = message.message || message.data?.message || 'No message'
+        const commitAgent = message.agent || 'Unknown'
+        const filesChanged = message.data?.files?.length || message.filesChanged || 0
+        
+        toast(`🔀 New commit by ${commitAgent}`, {
+          description: `${commitMessage.substring(0, 50)}${commitMessage.length > 50 ? '...' : ''} (${filesChanged} files)`,
+          duration: 4000,
+        })
         break
       
       case 'stats-update':

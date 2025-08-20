@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 import { Badge } from './ui/badge'
 import { Button } from './ui/button'
 import { HoverCard, HoverCardContent, HoverCardTrigger } from './ui/hover-card'
-import { Maximize2, Minimize2, ZoomIn, ZoomOut, Move } from 'lucide-react'
+import { Maximize2, Minimize2, ZoomIn, ZoomOut, Move, Eye, EyeOff, BarChart3 } from 'lucide-react'
 
 // Register the dagre layout for perfect DAG positioning
 cytoscape.use(dagre)
@@ -14,6 +14,7 @@ interface DAGViewerProps {
   dagData: any
   taskStates: Record<string, any>
   className?: string
+  onDashboardToggle?: (show: boolean) => void
 }
 
 // Colorblind-friendly palette using patterns and high contrast
@@ -51,13 +52,15 @@ const waveColors = [
   '#CC9900', // Dark amber
 ]
 
-export const DAGViewer: React.FC<DAGViewerProps> = ({ dagData, taskStates, className }) => {
+export const DAGViewer: React.FC<DAGViewerProps> = ({ dagData, taskStates, className, onDashboardToggle }) => {
   const containerRef = useRef<HTMLDivElement>(null)
   const cyRef = useRef<cytoscape.Core | null>(null)
   const [selectedNode, setSelectedNode] = useState<any>(null)
   const [hoverCardOpen, setHoverCardOpen] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [clickPosition, setClickPosition] = useState({ x: 0, y: 0 })
+  const [showLegend, setShowLegend] = useState(true)
+  const [showDashboard, setShowDashboard] = useState(false)
 
   useEffect(() => {
     if (!containerRef.current || !dagData) return
@@ -346,94 +349,136 @@ export const DAGViewer: React.FC<DAGViewerProps> = ({ dagData, taskStates, class
   const graphStats = getGraphStats()
 
   const graphContent = (
-    <>
-      {/* Color Legend */}
-      <Card className="mb-2">
-        <CardContent className="p-3">
-          <div className="flex flex-wrap gap-3 items-center">
-            <span className="text-xs font-semibold text-muted-foreground">Legend:</span>
-            {Object.entries(stateColors).map(([state, color]) => (
-              <div key={state} className="flex items-center gap-1">
-                <div 
-                  className="w-4 h-4 rounded border-2" 
-                  style={{ 
-                    backgroundColor: color,
-                    borderColor: stateBorderColors[state]
-                  }}
-                />
-                <span className="text-xs capitalize">{state.replace('_', ' ')}</span>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+    <div className="relative w-full h-full">
+      {/* Full screen graph canvas */}
+      <div 
+        ref={containerRef} 
+        className="absolute inset-0 w-full h-full bg-white dark:bg-gray-900"
+        style={{
+          background: 'linear-gradient(45deg, #FFFFFF 25%, #F5F5F5 25%, #F5F5F5 50%, #FFFFFF 50%, #FFFFFF 75%, #F5F5F5 75%, #F5F5F5)',
+          backgroundSize: '20px 20px'
+        }}
+      />
       
-      <Card className="overflow-hidden">
-        <CardHeader className="pb-3">
-          <div className="flex justify-between items-center">
-            <div className="flex gap-4">
-              <div className="text-sm text-muted-foreground">
-                <span className="font-semibold">{graphStats.nodes}</span> nodes
+      {/* Overlaid controls and legend in top-left - toggleable */}
+      {showLegend && (
+        <div className="absolute top-20 left-4 z-30 space-y-2 max-w-sm animate-in fade-in slide-in-from-left-2 duration-200">
+          {/* Graph stats */}
+          <Card className="bg-background/95 backdrop-blur shadow-lg">
+            <CardContent className="p-3">
+              <div className="flex gap-3 text-xs">
+                <span><strong>{graphStats.nodes}</strong> nodes</span>
+                <span><strong>{graphStats.edges}</strong> edges</span>
+                <span><strong>{graphStats.waves}</strong> waves</span>
+                <span><strong>{graphStats.density}%</strong> density</span>
               </div>
-              <div className="text-sm text-muted-foreground">
-                <span className="font-semibold">{graphStats.edges}</span> edges
+            </CardContent>
+          </Card>
+          
+          {/* Legend */}
+          <Card className="bg-background/95 backdrop-blur shadow-lg">
+            <CardContent className="p-3">
+              <div className="grid grid-cols-2 gap-2">
+                {Object.entries(stateColors).map(([state, color]) => (
+                  <div key={state} className="flex items-center gap-1.5">
+                    <div 
+                      className="w-3 h-3 rounded border-2 flex-shrink-0" 
+                      style={{ 
+                        backgroundColor: color,
+                        borderColor: stateBorderColors[state]
+                      }}
+                    />
+                    <span className="text-xs capitalize">{state.replace('_', ' ')}</span>
+                  </div>
+                ))}
               </div>
-              <div className="text-sm text-muted-foreground">
-                <span className="font-semibold">{graphStats.waves}</span> waves
-              </div>
-              <div className="text-sm text-muted-foreground">
-                <span className="font-semibold">{graphStats.density}%</span> density
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={handleZoomOut}
-                title="Zoom Out"
-              >
-                <ZoomOut className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={handleZoomIn}
-                title="Zoom In"
-              >
-                <ZoomIn className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={handleResetZoom}
-                title="Reset Zoom"
-              >
-                <Move className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={handleToggleFullscreen}
-                title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
-              >
-                {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div 
-            ref={containerRef} 
-            className={`w-full bg-white dark:bg-gray-900 ${
-              isFullscreen ? 'h-[calc(100vh-200px)]' : 'h-[700px]'
-            }`}
-            style={{
-              background: 'linear-gradient(45deg, #FFFFFF 25%, #F5F5F5 25%, #F5F5F5 50%, #FFFFFF 50%, #FFFFFF 75%, #F5F5F5 75%, #F5F5F5)',
-              backgroundSize: '20px 20px'
-            }}
-          />
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+          
+          {/* Task status counts - only if there are active tasks */}
+          {Object.values(stateCounts).some(count => count > 0) && (
+            <Card className="bg-background/95 backdrop-blur shadow-lg">
+              <CardContent className="p-3">
+                <div className="space-y-1">
+                  {Object.entries(stateCounts).map(([state, count]) => (
+                    count > 0 && (
+                      <div key={state} className="flex items-center justify-between text-xs">
+                        <span className="capitalize">{state.replace('_', ' ')}</span>
+                        <Badge variant="secondary" className="h-5 px-1.5">
+                          {count}
+                        </Badge>
+                      </div>
+                    )
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
+      
+      {/* Control buttons in top-right */}
+      <div className="absolute top-20 right-4 z-30 flex gap-2">
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => setShowLegend(!showLegend)}
+          title={showLegend ? "Hide Legend" : "Show Legend"}
+          className="bg-background/95 backdrop-blur shadow-lg"
+        >
+          {showLegend ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+        </Button>
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => {
+            const newState = !showDashboard
+            setShowDashboard(newState)
+            onDashboardToggle?.(newState)
+          }}
+          title={showDashboard ? "Hide Dashboard" : "Show Dashboard"}
+          className="bg-background/95 backdrop-blur shadow-lg"
+        >
+          <BarChart3 className="h-4 w-4" />
+        </Button>
+        <div className="w-px h-8 bg-border" />
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={handleZoomOut}
+          title="Zoom Out"
+          className="bg-background/95 backdrop-blur shadow-lg"
+        >
+          <ZoomOut className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={handleZoomIn}
+          title="Zoom In"
+          className="bg-background/95 backdrop-blur shadow-lg"
+        >
+          <ZoomIn className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={handleResetZoom}
+          title="Reset Zoom"
+          className="bg-background/95 backdrop-blur shadow-lg"
+        >
+          <Move className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={handleToggleFullscreen}
+          title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
+          className="bg-background/95 backdrop-blur shadow-lg"
+        >
+          {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+        </Button>
+      </div>
 
       {/* Hover Card for Task Details */}
       {selectedNode && (
@@ -628,39 +673,12 @@ export const DAGViewer: React.FC<DAGViewerProps> = ({ dagData, taskStates, class
           </HoverCard>
         </div>
       )}
-    </>
+    </div>
   )
 
   return (
-    <div className={className}>
-      {/* Only show status badges if there are any tasks with status */}
-      {Object.values(stateCounts).some(count => count > 0) && (
-        <Card className="mb-4">
-          <CardContent className="p-4">
-            <div className="flex gap-2 flex-wrap">
-              {Object.entries(stateCounts).map(([state, count]) => (
-                count > 0 && (
-                  <Badge key={state} variant="secondary" className="gap-2">
-                    <div 
-                      className="w-2 h-2 rounded-full" 
-                      style={{ backgroundColor: stateColors[state] }}
-                    />
-                    <span className="capitalize">{state.replace('_', ' ')}: {count}</span>
-                  </Badge>
-                )
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {isFullscreen ? (
-        <div className="fixed inset-0 z-50 bg-background p-4">
-          {graphContent}
-        </div>
-      ) : (
-        graphContent
-      )}
+    <div className={`${className || ''} ${isFullscreen ? 'fixed inset-0 z-50' : 'absolute inset-0'}`}>
+      {graphContent}
     </div>
   )
 }

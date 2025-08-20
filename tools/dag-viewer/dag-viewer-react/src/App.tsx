@@ -2,6 +2,9 @@ import { useEffect, useState, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from './components/ui/card'
 import { Badge } from './components/ui/badge'
 import { Progress } from './components/ui/progress'
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from './components/ui/sheet'
+import { Toaster } from './components/ui/sonner'
+import { toast } from 'sonner'
 import { DAGViewer } from './components/DAGViewer'
 import AgentAnalytics from './components/AgentAnalytics'
 import GitAnalytics from './components/GitAnalytics'
@@ -26,11 +29,24 @@ function App() {
   const { isConnected } = useWebSocket({
     url: 'ws://localhost:3456',
     onMessage: handleWebSocketMessage,
-    onOpen: () => setWsConnected(true),
-    onClose: () => setWsConnected(false)
+    onOpen: () => {
+      setWsConnected(true)
+      toast.success('Connected to live updates', {
+        description: 'Real-time task and git activity enabled',
+        duration: 3000,
+      })
+    },
+    onClose: () => {
+      setWsConnected(false)
+      toast.error('Disconnected from live updates', {
+        description: 'Attempting to reconnect...',
+        duration: 3000,
+      })
+    }
   })
   const [startTime, setStartTime] = useState<number | null>(null)
   const [elapsedTime, setElapsedTime] = useState(0)
+  const [showDashboard, setShowDashboard] = useState(false)
   
   // Load DAG data from multiple JSON files
   useEffect(() => {
@@ -150,31 +166,41 @@ function App() {
   }, [agents])
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b">
-        <div className="container mx-auto px-4 py-4">
+    <div className="fixed inset-0 overflow-hidden bg-background">
+      {/* Fullscreen DAG Graph */}
+      <DAGViewer 
+        dagData={dagData} 
+        taskStates={taskStates} 
+        onDashboardToggle={setShowDashboard}
+      />
+
+      {/* Toast notifications */}
+      <Toaster position="bottom-right" />
+
+      {/* Transparent Header Overlay */}
+      <header className="absolute top-0 left-0 right-0 z-20 bg-background/80 backdrop-blur-sm border-b">
+        <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold">DAG Task Analytics</h1>
-              <p className="text-sm text-muted-foreground">Real-time task execution and agent performance</p>
+              <h1 className="text-xl font-bold">DAG Task Analytics</h1>
+              <p className="text-xs text-muted-foreground">Real-time task execution and agent performance</p>
             </div>
-            <div className="flex items-center gap-4">
-              <Badge variant={isConnected ? 'default' : 'destructive'}>
+            <div className="flex items-center gap-3">
+              <Badge variant={isConnected ? 'default' : 'destructive'} className="text-xs">
                 {isConnected ? 'Live' : 'Disconnected'}
               </Badge>
               {progress.total > 0 && (
                 <div className="flex items-center gap-2">
-                  <Progress value={progress.percentage} className="w-32" />
-                  <span className="text-sm font-medium">
+                  <Progress value={progress.percentage} className="w-24 h-2" />
+                  <span className="text-xs font-medium">
                     {progress.completed}/{progress.total}
                   </span>
                 </div>
               )}
               {elapsedTime > 0 && (
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-medium">{formatTime(elapsedTime)}</span>
+                <div className="flex items-center gap-1">
+                  <Clock className="h-3 w-3 text-muted-foreground" />
+                  <span className="text-xs font-medium">{formatTime(elapsedTime)}</span>
                 </div>
               )}
             </div>
@@ -182,105 +208,35 @@ function App() {
         </div>
       </header>
 
-      {/* Hero Section - DAG Graph */}
-      <section className="border-b">
-        <div className="container mx-auto px-4 py-6">
-          <DAGViewer dagData={dagData} taskStates={taskStates} />
-        </div>
-      </section>
+      {/* Dashboard Drawer */}
+      <Sheet open={showDashboard} onOpenChange={setShowDashboard}>
+        <SheetContent side="bottom" className="h-[80vh] overflow-y-auto bg-white dark:bg-gray-950 border-t">
+          <SheetHeader>
+            <SheetTitle>Analytics Dashboard</SheetTitle>
+          </SheetHeader>
+          <div className="container mx-auto px-4 py-6">
+            <div className="grid gap-6">
+              {/* Agent Gantt Chart */}
+              <AgentGanttChart />
 
-      {/* Dashboard Section */}
-      <section className="container mx-auto px-4 py-6">
-        <div className="grid gap-6">
-          {/* Removed redundant Task Status Overview - this info is in the DAG viewer legend */}
-          <div className="hidden">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Pending</CardTitle>
-                <AlertCircle className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{taskStats.pending}</div>
-                <p className="text-xs text-muted-foreground">
-                  Waiting to start
-                </p>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">In Progress</CardTitle>
-                <Activity className="h-4 w-4 text-blue-500" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{taskStats.started}</div>
-                <p className="text-xs text-muted-foreground">
-                  Currently running
-                </p>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Completed</CardTitle>
-                <CheckCircle2 className="h-4 w-4 text-green-500" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{taskStats.completed}</div>
-                <p className="text-xs text-muted-foreground">
-                  Successfully finished
-                </p>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Failed</CardTitle>
-                <XCircle className="h-4 w-4 text-red-500" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{taskStats.failed}</div>
-                <p className="text-xs text-muted-foreground">
-                  Errors encountered
-                </p>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Blocked</CardTitle>
-                <AlertCircle className="h-4 w-4 text-yellow-500" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{taskStats.blocked}</div>
-                <p className="text-xs text-muted-foreground">
-                  Waiting on dependencies
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Agent Gantt Chart */}
-          <AgentGanttChart />
-
-          {/* Agent and Git Analytics Side by Side */}
-          <div className="grid gap-6 lg:grid-cols-2">
-            {/* Agent Analytics */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  Agent Performance
-                </h2>
-                <div className="flex gap-2">
-                  <Badge variant="outline">
-                    {agentStats.activeAgents} Active
-                  </Badge>
-                  <Badge variant="outline">
-                    {Object.keys(agents).length} Total
-                  </Badge>
-                </div>
-              </div>
+              {/* Agent and Git Analytics Side by Side */}
+              <div className="grid gap-6 lg:grid-cols-2">
+                {/* Agent Analytics */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-xl font-semibold flex items-center gap-2">
+                      <Users className="h-5 w-5" />
+                      Agent Performance
+                    </h2>
+                    <div className="flex gap-2">
+                      <Badge variant="outline">
+                        {agentStats.activeAgents} Active
+                      </Badge>
+                      <Badge variant="outline">
+                        {Object.keys(agents).length} Total
+                      </Badge>
+                    </div>
+                  </div>
               
               <div className="grid gap-4 md:grid-cols-3">
                 <Card>
@@ -371,13 +327,15 @@ function App() {
             </div>
           </div>
 
-          {/* Event Streams Side by Side */}
-          <div className="grid gap-6 lg:grid-cols-2">
-            <AgentEventStream />
-            <GitEventStream />
+              {/* Event Streams Side by Side */}
+              <div className="grid gap-6 lg:grid-cols-2">
+                <AgentEventStream />
+                <GitEventStream />
+              </div>
+            </div>
           </div>
-        </div>
-      </section>
+        </SheetContent>
+      </Sheet>
     </div>
   )
 }

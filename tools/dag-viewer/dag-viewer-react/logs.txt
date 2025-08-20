@@ -30,7 +30,7 @@ curl -X POST http://localhost:8080/event \
       "agent": "mr_clean",
       "task": "P1.T003",
       "status": "completed",
-      "timestamp": 1755646950,
+      "timestamp": 1755649407,
       "total_tokens": 1234567
     }
   }'
@@ -45,7 +45,7 @@ curl -X POST http://localhost:8080/event \
       "sha": "abc123",
       "message": "Fix authentication bug",
       "branch": "main",
-      "timestamp": 1755646950,
+      "timestamp": 1755649407,
       "files": [
         {
           "path": "src/auth.js",
@@ -56,5 +56,3 @@ curl -X POST http://localhost:8080/event \
     }
   }'
   
-
-Saving state...
