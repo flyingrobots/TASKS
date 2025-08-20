@@ -26,9 +26,13 @@ kill_port 8080  # Alternative WebSocket server port
 kill_port 5173  # Vite default port
 kill_port 5174  # Vite alternate port
 
+# Extra check: forcefully kill anything on 8080
+echo -e "${YELLOW}Ensuring port 8080 is free...${NC}"
+lsof -ti:8080 | xargs -r kill -9 2>/dev/null || true
+
 # Start the DAG state server
-echo -e "${GREEN}Starting DAG state server on port 3456...${NC}"
-DAG_FILE=/Users/james/git/pf3/docs/plans/professional-quality-code/dag.json node ../dag-state-server-full.js 2>&1 > ./logs.txt &
+echo -e "${GREEN}Starting DAG state server on port 8080...${NC}"
+PORT=8080 DAG_FILE=/Users/james/git/pf3/docs/plans/professional-quality-code/dag.json node ../dag-state-server-full.js 2>&1 > ./logs.txt &
 SERVER_PID=$!
 echo -e "${GREEN}DAG state server started (PID: $SERVER_PID)${NC}"
 
@@ -59,7 +63,7 @@ trap cleanup INT TERM
 
 # Wait for both processes
 echo -e "${GREEN}Services are running. Press Ctrl+C to stop all services.${NC}"
-echo -e "${GREEN}WebSocket server: ws://localhost:3456${NC}"
+echo -e "${GREEN}WebSocket server: ws://localhost:8080${NC}"
 echo -e "${GREEN}React app: http://localhost:5173${NC}"
 
 # Keep script running
