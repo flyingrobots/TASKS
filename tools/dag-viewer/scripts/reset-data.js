@@ -10,11 +10,7 @@ const __dirname = dirname(__filename);
 // Files to delete for reset
 const STATE_FILES = [
   'dag-state-full.json',
-  'dag-state.json',
-  'dag-viewer-react/public/tasks.json',
-  'dag-viewer-react/public/features.json', 
-  'dag-viewer-react/public/waves.json',
-  'dag-viewer-react/public/dag.json'
+  'dag-state.json'
 ];
 
 console.log('🔄 Resetting DAG viewer data...\n');

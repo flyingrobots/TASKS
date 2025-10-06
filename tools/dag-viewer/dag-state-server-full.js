@@ -4,13 +4,35 @@ import { WebSocketServer } from 'ws';
 import { createServer } from 'http';
 import { writeFileSync, readFileSync, existsSync } from 'fs';
 import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+import { dirname, join, resolve } from 'path';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const PORT = process.env.PORT || 8080;
-const STATE_FILE = process.env.STATE_FILE || join(__dirname, 'dag-state-full.json');
+// Load configuration
+const CONFIG_PATH = process.argv[2] || join(__dirname, 'dag-viewer-react', 'config.json');
+let config = {
+  server: { port: 8080, host: 'localhost' },
+  paths: {
+    dagFile: join(__dirname, '../../../dag.json'),
+    stateFile: join(__dirname, 'dag-state-full.json')
+  }
+};
+
+if (existsSync(CONFIG_PATH)) {
+  try {
+    config = JSON.parse(readFileSync(CONFIG_PATH, 'utf8'));
+    console.log('Loaded configuration from', CONFIG_PATH);
+  } catch (e) {
+    console.error('Error loading config:', e);
+    console.log('Using default configuration');
+  }
+} else {
+  console.log('Config file not found at', CONFIG_PATH, '- using defaults');
+}
+
+const PORT = config.server.port;
+const STATE_FILE = resolve(config.paths.stateFile);
 
 // In-memory state
 const state = {
@@ -48,24 +70,86 @@ function loadState() {
   }
 }
 
-// Load DAG structure
+// Load DAG structure and related files
 function loadDAG() {
-  const dagPath = process.env.DAG_FILE || join(__dirname, '../../../dag.json');
+  const dagPath = resolve(config.paths.dagFile);
   try {
     if (existsSync(dagPath)) {
-      state.dag = JSON.parse(readFileSync(dagPath, 'utf8'));
-      console.log('Loaded DAG from', dagPath);
+      const rawDag = JSON.parse(readFileSync(dagPath, 'utf8'));
+      
+      // Convert DAG format if needed
+      if (rawDag.topo_order && rawDag.reduced_edges) {
+        // Convert from topo_order/reduced_edges format to nodes/edges format
+        const nodes = rawDag.topo_order.map(id => ({ id }));
+        const edges = rawDag.reduced_edges.map(edge => ({
+          source: edge[0],
+          target: edge[1]
+        }));
+        
+        state.dag = {
+          ...rawDag,
+          nodes,
+          edges
+        };
+        console.log(`Loaded and converted DAG from ${dagPath}: ${nodes.length} nodes, ${edges.length} edges`);
+      } else if (rawDag.nodes && rawDag.edges) {
+        // Already in the correct format
+        state.dag = rawDag;
+        console.log(`Loaded DAG from ${dagPath}: ${rawDag.nodes.length} nodes, ${rawDag.edges.length} edges`);
+      } else {
+        state.dag = rawDag;
+        console.log('Loaded DAG from', dagPath);
+      }
     } else {
       console.warn('DAG file not found at', dagPath);
     }
   } catch (e) {
     console.error('Error loading DAG:', e);
   }
+  
+  // Load features if available
+  if (config.paths.featuresFile) {
+    const featuresPath = resolve(config.paths.featuresFile);
+    try {
+      if (existsSync(featuresPath)) {
+        state.features = JSON.parse(readFileSync(featuresPath, 'utf8'));
+        console.log('Loaded features from', featuresPath);
+      }
+    } catch (e) {
+      console.error('Error loading features:', e);
+    }
+  }
+  
+  // Load waves if available
+  if (config.paths.wavesFile) {
+    const wavesPath = resolve(config.paths.wavesFile);
+    try {
+      if (existsSync(wavesPath)) {
+        state.waves = JSON.parse(readFileSync(wavesPath, 'utf8'));
+        console.log('Loaded waves from', wavesPath);
+      }
+    } catch (e) {
+      console.error('Error loading waves:', e);
+    }
+  }
+  
+  // Load tasks if available
+  if (config.paths.tasksFile) {
+    const tasksPath = resolve(config.paths.tasksFile);
+    try {
+      if (existsSync(tasksPath)) {
+        state.tasksMetadata = JSON.parse(readFileSync(tasksPath, 'utf8'));
+        console.log('Loaded tasks metadata from', tasksPath);
+      }
+    } catch (e) {
+      console.error('Error loading tasks metadata:', e);
+    }
+  }
 }
 
 // Get ready tasks (all dependencies completed)
 function getReadyTasks() {
-  if (!state.dag || !state.dag.edges) {
+  if (!state.dag || (!state.dag.edges && !state.dag.reduced_edges_sample)) {
     return { ready: [], blocked: [], error: 'DAG not loaded' };
   }
   
@@ -75,10 +159,26 @@ function getReadyTasks() {
   
   // Get all tasks from DAG
   const allTasks = new Set();
-  state.dag.edges.forEach(edge => {
-    allTasks.add(edge.source);
-    allTasks.add(edge.target);
-  });
+  const edges = state.dag.edges || state.dag.reduced_edges_sample || [];
+  
+  if (state.dag.edges) {
+    // Handle standard edges format
+    edges.forEach(edge => {
+      allTasks.add(edge.source);
+      allTasks.add(edge.target);
+    });
+  } else if (state.dag.reduced_edges_sample) {
+    // Handle reduced_edges_sample format [source, target]
+    edges.forEach(edge => {
+      allTasks.add(edge[0]);
+      allTasks.add(edge[1]);
+    });
+  }
+  
+  // Add tasks from topo_order if available
+  if (state.dag.topo_order) {
+    state.dag.topo_order.forEach(task => allTasks.add(task));
+  }
   
   // Build dependency map
   const dependencies = {};
@@ -86,9 +186,17 @@ function getReadyTasks() {
     dependencies[task] = [];
   });
   
-  state.dag.edges.forEach(edge => {
-    dependencies[edge.target].push(edge.source);
-  });
+  if (state.dag.edges) {
+    // Handle standard edges format
+    state.dag.edges.forEach(edge => {
+      dependencies[edge.target].push(edge.source);
+    });
+  } else if (state.dag.reduced_edges_sample) {
+    // Handle reduced_edges_sample format [source, target]
+    state.dag.reduced_edges_sample.forEach(edge => {
+      dependencies[edge[1]].push(edge[0]);
+    });
+  }
   
   // Check each task
   allTasks.forEach(taskId => {
@@ -672,13 +780,15 @@ wss.on('connection', (ws) => {
   // Send initial state
   ws.send(JSON.stringify({
     type: 'init',
+    dag: state.dag,
     tasks: state.tasks,
     agents: Object.fromEntries(
       Object.entries(state.agents).map(([k, v]) => [k, calculateAgentMetrics(k)])
     ),
     leaderboard: getLeaderboard(),
     gitInsights: getGitInsights(),
-    recentEvents: state.events.slice(-50)
+    gitStats: state.gitStats,
+    events: state.events.slice(-50)
   }));
   
   ws.on('close', () => wsClients.delete(ws));

@@ -1,5 +1,9 @@
+Loaded configuration from ./config.json
 Loaded state from /Users/james/git/TASKS/tools/dag-viewer/dag-state-full.json
-Loaded DAG from /Users/james/git/pf3/docs/plans/professional-quality-code/dag.json
+Loaded DAG from /Users/james/git/pf3/docs/tasks/plan-out-of-this-mess/dag.json
+Loaded features from /Users/james/git/pf3/docs/tasks/plan-out-of-this-mess/features.json
+Loaded waves from /Users/james/git/pf3/docs/tasks/plan-out-of-this-mess/waves.json
+Loaded tasks metadata from /Users/james/git/pf3/docs/tasks/plan-out-of-this-mess/tasks.json
 
 ╔════════════════════════════════════════════════════════╗
 ║          DAG STATE SERVER - FULL ANALYTICS            ║
@@ -30,7 +34,7 @@ curl -X POST http://localhost:8080/event \
       "agent": "mr_clean",
       "task": "P1.T003",
       "status": "completed",
-      "timestamp": 1755649407,
+      "timestamp": 1756032505,
       "total_tokens": 1234567
     }
   }'
@@ -45,7 +49,7 @@ curl -X POST http://localhost:8080/event \
       "sha": "abc123",
       "message": "Fix authentication bug",
       "branch": "main",
-      "timestamp": 1755649407,
+      "timestamp": 1756032505,
       "files": [
         {
           "path": "src/auth.js",
@@ -56,3 +60,30 @@ curl -X POST http://localhost:8080/event \
     }
   }'
   
+Client connected
+Client connected
+Client connected
+Client connected
+Client connected
+Client connected
+Client connected
+Client connected
+Client connected
+Client connected
+Client connected
+Client connected
+Client connected
+test_coordinator claimed P1.T001
+security_coordinator claimed P1.T002
+security_coordinator claimed P1.T004
+backend_security claimed P1.T006
+security-auditor claimed P1.T007
+api-integrator claimed P1.T003
+form-integrator claimed P1.T005
+rate-limiter claimed P1.T008
+security-headers claimed P1.T009
+rls-specialist claimed P1.T010
+api-security claimed P1.T011
+security-validator claimed P1.T012
+Client connected
+Client connected

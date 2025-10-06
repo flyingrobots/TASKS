@@ -13,6 +13,7 @@ import { AgentEventStream } from './components/AgentEventStream'
 import { GitEventStream } from './components/GitEventStream'
 import { useWebSocket } from './hooks/useWebSocket'
 import useStore from './store/dagStore'
+import { loadConfig, getWebSocketUrl } from './config'
 import { 
   Activity, 
   GitBranch, 
@@ -26,8 +27,18 @@ import {
 
 function App() {
   const { dagData, taskStates, agents, gitStats, handleWebSocketMessage, setDagData, setWsConnected } = useStore()
+  const [taskMetadata, setTaskMetadata] = useState<Record<string, any>>({})
+  const [wsUrl, setWsUrl] = useState<string>('ws://localhost:8080')
+  
+  // Load config on mount
+  useEffect(() => {
+    loadConfig().then(() => {
+      setWsUrl(getWebSocketUrl())
+    })
+  }, [])
+  
   const { isConnected } = useWebSocket({
-    url: 'ws://localhost:8080',
+    url: wsUrl,
     onMessage: handleWebSocketMessage,
     onOpen: () => {
       setWsConnected(true)
@@ -48,34 +59,39 @@ function App() {
   const [elapsedTime, setElapsedTime] = useState(0)
   const [showDashboard, setShowDashboard] = useState(false)
   
-  // Load DAG data from multiple JSON files
+  // Load DAG data from backend state endpoint
   useEffect(() => {
     if (!dagData) {
-      Promise.all([
-        fetch('/tasks.json').then(res => res.json()).catch(() => null),
-        fetch('/features.json').then(res => res.json()).catch(() => null),
-        fetch('/waves.json').then(res => res.json()).catch(() => null),
-        fetch('/dag.json').then(res => res.json()).catch(() => null)
-      ]).then(([tasksData, featuresData, wavesData, fallbackDag]) => {
-        if (tasksData && tasksData.tasks) {
-          // Build DAG from tasks.json format
-          const topo_order = tasksData.tasks.map((t: any) => t.id)
-          const dependencies = tasksData.dependencies || []
-          
-          const dagFromTasks = {
-            ...tasksData,
-            topo_order,
-            reduced_edges_sample: dependencies.map((d: any) => [d.from, d.to]),
-            features: featuresData?.features || [],
-            waves: wavesData?.waves || [],
-            metrics: tasksData.generated || fallbackDag?.metrics || {}
+      fetch('http://localhost:8080/state')
+        .then(res => res.json())
+        .then(state => {
+          if (state.tasksMetadata && state.tasksMetadata.tasks) {
+            // Store task metadata for lookup
+            const taskLookup: Record<string, any> = {}
+            state.tasksMetadata.tasks.forEach((task: any) => {
+              taskLookup[task.id] = task
+            })
+            setTaskMetadata(taskLookup)
+            
+            // Build DAG from tasks.json format
+            const topo_order = state.tasksMetadata.tasks.map((t: any) => t.id)
+            const dependencies = state.tasksMetadata.dependencies || []
+            
+            const dagFromTasks = {
+              ...state.tasksMetadata,
+              topo_order,
+              reduced_edges_sample: dependencies.map((d: any) => [d.from, d.to]),
+              features: state.features?.features || [],
+              waves: state.waves?.waves || [],
+              metrics: state.tasksMetadata.generated || state.dag?.metrics || {}
+            }
+            setDagData(dagFromTasks)
+          } else if (state.dag && state.dag.topo_order) {
+            // Fall back to original dag.json format
+            setDagData(state.dag)
           }
-          setDagData(dagFromTasks)
-        } else if (fallbackDag && fallbackDag.topo_order) {
-          // Fall back to original dag.json
-          setDagData(fallbackDag)
-        }
-      }).catch(err => console.error('Failed to load DAG data:', err))
+        })
+        .catch(err => console.error('Failed to load DAG data from backend:', err))
     }
   }, [dagData, setDagData])
 
@@ -86,12 +102,8 @@ function App() {
     )
     
     if (hasStartedTasks && !startTime) {
-      const earliestStart = Math.min(
-        ...Object.values(taskStates)
-          .filter((t: any) => t.startTime)
-          .map((t: any) => t.startTime)
-      )
-      setStartTime(earliestStart)
+      // Use current time as start time if tasks don't have timestamps
+      setStartTime(Date.now() / 1000)
     }
   }, [taskStates, startTime])
 
@@ -128,10 +140,12 @@ function App() {
   }
 
   const progress = useMemo(() => {
-    const total = Object.keys(taskStates).length || dagData?.topo_order?.length || 0
-    const completed = Object.values(taskStates).filter((t: any) => t.status === 'completed').length
-    const percentage = total > 0 ? (completed / total) * 100 : 0
-    return { completed, total, percentage }
+    const total = dagData?.topo_order?.length || Object.keys(taskStates).length || 0
+    const inProgressOrCompleted = Object.values(taskStates).filter((t: any) => 
+      t.status === 'in_progress' || t.status === 'completed' || t.status === 'started'
+    ).length
+    const percentage = total > 0 ? (inProgressOrCompleted / total) * 100 : 0
+    return { completed: inProgressOrCompleted, total, percentage }
   }, [taskStates, dagData])
 
   const taskStats = useMemo(() => {
@@ -171,6 +185,7 @@ function App() {
       <DAGViewer 
         dagData={dagData} 
         taskStates={taskStates} 
+        taskMetadata={taskMetadata}
         onDashboardToggle={setShowDashboard}
       />
 

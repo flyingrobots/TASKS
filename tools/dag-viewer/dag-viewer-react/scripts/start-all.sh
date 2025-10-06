@@ -28,11 +28,17 @@ kill_port 5174  # Vite alternate port
 
 # Extra check: forcefully kill anything on 8080
 echo -e "${YELLOW}Ensuring port 8080 is free...${NC}"
-lsof -ti:8080 | xargs -r kill -9 2>/dev/null || true
+# macOS doesn't have xargs -r, use different approach
+if [ "$(lsof -ti:8080)" ]; then
+    lsof -ti:8080 | xargs kill -9 2>/dev/null
+fi
 
-# Start the DAG state server
-echo -e "${GREEN}Starting DAG state server on port 8080...${NC}"
-PORT=8080 DAG_FILE=/Users/james/git/pf3/docs/plans/professional-quality-code/dag.json node ../dag-state-server-full.js 2>&1 > ./logs.txt &
+# Get config file path (can be overridden by passing it as first argument)
+CONFIG_FILE="${1:-./config.json}"
+
+# Start the DAG state server with config file
+echo -e "${GREEN}Starting DAG state server using config: $CONFIG_FILE${NC}"
+node ../dag-state-server-full.js "$CONFIG_FILE" 2>&1 > ./logs.txt &
 SERVER_PID=$!
 echo -e "${GREEN}DAG state server started (PID: $SERVER_PID)${NC}"
 

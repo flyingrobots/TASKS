@@ -4,7 +4,6 @@ import dagre from 'cytoscape-dagre'
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 import { Badge } from './ui/badge'
 import { Button } from './ui/button'
-import { HoverCard, HoverCardContent, HoverCardTrigger } from './ui/hover-card'
 import { Maximize2, Minimize2, ZoomIn, ZoomOut, Move, Eye, EyeOff, BarChart3 } from 'lucide-react'
 
 // Register the dagre layout for perfect DAG positioning
@@ -13,6 +12,7 @@ cytoscape.use(dagre)
 interface DAGViewerProps {
   dagData: any
   taskStates: Record<string, any>
+  taskMetadata?: Record<string, any>
   className?: string
   onDashboardToggle?: (show: boolean) => void
 }
@@ -52,11 +52,11 @@ const waveColors = [
   '#CC9900', // Dark amber
 ]
 
-export const DAGViewer: React.FC<DAGViewerProps> = ({ dagData, taskStates, className, onDashboardToggle }) => {
+export const DAGViewer: React.FC<DAGViewerProps> = ({ dagData, taskStates, taskMetadata, className, onDashboardToggle }) => {
   const containerRef = useRef<HTMLDivElement>(null)
   const cyRef = useRef<cytoscape.Core | null>(null)
   const [selectedNode, setSelectedNode] = useState<any>(null)
-  const [hoverCardOpen, setHoverCardOpen] = useState(false)
+  const [showTaskCard, setShowTaskCard] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [clickPosition, setClickPosition] = useState({ x: 0, y: 0 })
   const [showLegend, setShowLegend] = useState(true)
@@ -73,7 +73,8 @@ export const DAGViewer: React.FC<DAGViewerProps> = ({ dagData, taskStates, class
       dagData.topo_order.forEach((taskId: string) => {
         const state = taskStates[taskId]?.status || 'pending'
         // Get task metadata if available
-        const taskMeta = dagData.tasks?.find((t: any) => t.id === taskId) || 
+        const taskMeta = taskMetadata?.[taskId] || 
+                        dagData.tasks?.find((t: any) => t.id === taskId) || 
                         dagData.task_metadata?.[taskId]
         
         // Find which wave this task belongs to
@@ -239,7 +240,7 @@ export const DAGViewer: React.FC<DAGViewerProps> = ({ dagData, taskStates, class
         ...nodeData,
         taskData: taskStates[nodeData.id]
       })
-      setHoverCardOpen(true)
+      setShowTaskCard(true)
     })
 
     // Handle background clicks
@@ -247,7 +248,7 @@ export const DAGViewer: React.FC<DAGViewerProps> = ({ dagData, taskStates, class
       if (evt.target === cy) {
         cy.nodes().removeClass('selected')
         setSelectedNode(null)
-        setHoverCardOpen(false)
+        setShowTaskCard(false)
       }
     })
 
@@ -297,7 +298,7 @@ export const DAGViewer: React.FC<DAGViewerProps> = ({ dagData, taskStates, class
 
   const getGraphStats = () => {
     const nodeCount = dagData?.topo_order?.length || 0
-    const edgeCount = dagData?.reduced_edges_sample?.length || 0
+    const edgeCount = dagData?.edges?.length || dagData?.reduced_edges_sample?.length || 0
     const waveCount = dagData?.metrics?.longestPath || 0
     const density = dagData?.metrics?.edgeDensity || 0
     
@@ -480,21 +481,18 @@ export const DAGViewer: React.FC<DAGViewerProps> = ({ dagData, taskStates, class
         </Button>
       </div>
 
-      {/* Hover Card for Task Details */}
-      {selectedNode && (
+      {/* Task Details Card */}
+      {selectedNode && showTaskCard && (
         <div 
           style={{ 
             position: 'fixed', 
-            left: clickPosition.x, 
-            top: clickPosition.y,
+            left: Math.min(clickPosition.x, window.innerWidth - 400), 
+            top: Math.min(clickPosition.y, window.innerHeight - 600),
             zIndex: 9999
           }}
         >
-          <HoverCard open={hoverCardOpen} onOpenChange={setHoverCardOpen}>
-            <HoverCardTrigger asChild>
-              <div />
-            </HoverCardTrigger>
-            <HoverCardContent className="w-96 max-h-[600px] overflow-y-auto bg-background border shadow-xl" align="center" side="right">
+          <Card className="w-96 max-h-[600px] overflow-y-auto bg-background border-2 shadow-xl">
+            <CardContent className="p-4">
               <div className="space-y-3">
                 {/* Header with ID and Title */}
                 <div>
@@ -669,8 +667,8 @@ export const DAGViewer: React.FC<DAGViewerProps> = ({ dagData, taskStates, class
                   </div>
                 </div>
               </div>
-            </HoverCardContent>
-          </HoverCard>
+            </CardContent>
+          </Card>
         </div>
       )}
     </div>

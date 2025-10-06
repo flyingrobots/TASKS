@@ -10,8 +10,14 @@
     "preview": "vite preview",
     "start": "./scripts/start-all.sh",
     "start:all": "./scripts/start-all.sh",
+    "start:server": "./scripts/start-server.sh",
+    "start:frontend": "./scripts/start-frontend.sh",
+    "server": "./scripts/start-server.sh",
+    "frontend": "./scripts/start-frontend.sh",
+    "reset": "./scripts/reset-state.sh",
+    "reset:state": "./scripts/reset-state.sh",
     "kill-ports": "lsof -ti:3456,8080,5173,5174 | xargs kill -9 2>/dev/null || true",
-    "server": "DAG_FILE=/Users/james/git/pf3/docs/plans/professional-quality-code/dag.json node ../dag-state-server-full.js"
+    "server:direct": "node ../dag-state-server-full.js ./config.json"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

@@ -147,16 +147,23 @@ export const useDagStore = create<DagState>((set, get) => ({
   
   handleWebSocketMessage: (message) => {
     const state = get()
+    console.log('Received WebSocket message:', message.type, message)
     
     switch (message.type) {
       case 'init':
+        console.log('Setting init data:', {
+          dag: message.dag,
+          tasks: message.tasks,
+          agents: Object.keys(message.agents || {})
+        })
         set({
-          dagData: message.dagData || null,
+          dagData: message.dag || message.dagData || null,
           taskStates: message.tasks || {},
           agents: message.agents || {},
           leaderboard: message.leaderboard || [],
           gitInsights: message.gitInsights || null,
-          events: message.recentEvents || []
+          gitStats: message.gitStats || state.gitStats,
+          events: message.events || message.recentEvents || []
         })
         break
       
