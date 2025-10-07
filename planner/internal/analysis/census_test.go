@@ -4,13 +4,36 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"testing"
+
+	"github.com/google/go-cmp/cmp" // Import go-cmp
 )
 
 // Helper function to create a mock codebase structure
 func createMockCodebase(t *testing.T, tmpDir string, structure map[string]string) {
 	for path, content := range structure {
-		fullPath := filepath.Join(tmpDir, path)
+		// Validate path: reject absolute paths, normalize, ensure it doesn't escape tmpDir
+		if filepath.IsAbs(path) {
+			t.Fatalf("Test setup error: Absolute path '%s' not allowed in mock structure", path)
+		}
+		cleanedPath := filepath.Clean(path)
+		// Check if the cleaned path attempts to go up the directory tree
+		if strings.HasPrefix(cleanedPath, "..") {
+			t.Fatalf("Test setup error: Path '%s' attempts to escape temp directory", path)
+		}
+		
+		fullPath := filepath.Join(tmpDir, cleanedPath)
+		
+		// Ensure the path doesn't escape tmpDir after joining
+		rel, err := filepath.Rel(tmpDir, fullPath)
+		if err != nil {
+			t.Fatalf("Test setup error: Failed to get relative path for '%s': %v", fullPath, err)
+		}
+		if strings.HasPrefix(rel, "..") {
+			t.Fatalf("Test setup error: Path '%s' escapes temp directory after join", path)
+		}
+
 		dir := filepath.Dir(fullPath)
 		if err := os.MkdirAll(dir, 0755); err != nil {
 			t.Fatalf("Failed to create dir %s: %v", dir, err)
@@ -28,6 +51,7 @@ func TestRunCensus(t *testing.T) {
 		expectedFiles []string
 		expectedGoFiles []string
 		expectError   bool
+		setupError    bool // For testing non-existent path
 	}{
 		{
 			name: "empty directory",
@@ -66,23 +90,38 @@ func TestRunCensus(t *testing.T) {
 			expectedFiles: []string{"config.json", "template.html"},
 			expectedGoFiles: []string{},
 		},
+		{
+			name: "non-existent directory (error case)",
+			structure: map[string]string{},
+			expectError: true,
+			setupError: true,
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tmpDir, err := os.MkdirTemp("", "census-test-*")
-			if err != nil {
-				t.Fatalf("Failed to create temp dir: %v", err)
-			}
-			defer os.RemoveAll(tmpDir)
+			var tmpDir string
+			var err error
 
-			createMockCodebase(t, tmpDir, tt.structure)
+			if !tt.setupError { // Only create temp dir if not testing a non-existent path
+				tmpDir, err = os.MkdirTemp("", "census-test-*")
+				if err != nil {
+					t.Fatalf("Failed to create temp dir: %v", err)
+				}
+				defer os.RemoveAll(tmpDir)
+				createMockCodebase(t, tmpDir, tt.structure)
+			} else {
+				// For error cases, use a path that definitely doesn't exist
+				tmpDir = filepath.Join(os.TempDir(), "non-existent-path-for-census-test")
+			}
 
 			analysisResult, err := RunCensus(tmpDir)
+
 			if tt.expectError {
 				if err == nil {
 					t.Fatal("Expected an error, but got none")
 				}
+				// For now, we just check for an error. More specific error type checks can be added later.
 				return
 			}
 			if err != nil {
@@ -110,24 +149,12 @@ func TestRunCensus(t *testing.T) {
 			sort.Strings(analysisResult.Files)
 			sort.Strings(analysisResult.GoFiles)
 
-			if len(analysisResult.Files) != len(expectedAbsFiles) {
-				t.Errorf("Expected %d total files, but found %d", len(expectedAbsFiles), len(analysisResult.Files))
-			} else {
-				for i, f := range analysisResult.Files {
-					if f != expectedAbsFiles[i] {
-						t.Errorf("File mismatch at index %d: expected %s, got %s", i, expectedAbsFiles[i], f)
-					}
-				}
+			// Use cmp.Diff for idiomatic slice comparison
+			if diff := cmp.Diff(expectedAbsFiles, analysisResult.Files); diff != "" {
+				t.Errorf("analysisResult.Files mismatch (-want +got):\n%s", diff)
 			}
-
-			if len(analysisResult.GoFiles) != len(expectedAbsGoFiles) {
-				t.Errorf("Expected %d Go files, but found %d", len(expectedAbsGoFiles), len(analysisResult.GoFiles))
-			} else {
-				for i, f := range analysisResult.GoFiles {
-					if f != expectedAbsGoFiles[i] {
-						t.Errorf("Go file mismatch at index %d: expected %s, got %s", i, expectedAbsGoFiles[i], f)
-					}
-				}
+			if diff := cmp.Diff(expectedAbsGoFiles, analysisResult.GoFiles); diff != "" {
+				t.Errorf("analysisResult.GoFiles mismatch (-want +got):\n%s", diff)
 			}
 		})
 	}
