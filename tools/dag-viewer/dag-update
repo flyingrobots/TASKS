@@ -1,0 +1,137 @@
+#!/usr/bin/env node
+
+import { createConnection } from 'net';
+
+const UNIX_SOCKET = process.env.UNIX_SOCKET || '/tmp/dag-state.sock';
+
+// Parse command line arguments
+const args = process.argv.slice(2);
+
+if (args.length === 0 || args.includes('-h') || args.includes('--help')) {
+  console.log(`
+DAG State Update Client
+
+Usage:
+  dag-update <taskId> <state> [metadata...]
+  dag-update batch <json>
+  dag-update query [taskId]
+  dag-update clear
+
+States:
+  pending, started, in_progress, failed, blocked, completed
+
+Examples:
+  # Update single task
+  dag-update task1 completed
+  dag-update task2 failed "error=timeout"
+  
+  # Batch update
+  dag-update batch '{"task1":"completed","task2":"started"}'
+  
+  # Query state
+  dag-update query          # Get all states
+  dag-update query task1    # Get specific task state
+  
+  # Clear all states
+  dag-update clear
+
+Environment:
+  UNIX_SOCKET=${UNIX_SOCKET}
+  `);
+  process.exit(0);
+}
+
+function sendMessage(message) {
+  return new Promise((resolve, reject) => {
+    const client = createConnection(UNIX_SOCKET, () => {
+      client.write(JSON.stringify(message) + '\n');
+    });
+    
+    let response = '';
+    
+    client.on('data', (data) => {
+      response += data.toString();
+      if (response.includes('\n')) {
+        client.end();
+      }
+    });
+    
+    client.on('end', () => {
+      try {
+        const result = JSON.parse(response.trim());
+        resolve(result);
+      } catch (error) {
+        reject(new Error('Invalid response: ' + response));
+      }
+    });
+    
+    client.on('error', (error) => {
+      reject(error);
+    });
+  });
+}
+
+async function main() {
+  try {
+    let message;
+    
+    switch (args[0]) {
+      case 'batch':
+        if (!args[1]) {
+          console.error('Error: batch command requires JSON data');
+          process.exit(1);
+        }
+        message = {
+          type: 'batch',
+          updates: JSON.parse(args[1])
+        };
+        break;
+        
+      case 'query':
+        message = {
+          type: 'query',
+          taskId: args[1] || null
+        };
+        break;
+        
+      case 'clear':
+        message = { type: 'clear' };
+        break;
+        
+      default:
+        // Single task update
+        const [taskId, state, ...metaParts] = args;
+        const metadata = {};
+        
+        // Parse metadata (key=value pairs)
+        metaParts.forEach(part => {
+          const [key, value] = part.split('=');
+          if (key && value) {
+            metadata[key] = value;
+          }
+        });
+        
+        message = {
+          type: 'update',
+          taskId,
+          state,
+          metadata
+        };
+    }
+    
+    const result = await sendMessage(message);
+    
+    if (result.error) {
+      console.error('Error:', result.error);
+      process.exit(1);
+    }
+    
+    console.log(JSON.stringify(result, null, 2));
+    
+  } catch (error) {
+    console.error('Error:', error.message);
+    process.exit(1);
+  }
+}
+
+main();

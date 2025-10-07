@@ -7,6 +7,9 @@ import { GraphBuilder } from './graphBuilder.js';
 import { HTMLGenerator } from './htmlGenerator.js';
 import { HTMLGeneratorModern } from './htmlGeneratorModern.js';
 import HTMLGeneratorCytoscape from './htmlGeneratorCytoscape.js';
+import HTMLGeneratorLive from './htmlGeneratorLive.js';
+import HTMLGeneratorSimple from './htmlGeneratorSimple.js';
+import HTMLGeneratorAnalytics from './htmlGeneratorAnalytics.js';
 
 const execAsync = promisify(exec);
 
@@ -42,15 +45,27 @@ export async function orchestrate(options) {
     
     // Choose generator based on options
     let GeneratorClass;
-    if (options.renderer === 'cytoscape') {
+    if (options.renderer === 'analytics') {
+      GeneratorClass = HTMLGeneratorAnalytics;
+    } else if (options.renderer === 'simple') {
+      GeneratorClass = HTMLGeneratorSimple;
+    } else if (options.renderer === 'live') {
+      GeneratorClass = HTMLGeneratorLive;
+    } else if (options.renderer === 'cytoscape') {
       GeneratorClass = HTMLGeneratorCytoscape;
-    } else if (options.classic) {
+    } else if (options.renderer === 'modern') {
+      GeneratorClass = HTMLGeneratorModern;
+    } else if (options.classic || options.renderer === 'classic') {
       GeneratorClass = HTMLGenerator;
     } else {
-      GeneratorClass = HTMLGeneratorModern;
+      GeneratorClass = HTMLGeneratorCytoscape; // default
     }
     
-    const htmlGenerator = new GeneratorClass(graphData, { verbose: options.verbose });
+    const htmlGenerator = new GeneratorClass(graphData, { 
+      verbose: options.verbose,
+      wsPort: options.wsPort,
+      wsHost: options.wsHost
+    });
     const htmlContent = htmlGenerator.generate();
     
     // Step 4: Write output file

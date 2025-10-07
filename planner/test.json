@@ -1,0 +1,16 @@
+{
+  "zeta": "last",
+  "alpha": "first",
+  "nested": {
+    "c": 3,
+    "a": 1,
+    "b": 2
+  },
+  "gamma": [
+    {
+      "zulu": true,
+      "yankee": false
+    },
+    "beta"
+  ]
+}

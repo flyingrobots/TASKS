@@ -1,0 +1,138 @@
+{
+  "coordinator": {
+    "role": "ci_fix_orchestrator",
+    "version": "1.0.0",
+    "responsibilities": [
+      "Monitor task execution progress",
+      "Manage task frontier (ready queue)",
+      "Assign tasks to specialized agents",
+      "Enforce resource limits (4 concurrent tasks max)",
+      "Track completion and handle failures",
+      "Coordinate git commits between tasks"
+    ],
+    "state_management": {
+      "task_states": {
+        "blocked": "Dependencies not met",
+        "ready": "In frontier, awaiting execution",
+        "assigned": "Assigned to agent",
+        "running": "Actively executing",
+        "completed": "Successfully finished",
+        "failed": "Execution failed"
+      },
+      "frontier_management": {
+        "ready_queue": [],
+        "worker_assignments": {},
+        "resource_allocations": {},
+        "completion_log": []
+      }
+    },
+    "scheduling_loop": {
+      "interval_ms": 5000,
+      "steps": [
+        "update_frontier()",
+        "check_resource_availability()",
+        "prioritize_ready_tasks()",
+        "assign_tasks_to_agents()",
+        "monitor_running_tasks()",
+        "handle_completions()",
+        "commit_changes()",
+        "update_metrics()"
+      ]
+    },
+    "policies": {
+      "resource_allocation": {
+        "max_concurrent_tasks": 4,
+        "max_cpu_cores": 8,
+        "max_memory_gb": 16,
+        "exclusive_resources": ["docker_compose_file", "package_json"]
+      },
+      "agent_assignment": {
+        "P1.T001": "infrastructure-engineer",
+        "P1.T002": "bash-scripter",
+        "P1.T003": "bash-scripter",
+        "P1.T004": "docker-specialist",
+        "P1.T005": "deployment-engineer",
+        "P1.T006": "git-expert",
+        "P1.T007": "integration-engineer",
+        "P1.T008": "monitoring-specialist",
+        "P1.T009": "tech-writer",
+        "P1.T010": "test-engineer"
+      },
+      "failure_handling": {
+        "retry_policy": "exponential_backoff",
+        "max_retries": 2,
+        "failure_threshold": 0.3
+      },
+      "git_policy": {
+        "commit_after_task": true,
+        "push_remote": "B",
+        "commit_message_template": "✅ Complete {task_id}: {task_title}"
+      }
+    },
+    "monitoring": {
+      "metrics_collection_interval": 10,
+      "metrics": [
+        "task_throughput",
+        "average_execution_time",
+        "resource_utilization",
+        "failure_rate"
+      ],
+      "progress_reporting": {
+        "format": "markdown",
+        "location": "epic/fix-ci-and-deployments/PROGRESS.md",
+        "update_frequency": "after_each_task"
+      }
+    }
+  },
+  "agent_pool": {
+    "available_agents": [
+      "infrastructure-engineer",
+      "bash-scripter", 
+      "docker-specialist",
+      "deployment-engineer",
+      "git-expert",
+      "integration-engineer",
+      "monitoring-specialist",
+      "tech-writer",
+      "test-engineer"
+    ],
+    "agent_capabilities": {
+      "infrastructure-engineer": ["docker", "infrastructure", "yaml"],
+      "bash-scripter": ["bash", "shell", "scripting"],
+      "docker-specialist": ["docker", "containers", "caching"],
+      "deployment-engineer": ["ci-cd", "deployment", "npm"],
+      "git-expert": ["git", "hooks", "version-control"],
+      "integration-engineer": ["integration", "testing", "validation"],
+      "monitoring-specialist": ["monitoring", "metrics", "performance"],
+      "tech-writer": ["documentation", "markdown", "technical-writing"],
+      "test-engineer": ["testing", "validation", "qa"]
+    }
+  },
+  "execution_plan": {
+    "phase_1_foundation": {
+      "tasks": ["P1.T001", "P1.T003"],
+      "estimated_time": "2 hours",
+      "parallel": true
+    },
+    "phase_2_implementation": {
+      "tasks": ["P1.T002", "P1.T004"],
+      "estimated_time": "3 hours",
+      "parallel": true
+    },
+    "phase_3_integration": {
+      "tasks": ["P1.T005", "P1.T007"],
+      "estimated_time": "1.5 hours",
+      "parallel": true
+    },
+    "phase_4_enhancement": {
+      "tasks": ["P1.T006", "P1.T008"],
+      "estimated_time": "2.5 hours",
+      "parallel": true
+    },
+    "phase_5_validation": {
+      "tasks": ["P1.T009", "P1.T010"],
+      "estimated_time": "5 hours",
+      "parallel": true
+    }
+  }
+}

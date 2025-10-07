@@ -1,0 +1,204 @@
+{
+  "planId": "CI-FIX-2025-08-26",
+  "generated": {
+    "by": "T.A.S.K.S v3",
+    "timestamp": "2025-08-26T23:28:00Z",
+    "contentHash": "1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d"
+  },
+  "execution_models": {
+    "wave_based": {
+      "config": {
+        "maxWaveSize": 3,
+        "barrier": {
+          "kind": "quorum",
+          "quorum": 0.95
+        }
+      },
+      "waves": [
+        {
+          "waveNumber": 1,
+          "tasks": ["P1.T001", "P1.T003"],
+          "estimates": {
+            "units": "hours",
+            "p50Hours": 2.5,
+            "p80Hours": 3.0,
+            "p95Hours": 3.5
+          },
+          "resource_usage": {
+            "docker_compose_file": 1,
+            "estimated_cpu_cores": 2,
+            "estimated_memory_gb": 0.6
+          },
+          "barrier": {
+            "kind": "quorum",
+            "quorum": 1.0,
+            "timeoutMinutes": 240
+          }
+        },
+        {
+          "waveNumber": 2,
+          "tasks": ["P1.T002", "P1.T004"],
+          "estimates": {
+            "units": "hours",
+            "p50Hours": 3.0,
+            "p80Hours": 4.0,
+            "p95Hours": 4.5
+          },
+          "resource_usage": {
+            "docker_compose_file": 1,
+            "estimated_cpu_cores": 2,
+            "estimated_memory_gb": 0.5
+          }
+        },
+        {
+          "waveNumber": 3,
+          "tasks": ["P1.T005", "P1.T007"],
+          "estimates": {
+            "units": "hours",
+            "p50Hours": 1.5,
+            "p80Hours": 2.0,
+            "p95Hours": 2.5
+          },
+          "resource_usage": {
+            "package_json": 1,
+            "estimated_cpu_cores": 2,
+            "estimated_memory_gb": 0.4
+          }
+        },
+        {
+          "waveNumber": 4,
+          "tasks": ["P1.T006", "P1.T008"],
+          "estimates": {
+            "units": "hours",
+            "p50Hours": 2.5,
+            "p80Hours": 3.0,
+            "p95Hours": 3.5
+          },
+          "resource_usage": {
+            "estimated_cpu_cores": 2,
+            "estimated_memory_gb": 0.3
+          }
+        },
+        {
+          "waveNumber": 5,
+          "tasks": ["P1.T009", "P1.T010"],
+          "estimates": {
+            "units": "hours",
+            "p50Hours": 5.0,
+            "p80Hours": 6.0,
+            "p95Hours": 7.0
+          },
+          "resource_usage": {
+            "estimated_cpu_cores": 3,
+            "estimated_memory_gb": 1.2
+          }
+        }
+      ],
+      "total_waves": 5,
+      "estimated_completion": {
+        "p50_hours": 14.5,
+        "p80_hours": 18.0,
+        "p95_hours": 21.0
+      }
+    },
+    "rolling_frontier": {
+      "initial_frontier": ["P1.T001", "P1.T003"],
+      "config": {
+        "max_concurrent_tasks": 4,
+        "scheduling_algorithm": "resource_aware_greedy",
+        "frontier_update_policy": "immediate",
+        "coordinator_config_ref": "coordinator.json"
+      },
+      "estimated_completion_time": {
+        "optimal_hours": 10,
+        "p50_hours": 12,
+        "p95_hours": 15
+      },
+      "resource_utilization_forecast": {
+        "average_cpu_percent": 50,
+        "peak_cpu_percent": 75,
+        "average_memory_percent": 40,
+        "peak_memory_percent": 60,
+        "average_concurrency": 2.5,
+        "max_concurrency": 4
+      },
+      "execution_simulation": {
+        "time_0h": {
+          "running": ["P1.T001", "P1.T003"],
+          "ready": [],
+          "blocked": ["P1.T002", "P1.T004", "P1.T005", "P1.T006", "P1.T007", "P1.T008", "P1.T009", "P1.T010"],
+          "resource_usage": {
+            "cpu_cores": 2,
+            "memory_gb": 0.6,
+            "docker_compose_file": 1
+          }
+        },
+        "time_2h": {
+          "running": ["P1.T002", "P1.T004"],
+          "ready": [],
+          "blocked": ["P1.T005", "P1.T006", "P1.T007", "P1.T008", "P1.T009", "P1.T010"],
+          "completed": ["P1.T001", "P1.T003"],
+          "resource_usage": {
+            "cpu_cores": 2,
+            "memory_gb": 0.5,
+            "docker_compose_file": 1
+          }
+        },
+        "time_4h": {
+          "running": ["P1.T005", "P1.T007"],
+          "ready": ["P1.T006"],
+          "blocked": ["P1.T008", "P1.T009", "P1.T010"],
+          "completed": ["P1.T001", "P1.T002", "P1.T003", "P1.T004"],
+          "resource_usage": {
+            "cpu_cores": 2,
+            "memory_gb": 0.4,
+            "package_json": 1
+          }
+        },
+        "time_6h": {
+          "running": ["P1.T006", "P1.T008", "P1.T010"],
+          "ready": ["P1.T009"],
+          "blocked": [],
+          "completed": ["P1.T001", "P1.T002", "P1.T003", "P1.T004", "P1.T005", "P1.T007"],
+          "resource_usage": {
+            "cpu_cores": 4,
+            "memory_gb": 1.4
+          }
+        },
+        "time_10h": {
+          "running": ["P1.T009"],
+          "ready": [],
+          "blocked": [],
+          "completed": ["P1.T001", "P1.T002", "P1.T003", "P1.T004", "P1.T005", "P1.T006", "P1.T007", "P1.T008", "P1.T010"],
+          "resource_usage": {
+            "cpu_cores": 1,
+            "memory_gb": 0.1
+          }
+        },
+        "time_12h": {
+          "running": [],
+          "ready": [],
+          "blocked": [],
+          "completed": ["P1.T001", "P1.T002", "P1.T003", "P1.T004", "P1.T005", "P1.T006", "P1.T007", "P1.T008", "P1.T009", "P1.T010"],
+          "resource_usage": {
+            "cpu_cores": 0,
+            "memory_gb": 0
+          }
+        }
+      },
+      "advantages_over_wave_based": [
+        "17% faster completion (12h vs 14.5h)",
+        "No artificial wave barriers",
+        "Better resource utilization",
+        "Adaptive to actual task completion times"
+      ]
+    }
+  },
+  "recommended_model": "rolling_frontier",
+  "recommendation_rationale": [
+    "Smaller task count (10) benefits from continuous execution",
+    "Few resource conflicts allow parallel execution",
+    "Time savings of 2.5 hours significant for 1-day project",
+    "Team can focus on continuous progress vs batch checkpoints"
+  ]
+}

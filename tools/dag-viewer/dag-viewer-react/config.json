@@ -1,0 +1,19 @@
+{
+  "server": {
+    "port": 8080,
+    "host": "localhost"
+  },
+  "paths": {
+    "dagFile": "/Users/james/git/pf3/docs/tasks/plan-out-of-this-mess/dag.json",
+    "featuresFile": "/Users/james/git/pf3/docs/tasks/plan-out-of-this-mess/features.json",
+    "wavesFile": "/Users/james/git/pf3/docs/tasks/plan-out-of-this-mess/waves.json",
+    "tasksFile": "/Users/james/git/pf3/docs/tasks/plan-out-of-this-mess/tasks.json",
+    "stateFile": "/Users/james/git/TASKS/tools/dag-viewer/dag-state-full.json",
+    "logsFile": "/Users/james/git/TASKS/tools/dag-viewer/dag-viewer-react/logs.txt",
+    "dagStateServer": "/Users/james/git/TASKS/tools/dag-viewer/dag-state-server-full.js"
+  },
+  "vite": {
+    "port": 5173,
+    "host": "localhost"
+  }
+}
