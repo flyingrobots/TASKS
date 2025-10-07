@@ -1,6 +1,7 @@
 package analysis
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
@@ -11,7 +12,8 @@ import (
 )
 
 // Helper function to create a mock codebase structure
-func createMockCodebase(t *testing.T, tmpDir string, structure map[string]string) {
+func createMockCodebase(t *testing.T, tmpDir string, structure map[string]string, chmodDir string) {
+	// First, create all files and directories
 	for path, content := range structure {
 		// Validate path: reject absolute paths, normalize, ensure it doesn't escape tmpDir
 		if filepath.IsAbs(path) {
@@ -42,6 +44,18 @@ func createMockCodebase(t *testing.T, tmpDir string, structure map[string]string
 			t.Fatalf("Failed to write mock file %s: %v", fullPath, err)
 		}
 	}
+
+	// Then, apply chmod if specified
+	if chmodDir != "" {
+		unreadableDirPath := filepath.Join(tmpDir, chmodDir)
+		// Ensure the directory exists before chmodding
+		if err := os.MkdirAll(unreadableDirPath, 0755); err != nil {
+			t.Fatalf("Failed to create unreadable dir %s: %v", unreadableDirPath, err)
+		}
+		if err := os.Chmod(unreadableDirPath, 0000); err != nil { // chmod 000
+			t.Fatalf("Failed to chmod dir %s: %v", unreadableDirPath, err)
+		}
+	}
 }
 
 func TestRunCensus(t *testing.T) {
@@ -52,12 +66,13 @@ func TestRunCensus(t *testing.T) {
 		expectedGoFiles []string
 		expectError   bool
 		setupError    bool // For testing non-existent path
+		chmodDir      string // Directory to chmod 000 for permission denied test
 	}{
 		{
 			name: "empty directory",
 			structure: map[string]string{},
-			expectedFiles: []string{},
-			expectedGoFiles: []string{},
+			expectedFiles: []string{}, 
+			expectedGoFiles: []string{}, 
 		},
 		{
 			name: "flat directory with mixed files",
@@ -96,6 +111,39 @@ func TestRunCensus(t *testing.T) {
 			expectError: true,
 			setupError: true,
 		},
+		{
+			name: "hidden files and dot-directories",
+			structure: map[string]string{
+				".git/config": "git config",
+				".env":        "ENV_VAR=value",
+				"main.go":     "package main",
+				".vscode/settings.json": "{}",
+			},
+			expectedFiles: []string{`.env`, `.git/config`, `.vscode/settings.json`, `main.go`},
+			expectedGoFiles: []string{"main.go"},
+		},
+		{
+			name: "filenames with spaces and unicode",
+			structure: map[string]string{
+				`My File.go`:      `package main`,
+				`résumé.pdf`:      `pdf content`,
+				`你好世界.txt`:      `hello world`,
+				`another file.txt`: `content`,
+			},
+			expectedFiles: []string{`My File.go`, `another file.txt`, `résumé.pdf`, `你好世界.txt`},
+			expectedGoFiles: []string{`My File.go`},
+		},
+		{
+			name: "permission denied directory",
+			structure: map[string]string{
+				"readable/file.go": "package main",
+				"unreadable/file.go": "package main", // This file won't be found
+			},
+			expectedFiles: []string{"readable/file.go"},
+			expectedGoFiles: []string{"readable/file.go"},
+			expectError: true, // Expect error from WalkDir
+			chmodDir: "unreadable", // Directory to make unreadable
+		}, // Add comma here
 	}
 
 	for _, tt := range tests {
@@ -109,19 +157,20 @@ func TestRunCensus(t *testing.T) {
 					t.Fatalf("Failed to create temp dir: %v", err)
 				}
 				defer os.RemoveAll(tmpDir)
-				createMockCodebase(t, tmpDir, tt.structure)
+				createMockCodebase(t, tmpDir, tt.structure, tt.chmodDir) // Pass chmodDir here
 			} else {
 				// For error cases, use a path that definitely doesn't exist
 				tmpDir = filepath.Join(os.TempDir(), "non-existent-path-for-census-test")
 			}
 
 			analysisResult, err := RunCensus(tmpDir)
+			fmt.Fprintf(os.Stderr, "DEBUG: RunCensus returned err: %v\n", err) // DEBUG PRINT
 
 			if tt.expectError {
 				if err == nil {
 					t.Fatal("Expected an error, but got none")
 				}
-				// For now, we just check for an error. More specific error type checks can be added later.
+				fmt.Fprintf(os.Stderr, "DEBUG: Test case '%s' correctly returned error: %v\n", tt.name, err) // DEBUG PRINT
 				return
 			}
 			if err != nil {
