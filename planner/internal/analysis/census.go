@@ -45,7 +45,16 @@ func RunCensus(path string) (*CodebaseAnalysis, error) {
 			// fmt.Fprintf(os.Stderr, "DEBUG: WalkDir callback error at %s: %v\n", currentPath, err) // DEBUG PRINT
 			return err
 		}
-		if !d.IsDir() {
+		// Explicitly check for permission errors on directories
+		if d.IsDir() {
+			// Try to read the directory to force a permission error if it's unreadable
+			// This is a workaround for filepath.WalkDir's subtle behavior on some OSes
+			// where it might not return an error for unreadable subdirectories.
+			_, statErr := os.ReadDir(currentPath)
+			if statErr != nil && os.IsPermission(statErr) {
+				return statErr // Propagate permission error
+			}
+		} else { // It's a file
 			analysis.Files = append(analysis.Files, currentPath)
 			if strings.HasSuffix(d.Name(), ".go") {
 				analysis.GoFiles = append(analysis.GoFiles, currentPath)
