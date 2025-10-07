@@ -42,7 +42,7 @@ func RunCensus(path string) (*CodebaseAnalysis, error) {
 
 	err = filepath.WalkDir(path, func(currentPath string, d fs.DirEntry, err error) error {
 		if err != nil {
-			// fmt.Fprintf(os.Stderr, "DEBUG: WalkDir callback error at %s: %v\n", currentPath, err) // DEBUG PRINT
+			// t.Logf("DEBUG: WalkDir callback error at %s: %v", currentPath, err) // DEBUG PRINT
 			return err
 		}
 		// Explicitly check for permission errors on directories
@@ -64,7 +64,7 @@ func RunCensus(path string) (*CodebaseAnalysis, error) {
 	})
 
 	if err != nil {
-		// fmt.Fprintf(os.Stderr, "DEBUG: RunCensus returning error from WalkDir: %v\n", err) // DEBUG PRINT
+		// t.Logf("DEBUG: RunCensus returning error from WalkDir: %v", err) // DEBUG PRINT
 		return nil, fmt.Errorf("failed to walk directory '%s': %w", path, err)
 	}
 
