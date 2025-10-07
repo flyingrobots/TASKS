@@ -1,7 +1,9 @@
 package analysis
 
 import (
+	"fmt"
 	"io/fs"
+	"os"
 	"path/filepath"
 	"strings"
 )
@@ -26,7 +28,16 @@ type CodebaseAnalysis struct {
 func RunCensus(path string) (*CodebaseAnalysis, error) {
 	analysis := &CodebaseAnalysis{}
 
-	err := filepath.WalkDir(path, func(currentPath string, d fs.DirEntry, err error) error {
+	// Check if the path exists and is a directory
+	info, err := os.Stat(path)
+	if err != nil {
+		return nil, fmt.Errorf("failed to access path '%s': %w", path, err)
+	}
+	if !info.IsDir() {
+		return nil, fmt.Errorf("path '%s' is not a directory", path)
+	}
+
+	err = filepath.WalkDir(path, func(currentPath string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -40,7 +51,7 @@ func RunCensus(path string) (*CodebaseAnalysis, error) {
 	})
 
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to walk directory '%s': %w", path, err)
 	}
 
 	return analysis, nil
