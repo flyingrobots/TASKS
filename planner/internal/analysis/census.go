@@ -26,7 +26,10 @@ type CodebaseAnalysis struct {
 //   A pointer to a CodebaseAnalysis struct containing the discovered files,
 //   or an error if the directory cannot be walked.
 func RunCensus(path string) (*CodebaseAnalysis, error) {
-	analysis := &CodebaseAnalysis{}
+	analysis := &CodebaseAnalysis{
+		Files:   []string{}, // Initialize to empty slice
+		GoFiles: []string{}, // Initialize to empty slice
+	}
 
 	// Check if the path exists and is a directory
 	info, err := os.Stat(path)
