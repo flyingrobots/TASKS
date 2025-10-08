@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "dag.json",
+  "type": "object",
+  "required": ["meta", "nodes", "edges", "metrics", "analysis"],
+  "properties": {
+    "meta": {
+      "type": "object",
+      "required": ["version", "artifact_hash", "tasks_hash"],
+      "properties": {
+        "version": {"type": "string"},
+        "artifact_hash": {"type": "string"},
+        "tasks_hash": {"type": "string"}
+      }
+    },
+    "nodes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "depth", "critical_path", "parallel_opportunity"],
+        "properties": {
+          "id": {"type": "string"},
+          "depth": {"type": "integer", "minimum": 0},
+          "critical_path": {"type": "boolean"},
+          "parallel_opportunity": {"type": "integer", "minimum": 0}
+        }
+      }
+    },
+    "edges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["from", "to", "type", "transitive"],
+        "properties": {
+          "from": {"type": "string"},
+          "to": {"type": "string"},
+          "type": {"type": "string"},
+          "transitive": {"type": "boolean"}
+        }
+      }
+    },
+    "metrics": {"type": "object"},
+    "analysis": {
+      "type": "object",
+      "required": ["ok"],
+      "properties": {"ok": {"type": "boolean"}}
+    }
+  }
+}

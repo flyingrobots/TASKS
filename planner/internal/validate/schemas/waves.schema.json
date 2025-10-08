@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "waves.json",
+  "type": "object",
+  "required": ["meta", "waves"],
+  "properties": {
+    "meta": {
+      "type": "object",
+      "required": ["version", "planId", "artifact_hash"],
+      "properties": {
+        "version": {"type": "string"},
+        "planId": {"type": "string"},
+        "artifact_hash": {"type": "string"}
+      }
+    },
+    "waves": {
+      "type": "array",
+      "items": {
+        "type": "array",
+        "items": {"type": "string"}
+      }
+    }
+  },
+  "additionalProperties": true
+}

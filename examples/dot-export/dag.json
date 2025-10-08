@@ -1,0 +1,15 @@
+{
+  "meta": {"version": "v8", "artifact_hash": "placeholder", "tasks_hash": "placeholder"},
+  "nodes": [
+    {"id": "T001", "depth": 0, "critical_path": true,  "parallel_opportunity": 2},
+    {"id": "T002", "depth": 1, "critical_path": true,  "parallel_opportunity": 2},
+    {"id": "T003", "depth": 2, "critical_path": false, "parallel_opportunity": 1}
+  ],
+  "edges": [
+    {"from": "T001", "to": "T002", "type": "sequential", "transitive": false},
+    {"from": "T002", "to": "T003", "type": "technical",  "transitive": false},
+    {"from": "T001", "to": "T003", "type": "implied",    "transitive": true}
+  ],
+  "metrics": {"nodes": 3, "edges": 3},
+  "analysis": {"ok": true, "errors": [], "warnings": []}
+}

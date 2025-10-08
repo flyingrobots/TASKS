@@ -1,0 +1,49 @@
+{
+  "meta": {
+    "version": "v8",
+    "min_confidence": 0.7,
+    "artifact_hash": "placeholder",
+    "codebase_analysis": {},
+    "autonormalization": {"split": [], "merged": []}
+  },
+  "tasks": [
+    {
+      "id": "T001",
+      "feature_id": "F1",
+      "title": "Setup DB",
+      "duration": {"optimistic": 1, "mostLikely": 2, "pessimistic": 3},
+      "durationUnits": "hours",
+      "acceptance_checks": [],
+      "source_evidence": [],
+      "resources": {},
+      "execution_logging": {"format": "JSONL", "required_fields": []},
+      "compensation": {"idempotent": true}
+    },
+    {
+      "id": "T002",
+      "feature_id": "F1",
+      "title": "Migrate Schema",
+      "duration": {"optimistic": 1, "mostLikely": 2, "pessimistic": 3},
+      "durationUnits": "hours",
+      "acceptance_checks": [],
+      "source_evidence": [],
+      "resources": {},
+      "execution_logging": {"format": "JSONL", "required_fields": []},
+      "compensation": {"idempotent": true}
+    },
+    {
+      "id": "T003",
+      "feature_id": "F1",
+      "title": "API Handlers",
+      "duration": {"optimistic": 1, "mostLikely": 2, "pessimistic": 3},
+      "durationUnits": "hours",
+      "acceptance_checks": [],
+      "source_evidence": [],
+      "resources": {},
+      "execution_logging": {"format": "JSONL", "required_fields": []},
+      "compensation": {"idempotent": true}
+    }
+  ],
+  "dependencies": [],
+  "resource_conflicts": {}
+}

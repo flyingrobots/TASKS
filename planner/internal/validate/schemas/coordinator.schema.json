@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "coordinator.json",
+  "type": "object",
+  "required": ["version", "graph", "config"],
+  "properties": {
+    "version": {"type": "string"},
+    "graph": {
+      "type": "object",
+      "required": ["nodes", "edges"],
+      "properties": {
+        "nodes": {"type": "array"},
+        "edges": {"type": "array"}
+      }
+    },
+    "config": {"type": "object"}
+  },
+  "additionalProperties": true
+}
