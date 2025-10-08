@@ -1,0 +1,39 @@
+# Project Roadmap (Hubless-Style, Git-Backed)
+
+This `todo/` directory is a markdown-first, Git-native planner for T.A.S.K.S. + S.L.A.P.S. It complements the v8 spec by tracking milestones, features, and tasks as files you can move through a simple CLI (`npm run todo:*`).
+
+- Milestones live in `todo/milestones/`
+- Features live in `todo/features/`
+- Tasks live in `todo/tasks/{milestone}/{backlog|active|finished|merged}/`
+
+Use the scripts to move tasks across states; progress bars and indexes update automatically.
+
+## Milestones
+
+- M1 – Planner Foundation (canonical JSON, schemas, census)
+- M2 – Plan Compiler (parse → tasks → deps → DAG → waves)
+- M3 – Validators (acceptance, evidence, interface)
+- M4 – Contract + Runtime Stub (coordinator + basic frontier)
+
+<!-- PROGRESS:START ROADMAP -->
+- M1 – 0/4 (0%) [backlog:3 active:1 finished:0 merged:0]
+- M2 – 0/5 (0%) [backlog:5 active:0 finished:0 merged:0]
+<!-- PROGRESS:END ROADMAP -->
+
+## Usage
+
+- Set a task active:
+  - `npm run todo:task:set-active -- T001`
+- Finish a task:
+  - `npm run todo:task:set-finished -- T001`
+- Merge/land a task:
+  - `npm run todo:task:set-merged -- T001`
+
+The scripts move the markdown file between status folders, update its frontmatter `status`, and refresh progress bars here and in each milestone README.
+
+## Conventions
+
+- Task file frontmatter:
+  - `id`, `milestone`, `features`, `title`, `status`, `deps`
+- Keep titles verb-first and bounded (2–8 hours).
+- Link tasks to features where applicable.

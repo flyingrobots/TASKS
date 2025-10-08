@@ -1,0 +1,10 @@
+{
+  "name": "tasks-slaps",
+  "private": true,
+  "scripts": {
+    "todo:task:set-active": "node scripts/todo/task.js set-active",
+    "todo:task:set-finished": "node scripts/todo/task.js set-finished",
+    "todo:task:set-merged": "node scripts/todo/task.js set-merged",
+    "todo:update": "node scripts/todo/task.js update-progress"
+  }
+}
