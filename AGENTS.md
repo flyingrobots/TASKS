@@ -156,3 +156,45 @@ Visualization: Use the external DAG Viewer repository (not part of this repo).
 
 ---
 This AGENTS.md is normative for agents modifying this repository. When in doubt, favor DAG purity, determinism, and auditability.
+
+## PR #7 Debrief (feat/planner-dag-validate)
+
+What we changed (high level)
+- Planner core:
+  - Canonical JSON minimal-number normalization (e.g., 1.0→1, 1.20e+03→1.2e3; 0e10→0).
+  - DAG builder: cycle detect, Kahn layering, transitive reduction; guard duplicate task IDs.
+  - Wave simulation (preview): layer by Kahn depth; split by exclusive resources; returns error on missing task IDs; integrated into tasksd plan.
+  - Coordinator/waves/features/dag JSON Schemas tightened (required fields, minLength, additionalProperties policies; explicit metrics schema for dag).
+  - Artifact writer: documented preimage hash policy; panic guard for setHash; writer errors are aggregated and reported after all writes.
+  - Repo census: removed debug/test-only comments and unnecessary per-directory reads; tests relaxed for OS portability; added typed FileCensusCounts and logging on failure.
+- CLI + DX:
+  - export-dot refactored into helpers; directory/single-file modes reuse common loaders.
+  - todo/ workflow scaffold with Node helpers: branch + PR commands; task indexing for O(1) lookup; root + ID validation; robust mkdir/IO handling; switched to gray-matter frontmatter.
+  - Roadmap: milestones/features/tasks seeded; examples added (success/error/idempotent); markdown hygiene across docs/milestones.
+
+Why these changes
+- Made the planner outputs deterministic and auditable (preimage hashing, schema validation, canonical numbers).
+- Enforced DAG purity (resource edges traced in tasks.json, not fed into dag.json) while still previewing waves.
+- Improved safety and ergonomics for everyday workflow (todo/ + helpers) without requiring a full Hubless install.
+
+Notable decisions
+- Preimage hash policy is intentional: meta.artifact_hash reflects canonical bytes with the hash field left empty (documented here, enforced by writer helper and validated).
+- Wave simulation is strictly a preview; the executor remains the authority on resources.
+
+Pitfalls we found and fixed
+- Silent duplicate task IDs in DAG builder (now fails fast with context).
+- brittle frontmatter parsing in todo script (replaced with gray-matter; added validation & error handling).
+- Over‑permissive schemas (tightened; added explicit metrics typing for dag).
+- Tests assumed uniform permission semantics across OSes (relaxed to remain meaningful and portable).
+
+Process notes
+- Followed the task workflow: mark task active → branch → tests/impl → docs → mark finished → push → PR.
+- Batched PR feedback in small commits, updated the feedback checklist as items were completed.
+
+Next steps (suggested)
+- Finish remaining PR #7 checklist items (continue small batches):
+  - Further schema tightening where applicable and unify additionalProperties policies.
+  - Minor code health passes (smaller helpers, comments, error messages).
+- Start M3 (validators): adapters for acceptance/evidence/interface and gate the plan accordingly; add flags + validation cache.
+- Wire a CI job to run tasksd validate + schema checks and block on drift; add a smoke test that plans a tiny spec and renders DOT.
+- Optional: add a tiny JSON export from todo/ into a Hubless-compatible structure; later, replace with Hubless CLI once ready.
