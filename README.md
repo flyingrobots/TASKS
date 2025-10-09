@@ -1,5 +1,7 @@
 # T.A.S.K.S. + S.L.A.P.S.
 
+<img src="https://github.com/user-attachments/assets/08f52e17-57c1-4287-b8cd-2ff66bc6c800" width="400" align="right" />
+
 A mathematically pure DAG planner + a resilient AI execution runtime.
 Plan like a compiler. Execute like a swarm.
 
@@ -19,9 +21,7 @@ From project chaos to deterministic calm.
 [![Status](https://img.shields.io/badge/status-specification--draft-orange.svg)](docs/v8/v8.md)
 [![Self-Healing](https://img.shields.io/badge/auto--repair-enabled-brightgreen.svg)](docs/v8/v8.md)
 
-<img src="https://github.com/user-attachments/assets/08f52e17-57c1-4287-b8cd-2ff66bc6c800" width="400" align="right" />
-
-## **Run It Like This: The T.A.S.K.S. Command Line Experience**
+### **Run It Like This: The T.A.S.K.S. Command Line Experience**
 
 T.A.S.K.S. is designed to be accessible and powerful, whether you're using it as a Claude command or a dedicated CLI.
 
