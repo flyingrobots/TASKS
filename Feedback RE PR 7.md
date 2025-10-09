@@ -998,7 +998,7 @@ the same but code is concise and testable.
 
 ---
 
-- [ ] In planner/cmd/tasksd/main.go around lines 225-478, runPlan is a huge function
+- [x] In planner/cmd/tasksd/main.go around lines 225-478, runPlan is a huge function
 mixing parsing, task construction, dependency inference, DAG building, and
 artifact emission; it also uses unnecessary immediately-invoked anonymous
 functions to initialize tasks (lines ~280-305). Split responsibilities by
