@@ -6,24 +6,51 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = process.cwd();
+if (!fs.existsSync(path.join(ROOT, 'package.json'))) {
+  die('Must run from repository root');
+}
+if (!fs.existsSync(path.join(ROOT, 'todo'))) {
+  die('todo/ directory not found - are you in the right repository?');
+}
 const TODO = path.join(ROOT, 'todo');
+const matter = require('gray-matter');
 
 function die(msg) { console.error(msg); process.exit(1); }
 
-function findTaskFile(taskId) {
+function indexPath() { return path.join(TODO, '.index.json'); }
+function loadIndex() {
+  try { return JSON.parse(fs.readFileSync(indexPath(), 'utf8')); } catch { return {}; }
+}
+function saveIndex(idx) {
+  try { fs.writeFileSync(indexPath(), JSON.stringify(idx, null, 2)); } catch { /* ignore */ }
+}
+function rebuildIndex() {
+  const idx = {};
   const ms = fs.readdirSync(path.join(TODO, 'tasks'));
   for (const m of ms) {
     const base = path.join(TODO, 'tasks', m);
     for (const lane of ['backlog','active','finished','merged']) {
       const dir = path.join(base, lane);
       if (!fs.existsSync(dir)) continue;
-      const files = fs.readdirSync(dir);
-      for (const f of files) {
-        if (f.startsWith(taskId + '-')) return { milestone: m, lane, file: path.join(dir, f) };
+      for (const f of fs.readdirSync(dir)) {
+        if (f.match(/^T\d{3}-/)) idx[f.slice(0,4)] = path.join(dir, f);
       }
     }
   }
-  return null;
+  saveIndex(idx);
+  return idx;
+}
+function findTaskFile(taskId) {
+  let idx = loadIndex();
+  if (!idx[taskId]) { idx = rebuildIndex(); }
+  const file = idx[taskId];
+  if (!file) return null;
+  // derive milestone/lane from path
+  const parts = file.split(path.sep);
+  const i = parts.lastIndexOf('tasks');
+  const milestone = parts[i+1];
+  const lane = parts[i+2];
+  return { milestone, lane, file };
 }
 
 function parseFrontmatter(s) {
@@ -64,12 +91,19 @@ function moveTask(taskId, targetLane) {
   if (!rec) die(`Task ${taskId} not found`);
   if (rec.lane === targetLane) { console.log(`Task ${taskId} already in ${targetLane}`); return; }
   const srcContent = fs.readFileSync(rec.file, 'utf8');
-  const { data, body } = parseFrontmatter(srcContent);
+  const parsed = matter(srcContent);
+  const data = parsed.data || {};
   data.status = targetLane;
-  const newContent = stringifyFrontmatter(data, body);
+  const newContent = matter.stringify(parsed.content, data, { language: 'yaml' });
   const basename = path.basename(rec.file);
   const dstDir = path.join(TODO, 'tasks', rec.milestone, targetLane);
-  if (!fs.existsSync(dstDir)) fs.mkdirSync(dstDir, { recursive: true });
+  if (!fs.existsSync(dstDir)) {
+    try { fs.mkdirSync(dstDir, { recursive: true }); }
+    catch (e) { die(`Failed to create directory ${dstDir}: ${e.message}`); }
+  } else {
+    const st = fs.statSync(dstDir);
+    if (!st.isDirectory()) die(`${dstDir} exists and is not a directory`);
+  }
   const dst = path.join(dstDir, basename);
   fs.writeFileSync(dst, newContent);
   fs.unlinkSync(rec.file);

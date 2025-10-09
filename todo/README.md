@@ -40,11 +40,37 @@ Use the scripts to move tasks across states; progress bars and indexes update au
 - Merge/land a task:
   - `npm run todo:task:set-merged -- T001`
 
-The scripts move the markdown file between status folders, update its frontmatter `status`, and refresh progress bars here and in each milestone README.
+The scripts move the task markdown file between status folders, update its frontmatter `status`, and refresh progress bars here and in each milestone README.
+
+### Examples (success, errors, idempotent)
+
+Successful activation:
+```bash
+$ npm run todo:task:set-active -- T001
+Moved T001 -> active
+```
+
+Invalid ID format:
+```bash
+$ npm run todo:task:set-active -- t1
+Invalid task ID format. Expected T### (e.g., T070)
+```
+
+Task not found:
+```bash
+$ npm run todo:task:set-active -- T999
+Task T999 not found
+```
+
+Idempotent (already in target state):
+```bash
+$ npm run todo:task:set-active -- T001
+Task T001 already in active
+```
 
 ## Conventions
 
 - Task file frontmatter:
   - `id`, `milestone`, `features`, `title`, `status`, `deps`
-- Keep titles verb-first and bounded (2–8 hours).
+- Keep tasks small and completable within a workday (2–8 hours is a useful guideline; adjust per team context). Keep titles verb-first.
 - Link tasks to features where applicable.

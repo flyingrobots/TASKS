@@ -9,5 +9,6 @@ Features: F009
 <!-- PROGRESS:END M3 -->
 
 ## Links
+
 - Features: [F009](../features/F009-validators-integration.md)
 - Tasks: see `../tasks/m3/*`

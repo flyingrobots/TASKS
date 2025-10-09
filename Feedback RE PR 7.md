@@ -676,7 +676,7 @@ and "properties" so only version, planId, and artifact_hash are permitted.
 
 ---
 
-- [ ] In package.json lines 1-10, the package is missing basic metadata (repository,
+- [x] In package.json lines 1-10, the package is missing basic metadata (repository,
 author, license); add these fields at the top level of package.json: a
 "repository" object with "type" and "url" (pointing to the VCS remote), an
 "author" string (name and optional email), and a "license" string (choose an
@@ -686,7 +686,7 @@ are valid JSON strings/objects and commit the updated package.json.
 
 ---
 
-- [ ] In scripts/todo/task.js lines 1-143, replace the custom
+- [x] In scripts/todo/task.js lines 1-143, replace the custom
 parseFrontmatter/stringifyFrontmatter with gray-matter: install gray-matter (npm
 i gray-matter and add to package.json), add const matter =
 require('gray-matter') at the top, remove the parseFrontmatter and
@@ -698,7 +698,7 @@ similarly.
 
 ---
 
-- [ ] scripts/todo/task.js around lines 29-46: the custom regex-based frontmatter
+- [x] scripts/todo/task.js around lines 29-46: the custom regex-based frontmatter
 parser is fragile, swallows parse errors and tries ad-hoc JSON parsing; replace
 it with a proper frontmatter/YAML parser (e.g. add gray-matter as a dependency
 and use gray-matter(s) to extract data and content), remove the manual
@@ -709,7 +709,7 @@ parsed data from the library.
 
 ---
 
-- [ ] In todo/README.md around lines 26 to 30, the command examples only show the
+- [x] In todo/README.md around lines 26 to 30, the command examples only show the
 happy path; update the doc to include concrete examples for error cases and
 idempotent operations: for each command (set-active, set-finished, set-merged)
 add one example showing successful output, one showing the error when the task
@@ -722,7 +722,7 @@ output and keep formatting consistent with other README examples.
 
 ---
 
-- [ ] In todo/README.md around line 38, the phrase "Keep titles verb-first and bounded
+- [x] In todo/README.md around line 38, the phrase "Keep titles verb-first and bounded
 (2–8 hours)" asserts a 2–8 hour bound with no justification; either remove the
 specific "2–8 hours" range or replace it with a justified guideline and
 citation: add a brief rationale for the chosen timebox (e.g., tie it to our
@@ -733,7 +733,7 @@ their context.
 
 ---
 
-- [ ] In todo/milestones/M3-validators.md around lines 11 to 13, there's a heading
+- [x] In todo/milestones/M3-validators.md around lines 11 to 13, there's a heading
 placed immediately after a list item without a separating blank line which
 violates markdownlint MD022; fix it by inserting a single blank line between the
 list and the heading (i.e., add an empty line after the list item before the
@@ -741,7 +741,7 @@ next heading).
 
 ---
 
-- [ ] [scripts/todo/task.js](https://github.com/flyingrobots/TASKS/pull/7/files/a67fdf2f1572d06fdee3526dfb72bb0fadb6747e#diff-1b41df9efafa843a9016571bcf505af1e3c5cfd7fccd050caa49c013dd7edaa8)
+- [x] [scripts/todo/task.js](https://github.com/flyingrobots/TASKS/pull/7/files/a67fdf2f1572d06fdee3526dfb72bb0fadb6747e#diff-1b41df9efafa843a9016571bcf505af1e3c5cfd7fccd050caa49c013dd7edaa8)
 
 Comment on lines +13 to +27
 
@@ -783,7 +783,7 @@ Consider either:
 
 ---
 
-- [ ] [scripts/todo/task.js](https://github.com/flyingrobots/TASKS/pull/7/files/a67fdf2f1572d06fdee3526dfb72bb0fadb6747e#diff-1b41df9efafa843a9016571bcf505af1e3c5cfd7fccd050caa49c013dd7edaa8)
+- [x] [scripts/todo/task.js](https://github.com/flyingrobots/TASKS/pull/7/files/a67fdf2f1572d06fdee3526dfb72bb0fadb6747e#diff-1b41df9efafa843a9016571bcf505af1e3c5cfd7fccd050caa49c013dd7edaa8)
 
 Comment on lines +8 to +9
 
@@ -837,7 +837,7 @@ Suggested change
 
 ---
 
-- [ ] In docs/todo-workflow.md lines 1-56 you have duplicated content already present
+- [x] In docs/todo-workflow.md lines 1-56 you have duplicated content already present
 in todo/README.md (specific overlaps around directory structure, scripts, and
 frontmatter), so remove duplication by either: A) Replace the duplicated
 sections with a short pointer to todo/README.md (e.g., a single sentence saying
@@ -1036,7 +1036,7 @@ and verify rendering after making these spacing and language-specifier fixes.
 
 ---
 
-- [ ] In docs/todo-workflow.md around lines 31 to 59, the fenced code blocks lack
+- [x] In docs/todo-workflow.md around lines 31 to 59, the fenced code blocks lack
 language specifiers and are missing surrounding blank lines which breaks
 Markdown rendering; update the first code fence to ```yaml (for the front-matter
 block) and add a blank line before and after it, then for each command example
