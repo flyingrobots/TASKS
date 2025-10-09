@@ -19,7 +19,7 @@
     "todo:pr:create": "node scripts/todo/pr.js",
     "todo:branch": "node scripts/todo/branch.js"
   },
-  "dependencies": {
+  "devDependencies": {
     "gray-matter": "^4.0.3"
   }
 }
