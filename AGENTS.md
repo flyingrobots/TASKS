@@ -90,7 +90,7 @@ Follow this sequence for every task. Make small, frequent commits.
 13. Commit + push + open PR:
     - `git add -A && git commit -m "todo: set T070 finished"`
     - `git push -u origin HEAD`
-    - `gh pr create --fill --base main --head $(git branch --show-current)`
+    - `gh pr create --fill --base main --head $(git branch --show-current)` (or `npm run todo:pr:create`)
 14. Await review; address feedback with incremental commits. When merged, optionally `npm run todo:task:set-merged -- T070` on `main` and commit the move.
 
 Notes

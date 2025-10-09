@@ -5,6 +5,8 @@
     "todo:task:set-active": "node scripts/todo/task.js set-active",
     "todo:task:set-finished": "node scripts/todo/task.js set-finished",
     "todo:task:set-merged": "node scripts/todo/task.js set-merged",
-    "todo:update": "node scripts/todo/task.js update-progress"
+    "todo:update": "node scripts/todo/task.js update-progress",
+    "todo:pr:create": "node scripts/todo/pr.js",
+    "todo:branch": "node scripts/todo/branch.js"
   }
 }
