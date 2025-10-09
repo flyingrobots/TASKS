@@ -3,6 +3,8 @@
 A mathematically pure DAG planner + a resilient AI execution runtime.
 Plan like a compiler. Execute like a swarm.
 
+<img src="https://github.com/user-attachments/assets/08f52e17-57c1-4287-b8cd-2ff66bc6c800" width="400" align="right" />
+
 ```
   ▀█▀ ▄▀█ █▀▀ █▄▀ █▀▀   TASKS ARE
    █  █▀█ ▄▄█ █ █ ▄▄█   SEQUENCED
@@ -13,8 +15,6 @@ Plan like a compiler. Execute like a swarm.
 
 ## **Plan. Execute. Heal.**
 From project chaos to deterministic calm.
-
----
 
 [![Version](https://img.shields.io/badge/version-v8.0--spec-blue.svg)](docs/v8/v8.md)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
