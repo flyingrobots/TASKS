@@ -649,7 +649,7 @@ SHA-256 hex pattern (64 hex chars) plus "minLength": 64 and "maxLength": 64 or a
 
 ---
 
-- [ ] In planner/internal/validate/schemas/waves.schema.json around lines 16 to 22,
+- [x] In planner/internal/validate/schemas/waves.schema.json around lines 16 to 22,
 the current schema allows empty inner wave arrays (e.g. "waves": [[]]) which is
 likely unintended; update the inner array schema to require at least one item by
 adding "minItems": 1 to the inner "items" array definition (optionally also
