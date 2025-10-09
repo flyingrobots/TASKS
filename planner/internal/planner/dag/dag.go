@@ -2,6 +2,7 @@ package dag
 
 import (
     "errors"
+    "fmt"
     "sort"
 
     m "github.com/james/tasks-planner/internal/model"
@@ -20,6 +21,11 @@ func Build(tasks []m.Task, edges []m.Edge, minConfidence float64) (m.DagFile, er
     idx := map[string]int{}
     order := make([]string, 0, len(tasks))
     for i, t := range tasks {
+        if _, exists := idx[t.ID]; exists {
+            df.Analysis.OK = false
+            df.Analysis.Errors = append(df.Analysis.Errors, fmt.Sprintf("duplicate task id %s", t.ID))
+            return df, fmt.Errorf("duplicate task id %s", t.ID)
+        }
         idx[t.ID] = i
         order = append(order, t.ID)
     }

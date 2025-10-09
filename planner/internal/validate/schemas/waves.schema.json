@@ -7,8 +7,9 @@
     "meta": {
       "type": "object",
       "required": ["version", "planId", "artifact_hash"],
+      "additionalProperties": false,
       "properties": {
-        "version": {"type": "string"},
+        "version": {"type": "string", "minLength": 1},
         "planId": {"type": "string"},
         "artifact_hash": {"type": "string"}
       }

@@ -5,6 +5,7 @@ import (
     "flag"
     "fmt"
     "io"
+    "log"
     "os"
     "path/filepath"
     "strings"
@@ -276,17 +277,19 @@ func runPlan() {
     }
 
     // optional census
-    var analysis any = map[string]any{}
+    var analysisVal any = map[string]any{}
     if *repo != "" {
         if a, err := analysisPkg(*repo); err == nil {
-            analysis = a
+            analysisVal = a
+        } else {
+            log.Printf("analysisPkg failed for repo %s: %v", *repo, err)
         }
     }
 
     tf := m.TasksFile{}
     tf.Meta.Version = "v8"
     tf.Meta.MinConfidence = 0.7
-    tf.Meta.CodebaseAnalysis = analysis
+    tf.Meta.CodebaseAnalysis = analysisVal
     tf.Meta.Autonormalization.Split = []string{}
     tf.Meta.Autonormalization.Merged = []string{}
     tf.Tasks = tasks
@@ -395,32 +398,41 @@ func runPlan() {
 
     // waves.json via wavesim (preview only; no feedback to DAG)
     w := map[string]any{"meta": map[string]any{"version":"v8","planId":"","artifact_hash":""}}
-    w["waves"] = wavesim.Generate(df, tasks)
+    if wavesIDs, err := wavesim.Generate(df, tasks); err != nil {
+        fmt.Fprintf(os.Stderr, "wavesim failed: %v\n", err)
+        os.Exit(1)
+    } else { w["waves"] = wavesIDs }
 
-    // Write artifacts with canonical JSON + hashes
+    // Write artifacts with canonical JSON + hashes (collect errors)
     hashes := map[string]string{}
-    mustWriteJSONWithHash := func(name string, v any, setHash func(h string)) {
+    var writeErrs []error
+    writeOrCollect := func(name string, v any, setHash func(h string)) {
         h, err := emitter.WriteWithArtifactHash(join(*out, name), v, setHash)
-        if err != nil { fmt.Fprintf(os.Stderr, "%v\n", err); os.Exit(1) }
+        if err != nil { writeErrs = append(writeErrs, fmt.Errorf("%s: %w", name, err)); return }
         hashes[name] = h
     }
 
     // tasks.json
-    mustWriteJSONWithHash("tasks.json", &tf, func(h string) { tf.Meta.ArtifactHash = h })
+    writeOrCollect("tasks.json", &tf, func(h string) { tf.Meta.ArtifactHash = h })
     // Fill dependent hashes
     df.Meta.ArtifactHash = "" // set by write
     df.Meta.TasksHash = hashes["tasks.json"]
-    mustWriteJSONWithHash("dag.json", &df, func(h string) { df.Meta.ArtifactHash = h })
+    writeOrCollect("dag.json", &df, func(h string) { df.Meta.ArtifactHash = h })
     if wm, ok := w["meta"].(map[string]any); ok { wm["planId"] = hashes["tasks.json"] }
-    mustWriteJSONWithHash("waves.json", &w, func(h string) {
+    writeOrCollect("waves.json", &w, func(h string) {
         if wm, ok := w["meta"].(map[string]any); ok { wm["artifact_hash"] = h }
     })
-    mustWriteJSONWithHash("features.json", &features, func(h string) {
+    writeOrCollect("features.json", &features, func(h string) {
         if meta, ok := features["meta"].(map[string]any); ok {
             meta["artifact_hash"] = h
         }
     })
-    mustWriteJSONWithHash("coordinator.json", &coord, func(h string) {})
+    writeOrCollect("coordinator.json", &coord, func(h string) {})
+
+    if len(writeErrs) > 0 {
+        for _, e := range writeErrs { fmt.Fprintf(os.Stderr, "artifact write error: %v\n", e) }
+        os.Exit(1)
+    }
 
     // Plan.md with hashes
     var md strings.Builder
@@ -513,9 +525,8 @@ func runValidate() {
 }
 
 // analysisPkg wraps the codebase census but returns a compact map for embedding.
-func analysisPkg(path string) (any, error) {
-    type fileCensus struct{ Files, GoFiles int }
+func analysisPkg(path string) (analysis.FileCensusCounts, error) {
     a, err := analysis.RunCensus(path)
-    if err != nil { return nil, err }
-    return fileCensus{Files: len(a.Files), GoFiles: len(a.GoFiles)}, nil
+    if err != nil { return analysis.FileCensusCounts{}, err }
+    return analysis.FileCensusCounts{Files: len(a.Files), GoFiles: len(a.GoFiles)}, nil
 }

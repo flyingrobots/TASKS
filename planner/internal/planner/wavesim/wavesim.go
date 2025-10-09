@@ -1,15 +1,19 @@
 package wavesim
 
 import (
+    "fmt"
     "sort"
 
     m "github.com/james/tasks-planner/internal/model"
 )
 
+// set is a simple string set for internal use
+type set map[string]struct{}
+
 // Generate returns waves as a slice of task-id slices. It respects Kahn layering via df.Nodes[].Depth
 // and splits each layer into subwaves so tasks that contend on the same exclusive resource do not
 // share a subwave. This is a planning-time preview only; it does not feed back into the DAG.
-func Generate(df m.DagFile, tasks []m.Task) [][]string {
+func Generate(df m.DagFile, tasks []m.Task) ([][]string, error) {
     // Build maps
     idToTask := make(map[string]m.Task, len(tasks))
     for _, t := range tasks { idToTask[t.ID] = t }
@@ -27,10 +31,12 @@ func Generate(df m.DagFile, tasks []m.Task) [][]string {
         ids := depthToIDs[d]
         sort.Strings(ids)
         // greedy packing
-        type set map[string]struct{}
         subwaves := []struct{ ids []string; used set }{}
         for _, id := range ids {
-            t := idToTask[id]
+            t, ok := idToTask[id]
+            if !ok {
+                return nil, fmt.Errorf("missing task for node ID %q", id)
+            }
             exclusives := make(set)
             for _, r := range t.Resources.Exclusive { exclusives[r] = struct{}{} }
             placed := false
@@ -56,6 +62,5 @@ func Generate(df m.DagFile, tasks []m.Task) [][]string {
             waves = append(waves, sw.ids)
         }
     }
-    return waves
+    return waves, nil
 }
-

@@ -15,9 +15,16 @@ function main() {
   }
   const branch = `feat/${feature}-task-${taskId}`;
   run('git', ['fetch', 'origin']);
-  run('git', ['checkout', '-B', branch, 'origin/main']);
+  // refuse to overwrite existing branch
+  try {
+    run('git', ['rev-parse', '--verify', branch], { stdio: 'pipe' });
+    console.error(`Branch ${branch} already exists. Aborting.`);
+    process.exit(1);
+  } catch (_) {
+    // rev-parse failed -> branch does not exist; proceed
+  }
+  run('git', ['checkout', '-b', branch, 'origin/main']);
   console.log(`Switched to branch ${branch}`);
 }
 
 main();
-
