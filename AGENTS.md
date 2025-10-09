@@ -69,6 +69,34 @@ Rules (from v8):
 Conventions
 - Tasks live at `todo/tasks/{milestone}/{backlog|active|finished|merged}/T###-*.md` with frontmatter keys: `id`, `milestone`, `features`, `title`, `status`, `deps`.
 - Milestones have PROGRESS markers; the script updates those and the roadmap block in `todo/README.md`.
+
+## Task Execution Workflow (Git + todo CLI + PR)
+Follow this sequence for every task. Make small, frequent commits.
+
+1. Verify a clean working tree: `git status` (commit/stash before starting).
+2. Pick a task ID from `todo/tasks/**` (e.g., `T070`). Read its frontmatter and linked feature/milestone.
+3. Mark it active via the CLI: `npm run todo:task:set-active -- T070`.
+4. Create a task branch off `origin/main`:
+   - `git fetch origin`
+   - `git checkout -B feat/{feature}-task-{taskid}` (e.g., `feat/validators-task-T070`).
+5. Commit the move/state change: `git add -A && git commit -m "todo: set T070 active"`.
+6. Re-read the task + feature/user story; update the test plan if needed (edit the task/feature doc).
+7. Write tests first. Commit: `git add -A && git commit -m "T070: add tests"`.
+8. Run tests. If they pass, proceed to step 10. If they fail, go to step 9.
+9. Implement the task in small steps. Make micro-commits as you go. Re-run tests until green.
+10. Update docs: task notes, feature rationale, how it was implemented, anything learned.
+11. Commit docs: `git add -A && git commit -m "T070: docs + notes"`.
+12. Mark the task finished: `npm run todo:task:set-finished -- T070`.
+13. Commit + push + open PR:
+    - `git add -A && git commit -m "todo: set T070 finished"`
+    - `git push -u origin HEAD`
+    - `gh pr create --fill --base main --head $(git branch --show-current)`
+14. Await review; address feedback with incremental commits. When merged, optionally `npm run todo:task:set-merged -- T070` on `main` and commit the move.
+
+Notes
+- Always keep branches focused on a single task.
+- If the task reveals necessary subtasks, add new task files under `todo/tasks/...` and link them from the feature.
+- Use `npm run todo:update` to refresh progress bars after state changes.
   
 Visualization: Use the external DAG Viewer repository (not part of this repo).
 
