@@ -4,7 +4,7 @@ milestone: m3
 features:
   - F009
 title: 'Wire acceptance, evidence, and interface validators into planner flow'
-status: active
+status: finished
 deps:
   - T030
   - T040

@@ -33,7 +33,7 @@ As a compliance lead I need validator gating wired into the planner so every tas
 Features: F009
 
 <!-- PROGRESS:START M3 -->
-0/1 done (0%)
+1/1 done (100%)
 <!-- PROGRESS:END M3 -->
 
 ## Links
