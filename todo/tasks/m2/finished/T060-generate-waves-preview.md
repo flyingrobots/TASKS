@@ -3,7 +3,7 @@ id: T060
 milestone: m2
 features: [F008]
 title: Generate waves.json preview (no feedback to DAG)
-status: backlog
+status: finished
 deps: [T050]
 ---
 

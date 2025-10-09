@@ -3,7 +3,7 @@ id: T030
 milestone: m2
 features: [F005]
 title: Generate bounded tasks (2–8h) with acceptance and logging
-status: backlog
+status: finished
 deps: [T020]
 ---
 

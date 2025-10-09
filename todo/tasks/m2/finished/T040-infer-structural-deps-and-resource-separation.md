@@ -3,7 +3,7 @@ id: T040
 milestone: m2
 features: [F006]
 title: Infer structural deps; record resource deps separately
-status: backlog
+status: finished
 deps: [T030]
 ---
 

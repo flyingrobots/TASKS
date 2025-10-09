@@ -16,6 +16,7 @@ import (
     m "github.com/james/tasks-planner/internal/model"
     docp "github.com/james/tasks-planner/internal/planner/docparse"
     dagbuild "github.com/james/tasks-planner/internal/planner/dag"
+    wavesim "github.com/james/tasks-planner/internal/planner/wavesim"
     "github.com/james/tasks-planner/internal/validate"
     "github.com/james/tasks-planner/internal/emitter"
 )
@@ -268,7 +269,7 @@ func runPlan() {
                     t.AcceptanceChecks = ts.Accept
                 }
                 t.ExecutionLogging.Format = "JSONL"
-                t.ExecutionLogging.RequiredFields = []string{}
+                t.ExecutionLogging.RequiredFields = []string{"timestamp","task_id","step","status","message"}
                 t.Compensation.Idempotent = true
                 tasks = append(tasks, t)
             }
@@ -283,7 +284,7 @@ func runPlan() {
                 Duration:  m.DurationPERT{Optimistic: 1, MostLikely: 2, Pessimistic: 3},
                 DurationUnit: "hours",
                 AcceptanceChecks: []m.AcceptanceCheck{{Type: "command", Cmd: "echo ok", Timeout: 5}},
-            }; t.ExecutionLogging.Format = "JSONL"; t.Compensation.Idempotent = true; return t }(),
+            }; t.ExecutionLogging.Format = "JSONL"; t.ExecutionLogging.RequiredFields = []string{"timestamp","task_id","step","status","message"}; t.Compensation.Idempotent = true; return t }(),
             func() m.Task { t := m.Task{
                 ID:        "T002",
                 FeatureID: "F1",
@@ -356,6 +357,16 @@ func runPlan() {
     }
     tf.Dependencies = depEdges
 
+    // Enforce acceptance for doc-driven plans
+    if *doc != "" {
+        for _, t := range tf.Tasks {
+            if len(t.AcceptanceChecks) == 0 {
+                fmt.Fprintf(os.Stderr, "task %s missing acceptance checks; add fenced ```acceptance``` block in spec\n", t.ID)
+                os.Exit(1)
+            }
+        }
+    }
+
     // Validate tasks.json before DAG build
     if err := validate.TasksFile(&tf); err != nil {
         fmt.Fprintf(os.Stderr, "tasks.json validation failed: %v\n", err)
@@ -367,6 +378,22 @@ func runPlan() {
     featsArr := make([]any, 0, len(featuresList))
     for _, f := range featuresList { featsArr = append(featsArr, map[string]any{"id": f.ID, "title": f.Title}) }
     features["features"] = featsArr
+
+    // Compute resource conflicts summary and resource edges (traceability; excluded from DAG)
+    resToTasks := map[string][]string{}
+    for _, t := range tf.Tasks {
+        for _, r := range t.Resources.Exclusive { resToTasks[r] = append(resToTasks[r], t.ID) }
+    }
+    tf.ResourceConflicts = map[string]any{}
+    for r, ids := range resToTasks {
+        if len(ids) < 2 { continue }
+        tf.ResourceConflicts[r] = map[string]any{"type":"exclusive","tasks": ids}
+        for i := 0; i < len(ids); i++ {
+            for j := i+1; j < len(ids); j++ {
+                tf.Dependencies = append(tf.Dependencies, m.Edge{From: ids[i], To: ids[j], Type: "resource", Subtype: "mutual_exclusion", IsHard: true, Confidence: 1.0})
+            }
+        }
+    }
 
     // Build DAG
     df, err := dagbuild.Build(tasks, tf.Dependencies, tf.Meta.MinConfidence)
@@ -396,11 +423,9 @@ func runPlan() {
     coord.Metrics.Estimates.LongestPathLength = 3
     coord.Metrics.Estimates.WidthApprox = 1
 
-    // waves.json (generic shape)
-    waves := map[string]any{
-        "meta": map[string]any{"version": "v8", "planId": ""},
-        "waves": [][]string{{"T001"}, {"T002"}, {"T003"}},
-    }
+    // waves.json via wavesim (preview only; no feedback to DAG)
+    w := map[string]any{"meta": map[string]any{"version":"v8","planId":"","artifact_hash":""}}
+    w["waves"] = wavesim.Generate(df, tasks)
 
     // Write artifacts with canonical JSON + hashes
     hashes := map[string]string{}
@@ -416,15 +441,9 @@ func runPlan() {
     df.Meta.ArtifactHash = "" // set by write
     df.Meta.TasksHash = hashes["tasks.json"]
     mustWriteJSONWithHash("dag.json", &df, func(h string) { df.Meta.ArtifactHash = h })
-    // planId for waves = tasks hash; ensure artifact_hash key exists (empty) for correct preimage
-    if mmeta, ok := waves["meta"].(map[string]any); ok {
-        mmeta["planId"] = hashes["tasks.json"]
-        if _, ok := mmeta["artifact_hash"]; !ok { mmeta["artifact_hash"] = "" }
-    }
-    mustWriteJSONWithHash("waves.json", &waves, func(h string) {
-        if mmeta, ok := waves["meta"].(map[string]any); ok {
-            mmeta["artifact_hash"] = h
-        }
+    if wm, ok := w["meta"].(map[string]any); ok { wm["planId"] = hashes["tasks.json"] }
+    mustWriteJSONWithHash("waves.json", &w, func(h string) {
+        if wm, ok := w["meta"].(map[string]any); ok { wm["artifact_hash"] = h }
     })
     mustWriteJSONWithHash("features.json", &features, func(h string) {
         if meta, ok := features["meta"].(map[string]any); ok {
