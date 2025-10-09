@@ -1,4 +1,12 @@
-.PHONY: setup setup-dry-run setup-win example-dot
+.PHONY: all test clean setup setup-dry-run setup-win example-dot
+
+all: test
+
+test:
+	@cd planner && go test ./...
+
+clean:
+	@cd planner && go clean
 
 setup:
 	@bash scripts/setup-deps.sh --install --yes
@@ -11,4 +19,3 @@ setup-win:
 
 example-dot:
 	@./examples/dot-export/render.sh
-

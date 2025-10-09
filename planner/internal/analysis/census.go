@@ -40,33 +40,22 @@ func RunCensus(path string) (*CodebaseAnalysis, error) {
 		return nil, fmt.Errorf("path '%s' is not a directory", path)
 	}
 
-	err = filepath.WalkDir(path, func(currentPath string, d fs.DirEntry, err error) error {
-		if err != nil {
-			// t.Logf("DEBUG: WalkDir callback error at %s: %v", currentPath, err) // DEBUG PRINT
-			return err
-		}
-		// Explicitly check for permission errors on directories
-		if d.IsDir() {
-			// Try to read the directory to force a permission error if it's unreadable
-			// This is a workaround for filepath.WalkDir's subtle behavior on some OSes
-			// where it might not return an error for unreadable subdirectories.
-			_, statErr := os.ReadDir(currentPath)
-			if statErr != nil && os.IsPermission(statErr) {
-				return statErr // Propagate permission error
-			}
-		} else { // It's a file
-			analysis.Files = append(analysis.Files, currentPath)
-			if strings.HasSuffix(d.Name(), ".go") {
-				analysis.GoFiles = append(analysis.GoFiles, currentPath)
-			}
-		}
-		return nil
-	})
+    err = filepath.WalkDir(path, func(currentPath string, d fs.DirEntry, err error) error {
+        if err != nil {
+            return err
+        }
+        if !d.IsDir() { // It's a file
+            analysis.Files = append(analysis.Files, currentPath)
+            if strings.HasSuffix(d.Name(), ".go") {
+                analysis.GoFiles = append(analysis.GoFiles, currentPath)
+            }
+        }
+        return nil
+    })
 
-	if err != nil {
-		// t.Logf("DEBUG: RunCensus returning error from WalkDir: %v", err) // DEBUG PRINT
-		return nil, fmt.Errorf("failed to walk directory '%s': %w", path, err)
-	}
+    if err != nil {
+        return nil, fmt.Errorf("failed to walk directory '%s': %w", path, err)
+    }
 
 	return analysis, nil
 }

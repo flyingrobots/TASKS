@@ -265,6 +265,10 @@ func runPlan() {
                     ml := ts.Hours
                     t.Duration = m.DurationPERT{Optimistic: ml * 0.5, MostLikely: ml, Pessimistic: ml * 2}
                 }
+                if len(ts.Errors) > 0 {
+                    fmt.Fprintf(os.Stderr, "spec parse errors for task %s: %s\n", id, strings.Join(ts.Errors, "; "))
+                    os.Exit(1)
+                }
                 if len(ts.Accept) > 0 {
                     t.AcceptanceChecks = ts.Accept
                 }

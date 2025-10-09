@@ -4,13 +4,20 @@
   "type": "object",
   "required": ["version", "graph", "config"],
   "properties": {
-    "version": {"type": "string"},
+    "version": {"type": "string", "minLength": 1},
     "graph": {
       "type": "object",
       "required": ["nodes", "edges"],
+      "additionalProperties": false,
       "properties": {
-        "nodes": {"type": "array"},
-        "edges": {"type": "array"}
+        "nodes": {
+          "type": "array",
+          "items": { "type": "object", "required": ["id"], "properties": {"id": {"type":"string"}}, "additionalProperties": true }
+        },
+        "edges": {
+          "type": "array",
+          "items": { "type": "object", "required": ["from","to","type"], "properties": {"from":{"type":"string"},"to":{"type":"string"},"type":{"type":"string"}}, "additionalProperties": true }
+        }
       }
     },
     "config": {"type": "object"}

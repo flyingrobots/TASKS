@@ -23,6 +23,7 @@ type TaskSpec struct {
     After     []string  // dependencies by title or ID
     Hours     float64   // duration hint in hours (0 if unset)
     Accept    []m.AcceptanceCheck
+    Errors    []string
 }
 
 var (
@@ -60,14 +61,18 @@ func ParseMarkdown(input string) (features []Feature, tasks []TaskSpec) {
                     payload := strings.Join(fenceBuf, "\n")
                     var arr []m.AcceptanceCheck
                     if strings.HasPrefix(strings.TrimSpace(payload), "[") {
-                        _ = json.Unmarshal([]byte(payload), &arr)
+                        if err := json.Unmarshal([]byte(payload), &arr); err != nil {
+                            tasks[lastTaskIdx].Errors = append(tasks[lastTaskIdx].Errors, "acceptance parse error: "+err.Error())
+                        }
                     } else {
                         var one m.AcceptanceCheck
-                        if err := json.Unmarshal([]byte(payload), &one); err == nil { arr = []m.AcceptanceCheck{one} }
+                        if err := json.Unmarshal([]byte(payload), &one); err != nil {
+                            tasks[lastTaskIdx].Errors = append(tasks[lastTaskIdx].Errors, "acceptance parse error: "+err.Error())
+                        } else {
+                            arr = []m.AcceptanceCheck{one}
+                        }
                     }
-                    if len(arr) > 0 {
-                        tasks[lastTaskIdx].Accept = append(tasks[lastTaskIdx].Accept, arr...)
-                    }
+                    if len(arr) > 0 { tasks[lastTaskIdx].Accept = append(tasks[lastTaskIdx].Accept, arr...) }
                 }
                 inFence = false
                 fenceLang = ""

@@ -2,6 +2,7 @@
 
 Minimal, runnable example that exports a DOT graph from `dag.json` and `tasks.json` and renders it to SVG.
 
+
 ## Files
 - `tasks.json` — three tasks with titles
 - `dag.json` — structural edges (one transitive edge included to show it’s suppressed)
