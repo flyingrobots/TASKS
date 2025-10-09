@@ -852,7 +852,7 @@ build/check to ensure there are no broken references.
 
 ---
 
-- [ ] [scripts/todo/task.js](https://github.com/flyingrobots/TASKS/pull/7/files/9869b3d20d9d82507931dbccab6b2e339ba7495b#diff-1b41df9efafa843a9016571bcf505af1e3c5cfd7fccd050caa49c013dd7edaa8)
+- [x] [scripts/todo/task.js](https://github.com/flyingrobots/TASKS/pull/7/files/9869b3d20d9d82507931dbccab6b2e339ba7495b#diff-1b41df9efafa843a9016571bcf505af1e3c5cfd7fccd050caa49c013dd7edaa8)
 
 Comment on lines +48 to +51
 

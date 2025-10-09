@@ -53,39 +53,6 @@ function findTaskFile(taskId) {
   return { milestone, lane, file };
 }
 
-function parseFrontmatter(s) {
-  if (!s.startsWith('---')) return { data: {}, body: s };
-  const end = s.indexOf('\n---', 3);
-  if (end === -1) return { data: {}, body: s };
-  const fm = s.slice(3, end).trim();
-  const body = s.slice(end + 4).replace(/^\s*\n/, '');
-  const data = {};
-  fm.split(/\r?\n/).forEach(line => {
-    const m = line.match(/^([A-Za-z0-9_]+):\s*(.*)$/);
-    if (m) {
-      const key = m[1];
-      let val = m[2].trim();
-      if (val.startsWith('[')) { try { val = JSON.parse(val); } catch { /* noop */ } }
-      data[key] = val;
-    }
-  });
-  return { data, body };
-}
-
-function stringifyFrontmatter(data, body) {
-  const lines = Object.keys(data).map(k => {
-    const val = data[k];
-    if (Array.isArray(val) || (val && typeof val === 'object')) {
-      return `${k}: ${JSON.stringify(val)}`;
-    }
-    if (typeof val === 'string' && (val.includes(':') || val.includes('\n'))) {
-      return `${k}: "${val.replace(/"/g, '\\"')}"`;
-    }
-    return `${k}: ${val}`;
-  });
-  return `---\n${lines.join('\n')}\n---\n\n${body}`;
-}
-
 function moveTask(taskId, targetLane) {
   const rec = findTaskFile(taskId);
   if (!rec) die(`Task ${taskId} not found`);
