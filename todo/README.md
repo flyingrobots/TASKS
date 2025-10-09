@@ -18,7 +18,7 @@ Use the scripts to move tasks across states; progress bars and indexes update au
 <!-- PROGRESS:START ROADMAP -->
 - M1 – 4/4 (100%) [backlog:0 active:0 finished:4 merged:0]
 - M2 – 5/5 (100%) [backlog:0 active:0 finished:5 merged:0]
-- M3 – 0/1 (0%) [backlog:1 active:0 finished:0 merged:0]
+- M3 – 0/1 (0%) [backlog:0 active:1 finished:0 merged:0]
 - M4 – 0/2 (0%) [backlog:2 active:0 finished:0 merged:0]
 - M5 – 0/2 (0%) [backlog:2 active:0 finished:0 merged:0]
 - M6 – 0/2 (0%) [backlog:2 active:0 finished:0 merged:0]

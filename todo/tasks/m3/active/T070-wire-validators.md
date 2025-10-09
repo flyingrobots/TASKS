@@ -1,10 +1,13 @@
 ---
 id: T070
 milestone: m3
-features: [F009]
-title: Wire acceptance, evidence, and interface validators into planner flow
-status: backlog
-deps: [T030, T040]
+features:
+  - F009
+title: 'Wire acceptance, evidence, and interface validators into planner flow'
+status: active
+deps:
+  - T030
+  - T040
 ---
 
 ## User Story
