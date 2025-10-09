@@ -1,10 +1,10 @@
-- [ ] In examples/dot-export/README.md around line 5, the heading "## Files" is
+- [x] In examples/dot-export/README.md around line 5, the heading "## Files" is
 missing a preceding blank line; insert a single blank line above that heading so
 there is an empty line separating it from the previous paragraph or content.
 
 ---
 
-- [ ] In examples/dot-export/tasks.json around lines 1 to 49 the example data is
+- [x] In examples/dot-export/tasks.json around lines 1 to 49 the example data is
 unrealistic and repetitive: all three tasks share the same feature_id, identical
 duration estimates, and empty acceptance_checks, source_evidence, and resources.
 Update the JSON to present varied, plausible tasks: assign distinct feature_id
@@ -18,7 +18,7 @@ resource_conflicts example to show conflict handling.
 
 ---
 
-- [ ] Makefile: Please fix
+- [x] Makefile: Please fix
 [Makefile](https://github.com/flyingrobots/TASKS/pull/7/files/e72c0b5a01ad83df929503ce62c0f94fce9fba0e#diff-76ed074a9305c04054cdebb9e9aad2d818052b07091de1f20cad0bbac34ffb52)
 
 Comment on lines +1 to +14
@@ -121,7 +121,7 @@ Suggested change
 
 ---
 
-- [ ] In planner/internal/analysis/census.go around lines 48 to 57, remove the
+- [x] In planner/internal/analysis/census.go around lines 48 to 57, remove the
 os.ReadDir workaround that attempts to read each directory to surface permission
 errors (the if d.IsDir() { _, statErr := os.ReadDir(currentPath) ... } block)
 because filepath.WalkDir already returns permission errors and this
@@ -132,7 +132,7 @@ issue or bug report that necessitates the workaround).
 
 ---
 
-- [ ] In planner/internal/analysis/census.go around line 67, remove the leftover
+- [x] In planner/internal/analysis/census.go around line 67, remove the leftover
 commented-out debug log line (`// t.Logf("DEBUG: RunCensus returning error from
 WalkDir: %v", err) // DEBUG PRINT`) so no test/debug logging remains in
 production code; delete the entire commented statement and ensure no trailing
@@ -140,7 +140,7 @@ whitespace or extraneous comments remain on that line.
 
 ---
 
-- [ ] In planner/internal/analysis/census.go at line 45 there's a commented-out test
+- [x] In planner/internal/analysis/census.go at line 45 there's a commented-out test
 log call referencing a test variable `t` (// t.Logf("DEBUG: WalkDir callback
 error at %s: %v", currentPath, err)), which is test/debug code left in
 production; remove that commented line entirely. If runtime logging is required
@@ -150,7 +150,7 @@ statement.
 
 ---
 
-- [ ] [planner/internal/emitter/writer.go](https://github.com/flyingrobots/TASKS/pull/7/files/e72c0b5a01ad83df929503ce62c0f94fce9fba0e#diff-b0a6ed47a0ffae0a6b8805ba05edf5f94bffc93167d069c2a29363ea2e1ceb43)
+- [x] [planner/internal/emitter/writer.go](https://github.com/flyingrobots/TASKS/pull/7/files/e72c0b5a01ad83df929503ce62c0f94fce9fba0e#diff-b0a6ed47a0ffae0a6b8805ba05edf5f94bffc93167d069c2a29363ea2e1ceb43)
 
 Comment on lines +12 to +14
 
@@ -172,7 +172,7 @@ Is `v` safe to mutate concurrently? Can multiple goroutines call this with the
 
 ---
 
-- [ ] [planner/internal/emitter/writer.go](https://github.com/flyingrobots/TASKS/pull/7/files/e72c0b5a01ad83df929503ce62c0f94fce9fba0e#diff-b0a6ed47a0ffae0a6b8805ba05edf5f94bffc93167d069c2a29363ea2e1ceb43)
+- [x] [planner/internal/emitter/writer.go](https://github.com/flyingrobots/TASKS/pull/7/files/e72c0b5a01ad83df929503ce62c0f94fce9fba0e#diff-b0a6ed47a0ffae0a6b8805ba05edf5f94bffc93167d069c2a29363ea2e1ceb43)
 
 Comment on lines +15 to +28
 
@@ -424,7 +424,7 @@ Suggested change
 
 ---
 
-- [ ] In planner/internal/planner/docparse/docparse.go around lines 61-70, the code
+- [x] In planner/internal/planner/docparse/docparse.go around lines 61-70, the code
 currently ignores json.Unmarshal errors when parsing an `accept` block; instead,
 check and handle the error: capture the error returned by json.Unmarshal for
 both array and single-object paths, and either return that error from the
@@ -435,7 +435,7 @@ message to make debugging possible.
 
 ---
 
-- [ ] In planner/internal/validate/schemas/coordinator.schema.json around lines 8 to
+- [x] In planner/internal/validate/schemas/coordinator.schema.json around lines 8 to
 15, the "graph" object schema lacks an additionalProperties constraint so
 arbitrary extra keys are permitted; update the schema to set
 "additionalProperties": false on the "graph" object and (optionally) tighten
