@@ -108,17 +108,19 @@ function updateProgress() {
     const pct = total ? Math.round((done/total)*100) : 0;
     lines.push(`- ${m.toUpperCase()} – ${done}/${total} (${pct}%) [backlog:${st.backlog} active:${st.active} finished:${st.finished} merged:${st.merged}]`);
     // Milestone file
-    const mf = path.join(TODO, 'milestones', `${m.toUpperCase()}${m.slice(1)}.md`);
-    const mf2 = path.join(TODO, 'milestones', m.toUpperCase().replace(/\/$/,'') + '.md');
-    // Our files follow explicit names; update the known ones
     const map = {
       m1: 'M1-planner-foundation.md',
       m2: 'M2-plan-compiler.md',
       m3: 'M3-validators.md',
-      m4: 'M4-contract-runtime-stub.md'
+      m4: 'M4-contract-runtime-stub.md',
+      m5: 'M5-resources-throughput.md',
+      m6: 'M6-resilience.md',
+      m7: 'M7-audit-admin.md',
+      m8: 'M8-security-visualization.md',
+      m9: 'M9-ci-docs.md'
     };
-    const file = path.join(TODO, 'milestones', map[m] || '');
-    if (fs.existsSync(file)) {
+    const file = map[m] ? path.join(TODO, 'milestones', map[m]) : null;
+    if (file && fs.existsSync(file) && fs.statSync(file).isFile()) {
       replaceBlock(file, m.toUpperCase(), `${done}/${total} done (${pct}%)`);
     }
   }
@@ -140,4 +142,3 @@ function main() {
 }
 
 main();
-

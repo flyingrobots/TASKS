@@ -57,6 +57,18 @@ Rules (from v8):
 - Stub planner (emits artifacts + DOT automatically):
   - `cd planner && go run ./cmd/tasksd plan --out ./plans`
   - Then render with Graphviz as needed.
+
+## Todo Workflow (Hubless-style, markdown-first)
+- Roadmap lives in `todo/` with milestones, features, and tasks as markdown files.
+- Scripts (Node) manage task state and update progress in place:
+  - Set active: `npm run todo:task:set-active -- T001`
+  - Set finished: `npm run todo:task:set-finished -- T001`
+  - Set merged: `npm run todo:task:set-merged -- T001`
+  - Recompute progress: `npm run todo:update`
+
+Conventions
+- Tasks live at `todo/tasks/{milestone}/{backlog|active|finished|merged}/T###-*.md` with frontmatter keys: `id`, `milestone`, `features`, `title`, `status`, `deps`.
+- Milestones have PROGRESS markers; the script updates those and the roadmap block in `todo/README.md`.
   
 Visualization: Use the external DAG Viewer repository (not part of this repo).
 

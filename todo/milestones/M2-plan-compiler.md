@@ -5,7 +5,7 @@ Scope: document parsing → tasks → dependencies → DAG → waves (preview on
 Features: F004, F005, F006, F007, F008
 
 <!-- PROGRESS:START M2 -->
-0/5 done (0%)
+2/5 done (40%)
 <!-- PROGRESS:END M2 -->
 
 ## Links

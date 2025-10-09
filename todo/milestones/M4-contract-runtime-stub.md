@@ -5,7 +5,7 @@ Scope: coordinator.json contract and a basic rolling-frontier executor stub.
 Features: F010, F011
 
 <!-- PROGRESS:START M4 -->
-(Progress will be updated by scripts)
+0/2 done (0%)
 <!-- PROGRESS:END M4 -->
 
 ## Links

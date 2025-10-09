@@ -5,7 +5,7 @@ Scope: wire acceptance, evidence, and interface validators as hard gates.
 Features: F009
 
 <!-- PROGRESS:START M3 -->
-(Progress will be updated by scripts)
+0/1 done (0%)
 <!-- PROGRESS:END M3 -->
 
 ## Links

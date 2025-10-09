@@ -3,7 +3,7 @@ id: T002
 milestone: m1
 features: [F001]
 title: Add artifact writer with preimage hashing policy
-status: backlog
+status: finished
 deps: [T001]
 ---
 

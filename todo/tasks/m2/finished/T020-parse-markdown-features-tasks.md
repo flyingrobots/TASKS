@@ -3,7 +3,7 @@ id: T020
 milestone: m2
 features: [F004]
 title: Parse Markdown for features/tasks/durations/accept/after
-status: backlog
+status: finished
 deps: [T010]
 ---
 
