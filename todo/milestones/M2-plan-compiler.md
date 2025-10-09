@@ -1,6 +1,39 @@
+---
+id: M2
+title: Plan Compiler
+status: finished
+features:
+  - F004
+  - F005
+  - F006
+  - F007
+  - F008
+reference: docs/formal-spec.md
+---
+
 # Milestone M2 – Plan Compiler
 
-Scope: document parsing → tasks → dependencies → DAG → waves (preview only).
+## User Story
+As the planning lead I need an automated pipeline that turns a repo+spec into canonical features, tasks, DAG, and waves so downstream executors inherit a deterministic contract.
+
+## Objectives
+- parse the charter into prioritized features and sized tasks
+- infer structural dependencies and compile the precedence DAG
+- generate waves previews without polluting DAG purity
+- document autonormalization and validator gating policies
+
+## Deliverables
+- updated `tasksd plan` wiring for doc parsing → tasks → dependencies → DAG → waves
+- validated artifacts (`features.json`, `tasks.json`, `dag.json`, `waves.json`, `Plan.md`)
+- CI fixtures that exercise plan compilation end to end
+
+## Exit Criteria
+- dag.json reports `analysis.ok == true` for baseline plans
+- waves preview references the `tasks.json` hash and passes schema validation
+- validator integration blocks plans missing acceptance, evidence, or confidence thresholds
+
+## Evidence & References
+- docs/formal-spec.md §§3–8 (planning pipeline, DAG purity, wave preview)
 
 Features: F004, F005, F006, F007, F008
 
