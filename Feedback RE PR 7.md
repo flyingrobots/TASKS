@@ -328,7 +328,7 @@ for fmt.
 
 ---
 
-- [ ] [planner/internal/planner/dag/dag.go](https://github.com/flyingrobots/TASKS/pull/7/files/e72c0b5a01ad83df929503ce62c0f94fce9fba0e#diff-d4fa045af807dc1b19fbf522ae0dfdb2526e581079fda2552787b8225247d13b)
+- [x] [planner/internal/planner/dag/dag.go](https://github.com/flyingrobots/TASKS/pull/7/files/e72c0b5a01ad83df929503ce62c0f94fce9fba0e#diff-d4fa045af807dc1b19fbf522ae0dfdb2526e581079fda2552787b8225247d13b)
 
 Comment on lines +94 to +116
 

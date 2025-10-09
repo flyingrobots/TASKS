@@ -47,6 +47,11 @@ func Build(tasks []m.Task, edges []m.Edge, minConfidence float64) (m.DagFile, er
 
     // build adjacency
     n := len(tasks)
+    if n == 0 {
+        df.Analysis.OK = false
+        df.Analysis.Errors = append(df.Analysis.Errors, "no tasks to build DAG")
+        return df, errors.New("no tasks to build DAG")
+    }
     adj := make([][]int, n)
     indeg := make([]int, n)
     for i := range adj { adj[i] = []int{} }
