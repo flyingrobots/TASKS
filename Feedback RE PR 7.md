@@ -658,7 +658,7 @@ should be disallowed).
 
 ---
 
-- [ ] In scripts/setup-deps.ps1 around lines 21 to 39, the Have() function currently
+- [x] In scripts/setup-deps.ps1 around lines 21 to 39, the Have() function currently
 pipes Get-Command to Out-Null so it returns nothing, causing all if (Have '...')
 checks to evaluate as $null; change Have() to return a proper boolean by testing
 Get-Command's result and returning $true when the command exists and $false when

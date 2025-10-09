@@ -18,7 +18,9 @@ param(
   [switch]$Yes
 )
 
-function Have($cmd) { Get-Command $cmd -ErrorAction SilentlyContinue | Out-Null }
+function Have($cmd) {
+  return $null -ne (Get-Command $cmd -ErrorAction SilentlyContinue)
+}
 function Confirm-Action($Message) {
   if ($Yes) { return $true }
   $r = Read-Host "$Message [y/N]"
@@ -73,4 +75,3 @@ foreach ($pkg in $missing) {
 }
 
 Write-Host "Done."
-
