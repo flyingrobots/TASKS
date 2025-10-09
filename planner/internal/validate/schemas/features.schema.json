@@ -21,9 +21,10 @@
         "properties": {
           "id": {"type": "string"},
           "title": {"type": "string"}
-        }
+        },
+        "additionalProperties": false
       }
     }
   },
-  "additionalProperties": true
+  "additionalProperties": false
 }

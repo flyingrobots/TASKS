@@ -444,14 +444,14 @@ required fields) to prevent random garbage from being accepted by the validator.
 
 ---
 
-- [ ] In planner/internal/validate/schemas/coordinator.schema.json around line 7, the
+- [x] In planner/internal/validate/schemas/coordinator.schema.json around line 7, the
 "version" property currently allows empty strings; update the schema to require
 non-empty strings by adding a minLength constraint (e.g., "version":
 {"type":"string","minLength":1}) so empty versions are rejected.
 
 ---
 
-- [ ] In planner/internal/validate/schemas/coordinator.schema.json around lines 12–13
+- [x] In planner/internal/validate/schemas/coordinator.schema.json around lines 12–13
 the "nodes" and "edges" properties are declared as arrays with no item schema,
 which permits any garbage; replace each with a proper item schema: for "nodes"
 use "type":"array","items":{ "type":"object", "required":["id","type"],
@@ -467,7 +467,7 @@ values.
 
 ---
 
-- [ ] In planner/internal/validate/schemas/dag.schema.json around lines 20 to 28, the
+- [x] In planner/internal/validate/schemas/dag.schema.json around lines 20 to 28, the
 node object schema omits an additionalProperties control so arbitrary fields are
 currently allowed; add "additionalProperties": false to the node schema to
 forbid unknown fields (or if allowing extras is intentional, add a brief
@@ -476,7 +476,7 @@ validates required properties and constraints after this change.
 
 ---
 
-- [ ] In planner/internal/validate/schemas/dag.schema.json around lines 32 to 41, the
+- [x] In planner/internal/validate/schemas/dag.schema.json around lines 32 to 41, the
 edge item schema lacks an additionalProperties policy; add
 "additionalProperties": false to the "items" object (or to the inner object
 schema) to prevent unexpected fields (or set to true if your project policy is
@@ -485,7 +485,7 @@ schemas.
 
 ---
 
-- [ ] In planner/internal/validate/schemas/dag.schema.json around line 43, the
+- [x] In planner/internal/validate/schemas/dag.schema.json around line 43, the
 "metrics": {"type":"object"} entry is too permissive (accepts any object,
 including {}). Replace it with a concrete schema: either reference an existing
 metrics schema (e.g., "$ref": "#/definitions/metrics") or define explicit
@@ -496,7 +496,7 @@ expected metric fields and types rather than accepting any object.
 
 ---
 
-- [ ] [planner/internal/validate/schemas/features.schema.json](https://github.com/flyingrobots/TASKS/pull/7/files/e72c0b5a01ad83df929503ce62c0f94fce9fba0e#diff-d1d5e061cb54b9df1cbab334cabb6656b369ab24e20c3732185f60fa28e2bca9)
+- [x] [planner/internal/validate/schemas/features.schema.json](https://github.com/flyingrobots/TASKS/pull/7/files/e72c0b5a01ad83df929503ce62c0f94fce9fba0e#diff-d1d5e061cb54b9df1cbab334cabb6656b369ab24e20c3732185f60fa28e2bca9)
 
 Comment on lines +1 to +29
 
@@ -930,7 +930,7 @@ Suggested change
 
 ---
 
-- [ ] In scripts/todo/task.js around lines 134-136, taskId is taken from user input
+- [x] In scripts/todo/task.js around lines 134-136, taskId is taken from user input
 and used directly which allows path traversal; validate and whitelist the
 expected taskId format (e.g. only alphanumeric, dashes, underscores) and reject
 anything containing path separators or unexpected characters, returning an
@@ -941,7 +941,7 @@ todo tree are impossible.
 
 ---
 
-- [ ] In todo/milestones/M6-resilience.md around lines 11 to 13, the Markdown heading
+- [x] In todo/milestones/M6-resilience.md around lines 11 to 13, the Markdown heading
 "## Links" is immediately followed by a bullet list which violates markdownlint;
 insert a single blank line between the "## Links" heading and the subsequent
 bullet list so the heading is separated from the list and the linter error is
@@ -949,14 +949,14 @@ resolved.
 
 --- 
 
-- [ ] In todo/milestones/M7-audit-admin.md around lines 11 to 13, the "## Links"
+- [x] In todo/milestones/M7-audit-admin.md around lines 11 to 13, the "## Links"
 heading is immediately followed by a bullet list with no blank line; insert a
 single empty line after the "## Links" heading so the markdown has a blank line
 between the heading and the list (i.e., add one newline after line 11).
 
 ---
 
-- [ ] In todo/milestones/M8-security-visualization.md around lines 11 to 13 the
+- [x] In todo/milestones/M8-security-visualization.md around lines 11 to 13 the
 unordered list is placed immediately after the "## Links" heading which violates
 Markdown convention/MD022; insert a single blank line between the "## Links"
 heading and the list (i.e., add an empty line before the "- Features..." line)
@@ -964,7 +964,7 @@ so the heading and list are separated and the linter warning is resolved.
 
 ---
 
-- [ ] In todo/README.md lines 1–46, the README documents the CLI but omits
+- [x] In todo/README.md lines 1–46, the README documents the CLI but omits
 prerequisites; add a "## Prerequisites" section immediately before the "Usage"
 header that lists "Node.js 14+ and npm" and instructs to "Run `npm install` from
 repository root before using these commands" so users know to install Node/npm
@@ -972,7 +972,7 @@ and dependencies prior to running the npm scripts.
 
 ---
 
-- [ ] In planner/internal/canonjson/canonjson.go around lines 96-113 the code only
+- [x] In planner/internal/canonjson/canonjson.go around lines 96-113 the code only
 clears the sign for zero but leaves the exponent (so "0e10" canonicalizes
 differently than "0"); change the zero-detection to treat magnitude-zero when
 intPart == "0" and either there is no fractional part or the fractional part is
@@ -981,7 +981,7 @@ all zeros, and when that condition holds clear both sign and exp (i.e., set exp
 
 ---
 
-- [ ] In planner/cmd/tasksd/main.go around lines 92–203, runExportDot mixes three
+- [x] In planner/cmd/tasksd/main.go around lines 92–203, runExportDot mixes three
 modes (directory, coordinator single-file, dag+tasks) and duplicates DOT
 generation/writing logic; extract the DOT creation and file-write logic into
 small helpers to reduce duplication and make testing easier. Create helpers such

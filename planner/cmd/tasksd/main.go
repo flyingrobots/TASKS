@@ -89,6 +89,43 @@ func runCanonical() {
     fmt.Println(hashString)
 }
 
+func writeCoordinatorDot(coordPath, outPath, nodeLabel, edgeLabel string) (string, error) {
+    var c m.Coordinator
+    if err := loadJSON(coordPath, &c); err != nil { return "", err }
+    dotStr := dot.FromCoordinatorWithOptions(c, dot.Options{NodeLabel: nodeLabel, EdgeLabel: edgeLabel})
+    if outPath == "" { return dotStr, nil }
+    return "", os.WriteFile(outPath, []byte(dotStr), 0o644)
+}
+
+func writeDagDot(dagPath, tasksPath, outPath, nodeLabel, edgeLabel string) (string, error) {
+    var tf m.TasksFile
+    if err := loadJSON(tasksPath, &tf); err != nil { return "", err }
+    titles := make(map[string]string)
+    for _, t := range tf.Tasks { titles[t.ID] = t.Title }
+    var df m.DagFile
+    if err := loadJSON(dagPath, &df); err != nil { return "", err }
+    dotStr := dot.FromDagWithOptions(df, titles, dot.Options{NodeLabel: nodeLabel, EdgeLabel: edgeLabel})
+    if outPath == "" { return dotStr, nil }
+    return "", os.WriteFile(outPath, []byte(dotStr), 0o644)
+}
+
+func emitDirArtifacts(dir, nodeLabel, edgeLabel string) error {
+    // coordinator
+    coord := join(dir, "coordinator.json")
+    if exists(coord) {
+        if _, err := writeCoordinatorDot(coord, join(dir, "runtime.dot"), nodeLabel, edgeLabel); err != nil { return err }
+        fmt.Println("wrote", join(dir, "runtime.dot"))
+    }
+    // dag + tasks
+    dag := join(dir, "dag.json")
+    tasks := join(dir, "tasks.json")
+    if exists(dag) && exists(tasks) {
+        if _, err := writeDagDot(dag, tasks, join(dir, "dag.dot"), nodeLabel, edgeLabel); err != nil { return err }
+        fmt.Println("wrote", join(dir, "dag.dot"))
+    }
+    return nil
+}
+
 func runExportDot() {
     fs := flag.NewFlagSet("export-dot", flag.ExitOnError)
     dir := fs.String("dir", "", "Directory containing artifacts (emits defaults)")
@@ -102,49 +139,8 @@ func runExportDot() {
 
     // Directory mode: emit both if present
     if *dir != "" {
-        emitCount := 0
-        // runtime.dot from coordinator.json
-        coord := join(*dir, "coordinator.json")
-        if exists(coord) {
-            var c m.Coordinator
-            if err := loadJSON(coord, &c); err != nil {
-                fmt.Fprintf(os.Stderr, "Failed to read %s: %v\n", coord, err)
-                os.Exit(1)
-            }
-            out := join(*dir, "runtime.dot")
-            if err := os.WriteFile(out, []byte(dot.FromCoordinatorWithOptions(c, dot.Options{NodeLabel: *nodeLabel, EdgeLabel: *edgeLabel})), 0o644); err != nil {
-                fmt.Fprintf(os.Stderr, "Failed to write %s: %v\n", out, err)
-                os.Exit(1)
-            }
-            fmt.Println("wrote", out)
-            emitCount++
-        }
-        // dag.dot from dag.json + tasks.json
-        dag := join(*dir, "dag.json")
-        tasks := join(*dir, "tasks.json")
-        if exists(dag) && exists(tasks) {
-            var tf m.TasksFile
-            if err := loadJSON(tasks, &tf); err != nil {
-                fmt.Fprintf(os.Stderr, "Failed to read %s: %v\n", tasks, err)
-                os.Exit(1)
-            }
-            titles := make(map[string]string)
-            for _, t := range tf.Tasks { titles[t.ID] = t.Title }
-            var df m.DagFile
-            if err := loadJSON(dag, &df); err != nil {
-                fmt.Fprintf(os.Stderr, "Failed to read %s: %v\n", dag, err)
-                os.Exit(1)
-            }
-            out := join(*dir, "dag.dot")
-            if err := os.WriteFile(out, []byte(dot.FromDagWithOptions(df, titles, dot.Options{NodeLabel: *nodeLabel, EdgeLabel: *edgeLabel})), 0o644); err != nil {
-                fmt.Fprintf(os.Stderr, "Failed to write %s: %v\n", out, err)
-                os.Exit(1)
-            }
-            fmt.Println("wrote", out)
-            emitCount++
-        }
-        if emitCount == 0 {
-            fmt.Fprintf(os.Stderr, "No artifacts found in %s (expected coordinator.json and/or dag.json + tasks.json)\n", *dir)
+        if err := emitDirArtifacts(*dir, *nodeLabel, *edgeLabel); err != nil {
+            fmt.Fprintf(os.Stderr, "export-dot: %v\n", err)
             os.Exit(1)
         }
         return
@@ -152,17 +148,12 @@ func runExportDot() {
 
     // Coordinator single-file mode
     if *coordPath != "" {
-        var c m.Coordinator
-        if err := loadJSON(*coordPath, &c); err != nil {
-            fmt.Fprintf(os.Stderr, "Failed to read coordinator.json: %v\n", err)
-            os.Exit(1)
-        }
-        dotStr := dot.FromCoordinatorWithOptions(c, dot.Options{NodeLabel: *nodeLabel, EdgeLabel: *edgeLabel})
-        if *outPath == "" { fmt.Print(dotStr); return }
-        if err := os.WriteFile(*outPath, []byte(dotStr), 0o644); err != nil {
+        dotStr, err := writeCoordinatorDot(*coordPath, *outPath, *nodeLabel, *edgeLabel)
+        if err != nil {
             fmt.Fprintf(os.Stderr, "Failed to write %s: %v\n", *outPath, err)
             os.Exit(1)
         }
+        if *outPath == "" { fmt.Print(dotStr) }
         return
     }
 
@@ -171,35 +162,10 @@ func runExportDot() {
         fmt.Fprintln(os.Stderr, "Usage: tasksd export-dot --dir ./plans | --coordinator ./coordinator.json | --dag ./dag.json --tasks ./tasks.json [--out ./dag.dot]")
         os.Exit(1)
     }
-
-    // Load tasks for labels
-    var tf m.TasksFile
-    if err := loadJSON(*tasksPath, &tf); err != nil {
-        fmt.Fprintf(os.Stderr, "Failed to read tasks.json: %v\n", err)
+    if dotStr, err := writeDagDot(*dagPath, *tasksPath, *outPath, *nodeLabel, *edgeLabel); err != nil {
+        fmt.Fprintf(os.Stderr, "Failed to export DOT: %v\n", err)
         os.Exit(1)
-    }
-    titleMap := make(map[string]string, len(tf.Tasks))
-    for _, t := range tf.Tasks {
-        titleMap[t.ID] = t.Title
-    }
-
-    // Load DAG
-    var df m.DagFile
-    if err := loadJSON(*dagPath, &df); err != nil {
-        fmt.Fprintf(os.Stderr, "Failed to read dag.json: %v\n", err)
-        os.Exit(1)
-    }
-
-    dotStr := dot.FromDagWithOptions(df, titleMap, dot.Options{NodeLabel: *nodeLabel, EdgeLabel: *edgeLabel})
-
-    if *outPath == "" {
-        fmt.Print(dotStr)
-        return
-    }
-    if err := os.WriteFile(*outPath, []byte(dotStr), 0o644); err != nil {
-        fmt.Fprintf(os.Stderr, "Failed to write %s: %v\n", *outPath, err)
-        os.Exit(1)
-    }
+    } else if *outPath == "" { fmt.Print(dotStr) }
 }
 
 func loadJSON(path string, v any) error {

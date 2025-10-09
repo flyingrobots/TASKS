@@ -97,6 +97,7 @@ func canonicalizeNumber(in string) (string, error) {
     allZero := (intPart == "0" && !hasFrac)
     if allZero {
         sign = ""
+        exp = ""
     }
 
     // Recompose

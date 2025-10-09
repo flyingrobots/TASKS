@@ -46,7 +46,16 @@ function parseFrontmatter(s) {
 }
 
 function stringifyFrontmatter(data, body) {
-  const lines = Object.keys(data).map(k => `${k}: ${Array.isArray(data[k]) ? JSON.stringify(data[k]) : data[k]}`);
+  const lines = Object.keys(data).map(k => {
+    const val = data[k];
+    if (Array.isArray(val) || (val && typeof val === 'object')) {
+      return `${k}: ${JSON.stringify(val)}`;
+    }
+    if (typeof val === 'string' && (val.includes(':') || val.includes('\n'))) {
+      return `${k}: "${val.replace(/"/g, '\\"')}"`;
+    }
+    return `${k}: ${val}`;
+  });
   return `---\n${lines.join('\n')}\n---\n\n${body}`;
 }
 
@@ -127,11 +136,14 @@ function updateProgress() {
   replaceBlock(path.join(TODO, 'README.md'), 'ROADMAP', lines.join('\n'));
 }
 
+function validTaskId(id) { return /^T\d{3}$/.test(id); }
+
 function main() {
   const [cmd, taskId] = process.argv.slice(2);
   if (!cmd) die('Usage: todo task <set-active|set-finished|set-merged> <TASK_ID>');
   if (cmd.startsWith('set-')) {
     if (!taskId) die('Task ID required');
+    if (!validTaskId(taskId)) die('Invalid task ID format. Expected T### (e.g., T070)');
     const lane = cmd.replace('set-','');
     moveTask(taskId, lane);
     updateProgress();

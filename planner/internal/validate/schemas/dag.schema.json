@@ -24,7 +24,8 @@
           "depth": {"type": "integer", "minimum": 0},
           "critical_path": {"type": "boolean"},
           "parallel_opportunity": {"type": "integer", "minimum": 0}
-        }
+        },
+        "additionalProperties": false
       }
     },
     "edges": {
@@ -37,10 +38,28 @@
           "to": {"type": "string"},
           "type": {"type": "string"},
           "transitive": {"type": "boolean"}
-        }
+        },
+        "additionalProperties": false
       }
     },
-    "metrics": {"type": "object"},
+    "metrics": {
+      "type": "object",
+      "properties": {
+        "min_confidence_applied": {"type":"number"},
+        "kept_by_type": {"type":"object", "additionalProperties": {"type":"integer"}},
+        "dropped_by_type": {"type":"object", "additionalProperties": {"type":"integer"}},
+        "nodes": {"type":"integer"},
+        "edges": {"type":"integer"},
+        "edge_density": {"type":"number"},
+        "width_approx": {"type":"integer"},
+        "longest_path_length": {"type":"integer"},
+        "critical_path": {"type":"array", "items": {"type":"string"}},
+        "isolated_tasks": {"type":"integer"},
+        "verb_first_pct": {"type":"number"},
+        "evidence_coverage": {"type":"number"}
+      },
+      "additionalProperties": false
+    },
     "analysis": {
       "type": "object",
       "required": ["ok"],

@@ -29,6 +29,10 @@ Use the scripts to move tasks across states; progress bars and indexes update au
 
 ## Usage
 
+## Prerequisites
+- Node.js 14+ and npm
+- Run `npm install` from repository root before using the commands below
+
 - Set a task active:
   - `npm run todo:task:set-active -- T001`
 - Finish a task:
