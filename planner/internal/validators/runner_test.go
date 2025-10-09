@@ -1,7 +1,9 @@
 package validators
 
 import (
+	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -11,6 +13,7 @@ import (
 	"testing"
 	"time"
 
+	m "github.com/james/tasks-planner/internal/model"
 	"github.com/james/tasks-planner/internal/model/testutil"
 )
 
@@ -23,7 +26,7 @@ func TestRunnerExecutesAndCaches(t *testing.T) {
 	if err != nil {
 		t.Fatalf("first run: %v", err)
 	}
-	if len(reports) != 1 || reports[0].Status != StatusPass {
+	if len(reports) != 1 || reports[0].Status != m.ValidatorStatusPass {
 		t.Fatalf("unexpected reports: %+v", reports)
 	}
 	if reports[0].Cached {
@@ -47,7 +50,7 @@ func TestRunnerErrorHandling(t *testing.T) {
 	if err == nil {
 		t.Fatalf("expected error")
 	}
-	if len(reports) != 1 || reports[0].Status != StatusError {
+	if len(reports) != 1 || reports[0].Status != m.ValidatorStatusError {
 		t.Fatalf("expected error status, got %+v", reports)
 	}
 	if reports[0].Cached {
@@ -63,6 +66,9 @@ func TestRunnerTimeout(t *testing.T) {
 	_, err := runner.Run(context.Background(), payload)
 	if err == nil {
 		t.Fatalf("expected timeout error")
+	}
+	if !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("expected deadline exceeded error, got %v", err)
 	}
 }
 
@@ -186,19 +192,23 @@ func newRunnerForTest(t *testing.T, cfg Config) *Runner {
 
 func buildMockValidator(t *testing.T, dir, source string) string {
 	t.Helper()
+	if _, err := exec.LookPath("go"); err != nil {
+		t.Skipf("skipping validator build; go binary not found: %v", err)
+	}
 	src := filepath.Join(dir, "main.go")
 	if err := os.WriteFile(src, []byte(source), 0o644); err != nil {
 		t.Fatalf("write validator: %v", err)
 	}
 	bin := filepath.Join(dir, "validator")
-	cmd := exec.Command("go", "build", "-o", bin, src)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if err := cmd.Run(); err != nil {
-		t.Fatalf("build validator: %v", err)
-	}
 	if runtime.GOOS == "windows" {
-		return bin + ".exe"
+		bin += ".exe"
+	}
+	cmd := exec.Command("go", "build", "-o", bin, src)
+	var out bytes.Buffer
+	cmd.Stdout = &out
+	cmd.Stderr = &out
+	if err := cmd.Run(); err != nil {
+		t.Fatalf("build validator: %v\n%s", err, out.String())
 	}
 	return bin
 }

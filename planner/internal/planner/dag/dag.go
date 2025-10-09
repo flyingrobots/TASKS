@@ -239,6 +239,7 @@ func Build(tasks []m.Task, edges []m.Edge, minConfidence float64) (m.DagFile, er
 	}
 
 	// Metrics
+	df.Metrics.MinConfidenceApplied = minConfidence
 	df.Metrics.Nodes = n
 	df.Metrics.Edges = len(df.Edges)
 	df.Metrics.LongestPathLength = dist[sink] + 1

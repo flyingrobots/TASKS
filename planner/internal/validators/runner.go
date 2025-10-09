@@ -18,12 +18,8 @@ import (
 	m "github.com/james/tasks-planner/internal/model"
 )
 
-const (
-	StatusPass  = "pass"
-	StatusFail  = "fail"
-	StatusError = "error"
-	StatusSkip  = "skip"
-)
+// Report is an alias to the planner model's validator report, ensuring shared semantics.
+type Report = m.ValidatorReport
 
 // Config drives validator execution.
 type Config struct {
@@ -32,17 +28,6 @@ type Config struct {
 	InterfaceCmd  string
 	CacheDir      string
 	Timeout       time.Duration
-}
-
-// Report summarizes a validator run.
-type Report struct {
-	Name      string          `json:"name"`
-	Command   string          `json:"command"`
-	InputHash string          `json:"input_hash"`
-	Status    string          `json:"status"`
-	Detail    string          `json:"detail,omitempty"`
-	RawOutput json.RawMessage `json:"raw_output,omitempty"`
-	Cached    bool            `json:"cached"`
 }
 
 // Payload is serialized and sent to validators.
@@ -151,6 +136,9 @@ func (r *Runner) runSingle(ctx context.Context, name, cmd string, payload Payloa
 		report.Status = status
 	}
 	if execErr != nil {
+		if runCtx.Err() != nil {
+			execErr = runCtx.Err()
+		}
 		if report.Detail == "" && len(stderr) > 0 {
 			report.Detail = strings.TrimSpace(string(stderr))
 		}
@@ -158,12 +146,12 @@ func (r *Runner) runSingle(ctx context.Context, name, cmd string, payload Payloa
 			report.Detail = execErr.Error()
 		}
 		if report.Status == "" {
-			report.Status = StatusError
+			report.Status = m.ValidatorStatusError
 		}
 		return report, fmt.Errorf("validator %s: %w", name, execErr)
 	}
 	if report.Status == "" {
-		report.Status = StatusPass
+		report.Status = m.ValidatorStatusPass
 	}
 	if report.Detail == "" && len(stderr) > 0 {
 		report.Detail = strings.TrimSpace(string(stderr))
@@ -209,7 +197,24 @@ func interpretOutput(raw json.RawMessage) (string, string) {
 	if err := json.Unmarshal(raw, &parsed); err != nil {
 		return "", string(raw)
 	}
-	return strings.ToLower(parsed.Status), parsed.Detail
+	return normalizeStatus(parsed.Status), parsed.Detail
+}
+
+func normalizeStatus(raw string) string {
+	switch strings.ToLower(strings.TrimSpace(raw)) {
+	case m.ValidatorStatusPass:
+		return m.ValidatorStatusPass
+	case m.ValidatorStatusFail:
+		return m.ValidatorStatusFail
+	case m.ValidatorStatusError:
+		return m.ValidatorStatusError
+	case m.ValidatorStatusSkip:
+		return m.ValidatorStatusSkip
+	case "ok":
+		return "ok"
+	default:
+		return ""
+	}
 }
 
 func defaultExec(ctx context.Context, command string, stdin []byte) ([]byte, []byte, error) {
@@ -226,6 +231,9 @@ func defaultExec(ctx context.Context, command string, stdin []byte) ([]byte, []b
 	cmd.Stderr = &errBuf
 	err := cmd.Run()
 	if err != nil {
+		if ctx.Err() != nil {
+			return out.Bytes(), errBuf.Bytes(), ctx.Err()
+		}
 		return out.Bytes(), errBuf.Bytes(), err
 	}
 	return out.Bytes(), errBuf.Bytes(), nil
@@ -242,4 +250,11 @@ func (m multiError) Error() string {
 		parts[i] = err.Error()
 	}
 	return strings.Join(parts, "; ")
+}
+
+func (m multiError) Unwrap() []error {
+	if len(m) == 0 {
+		return nil
+	}
+	return []error(m)
 }

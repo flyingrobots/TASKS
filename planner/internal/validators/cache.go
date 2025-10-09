@@ -70,7 +70,11 @@ func (c *cacheStore) Store(name, key string, rep Report) error {
 	path := c.cachePath(name)
 	entries := map[string]Report{}
 	if data, err := os.ReadFile(path); err == nil {
-		_ = json.Unmarshal(data, &entries)
+		if err := json.Unmarshal(data, &entries); err != nil {
+			return fmt.Errorf("validators: corrupt cache file %s: %w", path, err)
+		}
+	} else if !os.IsNotExist(err) {
+		return fmt.Errorf("validators: read cache %s: %w", path, err)
 	}
 	entries[key] = rep
 	encoded, err := json.MarshalIndent(entries, "", "  ")

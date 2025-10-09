@@ -547,6 +547,19 @@ func convertValidatorReports(src []validators.Report) []m.ValidatorReport {
 	if len(src) == 0 {
 		return nil
 	}
+	// Compile-time compatibility check between validators.Report and model.ValidatorReport.
+	var _ = func() m.ValidatorReport {
+		var r validators.Report
+		return m.ValidatorReport{
+			Name:      r.Name,
+			Status:    r.Status,
+			Command:   r.Command,
+			InputHash: r.InputHash,
+			Cached:    r.Cached,
+			Detail:    r.Detail,
+			RawOutput: r.RawOutput,
+		}
+	}
 	dst := make([]m.ValidatorReport, 0, len(src))
 	for _, rep := range src {
 		converted := m.ValidatorReport{
