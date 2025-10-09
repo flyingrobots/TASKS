@@ -668,7 +668,7 @@ if checks behave correctly.
 
 ---
 
-- [ ] In planner/internal/validate/schemas/waves.schema.json around lines 7 to 15, the
+- [x] In planner/internal/validate/schemas/waves.schema.json around lines 7 to 15, the
 "meta" object is missing an additionalProperties constraint which allows
 arbitrary properties; update the "meta" schema to disallow unknown fields by
 adding "additionalProperties": false alongside the existing "type", "required",
