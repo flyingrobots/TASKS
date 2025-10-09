@@ -119,6 +119,64 @@ Raw Project Doc → T.A.S.K.S. → Mathematically Optimized Plan → S.L.A.P.S. 
 
 ## **Core Features (v8.0 Specification)**
 
+## **Dependencies & Quick Setup**
+
+- Required to build/run planner:
+  - `go` (version in `planner/go.mod`, currently Go 1.25+)
+- Required to render DOT graphs to images:
+  - `graphviz` (provides the `dot` command)
+
+Install helpers:
+- POSIX/macOS/Linux:
+  - Check or install: `bash scripts/setup-deps.sh` (dry run)
+  - Auto-install with prompts: `bash scripts/setup-deps.sh --install`
+  - Non-interactive: `bash scripts/setup-deps.sh --install --yes`
+- Windows (PowerShell):
+  - Check: `pwsh -File scripts/setup-deps.ps1`
+  - Install: `pwsh -File scripts/setup-deps.ps1 -Install -Yes`
+
+Makefile shortcuts (POSIX):
+- `make setup-dry-run` — checks for deps
+- `make setup` — installs Graphviz (uses brew/apt/dnf/etc.)
+- `make example-dot` — runs the example DOT export and render
+
+Verify Graphviz:
+- `dot -V` should print the Graphviz version
+
+## **Contributing**
+
+- Day‑to‑day planning uses a markdown‑first, Git‑native tracker under `todo/`.
+- See `docs/todo-workflow.md` for task lifecycle, and use the scripts:
+  - `npm run todo:task:set-active -- T###`
+  - `npm run todo:task:set-finished -- T###`
+  - `npm run todo:update`
+
+## **Quick Start: Stub Planning Flow**
+
+Until the full planner is complete, you can generate a stub plan and immediate DOT visualizations:
+
+```
+cd planner
+go run ./cmd/tasksd plan --out ./plans                  # or: --doc ../my-spec.md --repo ..
+# DOT files are emitted automatically next to JSON artifacts:
+#  - ./plans/dag.dot (planning view)
+#  - ./plans/runtime.dot (executor view)
+# Render with Graphviz:
+dot -Tsvg ./plans/dag.dot -o ./plans/dag.svg
+dot -Tsvg ./plans/runtime.dot -o ./plans/runtime.svg
+```
+
+Stub planner flags:
+- `--doc FILE` — optional Markdown spec; headings `##` become features; bullet items under a feature become tasks.
+- `--repo DIR` — optional repo path; includes a small codebase census summary in tasks.json meta.
+- `--out DIR` — output directory for artifacts.
+
+Doc hints supported:
+- Task duration hints: `- Build tables (3h)` or `- Index docs (90m)`
+- Explicit dependencies per task: append `after: <Title or TID>[, ...]`
+  - Example: `- Seed data after: Build tables, T002`
+
+
 ### 🧠 **Intelligent Planning (T.A.S.K.S.)**
 -   **Codebase-First Analysis:** Integrates static analysis to ground plans in existing code.
 -   **Evidence-Driven Decomposition:** Every task and dependency is backed by verifiable evidence.

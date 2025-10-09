@@ -61,3 +61,8 @@ logs/
 .tmp/
 .gemini/
 gha-creds-*.json
+
+# Local planner outputs and render artifacts
+planner/plans-*/
+examples/dot-export/*.dot
+examples/dot-export/*.svg

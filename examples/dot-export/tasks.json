@@ -1,0 +1,67 @@
+{
+  "meta": {
+    "version": "v8",
+    "min_confidence": 0.7,
+    "artifact_hash": "placeholder",
+    "codebase_analysis": {},
+    "autonormalization": {"split": [], "merged": []}
+  },
+  "tasks": [
+    {
+      "id": "T001",
+      "feature_id": "F100",
+      "title": "Setup database cluster",
+      "duration": {"optimistic": 0.5, "mostLikely": 1, "pessimistic": 2},
+      "durationUnits": "hours",
+      "acceptance_checks": [
+        {"type":"command","cmd":"echo db-ready","timeoutSeconds":5}
+      ],
+      "source_evidence": [
+        {"type":"doc","source":"spec.md#database","confidence":0.9,"rationale":"cluster required"}
+      ],
+      "resources": {"exclusive":["infra.db"], "limited":[{"name":"cpu","units":1}]},
+      "execution_logging": {"format": "JSONL", "required_fields": ["timestamp","task_id","step","status","message"]},
+      "compensation": {"idempotent": true}
+    },
+    {
+      "id": "T002",
+      "feature_id": "F100",
+      "title": "Run migrations",
+      "duration": {"optimistic": 0.5, "mostLikely": 1.5, "pessimistic": 3},
+      "durationUnits": "hours",
+      "acceptance_checks": [
+        {"type":"command","cmd":"echo migrated","timeoutSeconds":10}
+      ],
+      "source_evidence": [
+        {"type":"code","source":"migrations/","confidence":0.9,"rationale":"pending migrations"}
+      ],
+      "resources": {"exclusive":["db.migrate"]},
+      "execution_logging": {"format": "JSONL", "required_fields": ["timestamp","task_id","step","status","message"]},
+      "compensation": {"idempotent": true}
+    },
+    {
+      "id": "T003",
+      "feature_id": "F200",
+      "title": "Implement API handlers",
+      "duration": {"optimistic": 2, "mostLikely": 3.5, "pessimistic": 6},
+      "durationUnits": "hours",
+      "acceptance_checks": [
+        {"type":"command","cmd":"echo api-ok","timeoutSeconds":10}
+      ],
+      "source_evidence": [
+        {"type":"doc","source":"spec.md#api","confidence":0.8,"rationale":"describe endpoints"}
+      ],
+      "resources": {"exclusive":[]},
+      "execution_logging": {"format": "JSONL", "required_fields": ["timestamp","task_id","step","status","message"]},
+      "compensation": {"idempotent": true}
+    }
+  ],
+  "dependencies": [
+    {"from":"T001","to":"T002","type":"sequential","isHard":true,"confidence":1},
+    {"from":"T002","to":"T003","type":"technical","isHard":true,"confidence":1}
+  ],
+  "resource_conflicts": {
+    "db.migrate": {"type":"exclusive","tasks":["T002"]},
+    "infra.db": {"type":"exclusive","tasks":["T001"]}
+  }
+}

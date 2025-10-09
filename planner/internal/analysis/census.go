@@ -40,24 +40,22 @@ func RunCensus(path string) (*CodebaseAnalysis, error) {
 		return nil, fmt.Errorf("path '%s' is not a directory", path)
 	}
 
-	err = filepath.WalkDir(path, func(currentPath string, d fs.DirEntry, err error) error {
-		if err != nil {
-			// fmt.Fprintf(os.Stderr, "DEBUG: WalkDir callback error at %s: %v\n", currentPath, err) // DEBUG PRINT
-			return err
-		}
-		if !d.IsDir() {
-			analysis.Files = append(analysis.Files, currentPath)
-			if strings.HasSuffix(d.Name(), ".go") {
-				analysis.GoFiles = append(analysis.GoFiles, currentPath)
-			}
-		}
-		return nil
-	})
+    err = filepath.WalkDir(path, func(currentPath string, d fs.DirEntry, err error) error {
+        if err != nil {
+            return err
+        }
+        if !d.IsDir() { // It's a file
+            analysis.Files = append(analysis.Files, currentPath)
+            if strings.HasSuffix(d.Name(), ".go") {
+                analysis.GoFiles = append(analysis.GoFiles, currentPath)
+            }
+        }
+        return nil
+    })
 
-	if err != nil {
-		// fmt.Fprintf(os.Stderr, "DEBUG: RunCensus returning error from WalkDir: %v\n", err) // DEBUG PRINT
-		return nil, fmt.Errorf("failed to walk directory '%s': %w", path, err)
-	}
+    if err != nil {
+        return nil, fmt.Errorf("failed to walk directory '%s': %w", path, err)
+    }
 
 	return analysis, nil
 }
