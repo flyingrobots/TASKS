@@ -225,6 +225,7 @@ func runPlan() {
 	interfaceCmd := fs.String("validators-interface", "", "Command to invoke the interface validator")
 	validatorsCache := fs.String("validators-cache", "", "Directory for validator result cache")
 	validatorsTimeout := fs.Duration("validators-timeout", 30*time.Second, "Timeout per validator command")
+	validatorsStrict := fs.Bool("validators-strict", false, "Fail the plan when any validator reports an error")
 	_ = fs.Parse(os.Args[2:])
 
 	if err := os.MkdirAll(*out, 0o755); err != nil {
@@ -313,13 +314,16 @@ func runPlan() {
 			fmt.Fprintf(os.Stderr, "validator runner: %v\n", err)
 			os.Exit(1)
 		}
-		reports, err := runner.Run(context.Background(), validatorPayload)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "validators failed: %v\n", err)
-			os.Exit(1)
-		}
+		reports, runErr := runner.Run(context.Background(), validatorPayload)
 		tf.Meta.ValidatorReports = convertValidatorReports(reports)
 		validatorReports = reports
+		if runErr != nil {
+			if *validatorsStrict {
+				fmt.Fprintf(os.Stderr, "validators reported issues: %v\n", runErr)
+				os.Exit(1)
+			}
+			fmt.Fprintf(os.Stderr, "validators warning: %v\n", runErr)
+		}
 	}
 
 	if err := writeArtifacts(*out, &tf, &df, &coord, features, waves, titles, validatorReports); err != nil {
@@ -537,21 +541,24 @@ func taskTitles(tasks []m.Task) map[string]string {
 	return titles
 }
 
+const validatorDetailLimit = 2048
+
 func convertValidatorReports(src []validators.Report) []m.ValidatorReport {
 	if len(src) == 0 {
 		return nil
 	}
 	dst := make([]m.ValidatorReport, 0, len(src))
 	for _, rep := range src {
-		dst = append(dst, m.ValidatorReport{
+		converted := m.ValidatorReport{
 			Name:      rep.Name,
 			Status:    rep.Status,
 			Command:   rep.Command,
 			InputHash: rep.InputHash,
 			Cached:    rep.Cached,
-			Detail:    rep.Detail,
+			Detail:    truncateDetail(rep.Detail, validatorDetailLimit),
 			RawOutput: rep.RawOutput,
-		})
+		}
+		dst = append(dst, converted)
 	}
 	return dst
 }
@@ -665,9 +672,9 @@ func writePlanSummary(outDir string, hashes map[string]string, validatorReports 
 			if rep.Cached {
 				cached = " (cached)"
 			}
-			detail := rep.Detail
+			detail := truncateDetail(rep.Detail, validatorDetailLimit)
 			if detail == "" && len(rep.RawOutput) > 0 {
-				detail = string(rep.RawOutput)
+				detail = truncateDetail(string(rep.RawOutput), validatorDetailLimit)
 			}
 			if detail != "" {
 				fmt.Fprintf(&md, "- %s: %s%s — %s\n", rep.Name, rep.Status, cached, detail)
@@ -677,6 +684,17 @@ func writePlanSummary(outDir string, hashes map[string]string, validatorReports 
 		}
 	}
 	return os.WriteFile(join(outDir, "Plan.md"), []byte(md.String()), 0o644)
+}
+
+func truncateDetail(detail string, limit int) string {
+	if limit <= 0 {
+		return detail
+	}
+	runes := []rune(detail)
+	if len(runes) <= limit {
+		return detail
+	}
+	return string(runes[:limit]) + " … (truncated)"
 }
 
 // -----------------

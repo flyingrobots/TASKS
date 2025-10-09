@@ -26,5 +26,7 @@ func main() {
 		log.Fatalf("unmarshal payload: %v", err)
 	}
 	enc := json.NewEncoder(os.Stdout)
-	_ = enc.Encode(result{Status: "ok", Validator: "mock"})
+	if err := enc.Encode(result{Status: "pass", Validator: "mock"}); err != nil {
+		log.Fatalf("encode result: %v", err)
+	}
 }

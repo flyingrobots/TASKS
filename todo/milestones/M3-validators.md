@@ -1,7 +1,7 @@
 ---
 id: M3
 title: Validators Integration
-status: backlog
+status: finished
 features:
   - F009
 reference: docs/formal-spec.md

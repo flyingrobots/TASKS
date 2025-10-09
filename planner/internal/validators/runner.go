@@ -9,13 +9,20 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/james/tasks-planner/internal/canonjson"
 	"github.com/james/tasks-planner/internal/hash"
 	m "github.com/james/tasks-planner/internal/model"
+)
+
+const (
+	StatusPass  = "pass"
+	StatusFail  = "fail"
+	StatusError = "error"
+	StatusSkip  = "skip"
 )
 
 // Config drives validator execution.
@@ -45,15 +52,14 @@ type Payload struct {
 	Coordinator *m.Coordinator `json:"coordinator,omitempty"`
 }
 
-// ExecFunc executes a command with the provided stdin.
-type ExecFunc func(ctx context.Context, cmd string, stdin []byte) ([]byte, error)
+// ExecFunc executes a command with the provided stdin and returns stdout, stderr.
+type ExecFunc func(ctx context.Context, command string, stdin []byte) ([]byte, []byte, error)
 
 // Runner orchestrates validator executions.
 type Runner struct {
-	cfg        Config
-	execFn     ExecFunc
-	cache      *cacheStore
-	cacheMutex sync.Mutex
+	cfg    Config
+	execFn ExecFunc
+	cache  *cacheStore
 }
 
 // NewRunner instantiates a runner with sane defaults.
@@ -86,24 +92,29 @@ func (r *Runner) SetExecFunc(fn ExecFunc) {
 
 // Run executes configured validators with the payload.
 func (r *Runner) Run(ctx context.Context, payload Payload) ([]Report, error) {
-	var reports []Report
-	entries := []struct {
+	type entry struct {
 		name string
 		cmd  string
-	}{
+	}
+	entries := []entry{
 		{"acceptance", r.cfg.AcceptanceCmd},
 		{"evidence", r.cfg.EvidenceCmd},
 		{"interface", r.cfg.InterfaceCmd},
 	}
+	reports := make([]Report, 0, len(entries))
+	var errs multiError
 	for _, entry := range entries {
 		if entry.cmd == "" {
 			continue
 		}
 		rep, err := r.runSingle(ctx, entry.name, entry.cmd, payload)
-		if err != nil {
-			return nil, err
-		}
 		reports = append(reports, rep)
+		if err != nil {
+			errs = append(errs, err)
+		}
+	}
+	if len(errs) > 0 {
+		return reports, errs
 	}
 	return reports, nil
 }
@@ -113,34 +124,54 @@ func (r *Runner) runSingle(ctx context.Context, name, cmd string, payload Payloa
 	if err != nil {
 		return Report{}, err
 	}
-	r.cacheMutex.Lock()
-	if cached, ok := r.cache.Load(name, inputHash); ok {
-		r.cacheMutex.Unlock()
-		cached.Cached = true
-		return cached, nil
+	rep, ok, err := r.cache.Load(name, inputHash)
+	if err != nil {
+		return Report{}, err
 	}
-	r.cacheMutex.Unlock()
+	if ok {
+		rep.Cached = true
+		return rep, nil
+	}
 
 	runCtx, cancel := context.WithTimeout(ctx, r.cfg.Timeout)
 	defer cancel()
-	stdout, err := r.execFn(runCtx, cmd, inputBytes)
-	if err != nil {
-		return Report{}, fmt.Errorf("validator %s failed: %w", name, err)
-	}
-	rep := Report{
+	stdout, stderr, execErr := r.execFn(runCtx, cmd, inputBytes)
+	raw := normalizeJSON(stdout)
+	report := Report{
 		Name:      name,
 		Command:   cmd,
 		InputHash: inputHash,
-		Status:    "ok",
-		RawOutput: normalizeJSON(stdout),
+		RawOutput: raw,
 	}
-    if len(rep.RawOutput) > 0 {
-        rep.Detail = string(rep.RawOutput)
-    }
-	r.cacheMutex.Lock()
-	r.cache.Store(name, inputHash, rep)
-	r.cacheMutex.Unlock()
-	return rep, nil
+	status, detail := interpretOutput(raw)
+	if detail != "" {
+		report.Detail = detail
+	}
+	if status != "" {
+		report.Status = status
+	}
+	if execErr != nil {
+		if report.Detail == "" && len(stderr) > 0 {
+			report.Detail = strings.TrimSpace(string(stderr))
+		}
+		if report.Detail == "" {
+			report.Detail = execErr.Error()
+		}
+		if report.Status == "" {
+			report.Status = StatusError
+		}
+		return report, fmt.Errorf("validator %s: %w", name, execErr)
+	}
+	if report.Status == "" {
+		report.Status = StatusPass
+	}
+	if report.Detail == "" && len(stderr) > 0 {
+		report.Detail = strings.TrimSpace(string(stderr))
+	}
+	if err := r.cache.Store(name, inputHash, report); err != nil {
+		return report, err
+	}
+	return report, nil
 }
 
 func encodePayload(payload Payload) ([]byte, string, error) {
@@ -163,27 +194,52 @@ func normalizeJSON(raw []byte) json.RawMessage {
 	if trimmed[0] == '{' || trimmed[0] == '[' {
 		return json.RawMessage(trimmed)
 	}
-	// treat as plain string payload
 	quoted, _ := json.Marshal(string(trimmed))
 	return json.RawMessage(quoted)
 }
 
-func defaultExec(ctx context.Context, cmd string, stdin []byte) ([]byte, error) {
-	parts := strings.Fields(cmd)
-	if len(parts) == 0 {
-		return nil, fmt.Errorf("empty command")
+func interpretOutput(raw json.RawMessage) (string, string) {
+	if len(raw) == 0 {
+		return "", ""
 	}
-	c := exec.CommandContext(ctx, parts[0], parts[1:]...)
-	c.Stdin = bytes.NewReader(stdin)
+	var parsed struct {
+		Status string `json:"status"`
+		Detail string `json:"detail"`
+	}
+	if err := json.Unmarshal(raw, &parsed); err != nil {
+		return "", string(raw)
+	}
+	return strings.ToLower(parsed.Status), parsed.Detail
+}
+
+func defaultExec(ctx context.Context, command string, stdin []byte) ([]byte, []byte, error) {
+	var cmd *exec.Cmd
+	if runtime.GOOS == "windows" {
+		cmd = exec.CommandContext(ctx, "cmd", "/c", command)
+	} else {
+		cmd = exec.CommandContext(ctx, "sh", "-c", command)
+	}
+	cmd.Stdin = bytes.NewReader(stdin)
 	var out bytes.Buffer
 	var errBuf bytes.Buffer
-	c.Stdout = &out
-	c.Stderr = &errBuf
-	if err := c.Run(); err != nil {
-		if errBuf.Len() > 0 {
-			return nil, fmt.Errorf("%w: %s", err, errBuf.String())
-		}
-		return nil, err
+	cmd.Stdout = &out
+	cmd.Stderr = &errBuf
+	err := cmd.Run()
+	if err != nil {
+		return out.Bytes(), errBuf.Bytes(), err
 	}
-	return out.Bytes(), nil
+	return out.Bytes(), errBuf.Bytes(), nil
+}
+
+type multiError []error
+
+func (m multiError) Error() string {
+	if len(m) == 0 {
+		return ""
+	}
+	parts := make([]string, len(m))
+	for i, err := range m {
+		parts[i] = err.Error()
+	}
+	return strings.Join(parts, "; ")
 }

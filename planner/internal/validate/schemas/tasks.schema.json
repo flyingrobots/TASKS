@@ -18,12 +18,23 @@
             "required": ["name", "status", "input_hash"],
             "properties": {
               "name": {"type": "string"},
-              "status": {"type": "string"},
+              "status": {
+                "type": "string",
+                "enum": ["pass", "fail", "error", "skip", "ok"]
+              },
               "command": {"type": "string"},
-              "input_hash": {"type": "string"},
-              "cached": {"type": "boolean"},
+              "input_hash": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              "cached": {
+                "type": "boolean",
+                "default": false
+              },
               "detail": {"type": "string"},
-              "raw_output": {}
+              "raw_output": {
+                "type": ["object", "string", "null"]
+              }
             },
             "additionalProperties": false
           }

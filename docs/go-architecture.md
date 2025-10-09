@@ -314,7 +314,11 @@ Each validator has two adapters: a subprocess client (exec the tool with JSON st
 - **Evidence**: every task and edge must carry at least one evidence object; the validator verifies that the excerpt exists (exact/fuzzy/semantic) and returns per-claim details; secrets are redacted **before** hashing and emission. 
 - **Interface**: produced/consumed compatibility is checked, missing producers are flagged, and version conflicts are auto-resolved when allowed by policy.
 
-Validator subprocesses consume canonical JSON payloads (`tasks`, `dag`, and `coordinator`) and return JSON diagnostics. We hash the payload before invocation and persist the report (hash + raw JSON) in a small cache so repeated `tasksd plan` runs with unchanged inputs reuse the validator response deterministically; the plan artifacts still embed the report so auditors can see what was validated.
+Validator subprocesses follow a predictable contract:
+
+- Inputs are canonical JSON payloads (`tasks`, `dag`, `coordinator`) hashed with SHA-256 prior to invocation.
+- Each payload hash is used as a cache key so repeated `tasksd plan` runs with unchanged inputs reuse validator output deterministically.
+- Cached validator reports (status, command, raw JSON) are persisted alongside artifacts and surfaced in `tasks.json.meta.validator_reports` and Plan.md for auditing.
 
 If any of those fails under “strict,” tasksd stops and emits an actionable error report instead of a half-baked plan. That’s consistent with your earlier v1/v2 “no cycles, no speculation” posture.   
 

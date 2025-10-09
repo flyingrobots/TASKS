@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	m "github.com/james/tasks-planner/internal/model"
@@ -109,13 +110,18 @@ func TestBuildTasksFromDocReadsFile(t *testing.T) {
 func TestPlanCommandWithValidators(t *testing.T) {
 	tmp := t.TempDir()
 	outDir := filepath.Join(tmp, "out")
-	validatorCmd := "go run ./internal/validators/testdata/mockvalidator/main.go"
-	cmd := exec.Command("go", "run", "./cmd/tasksd", "plan", "--out", outDir, "--validators-acceptance", validatorCmd)
-	cmd.Dir = filepath.Join("..", "..")
+	validatorBin := buildMockValidatorBinary(t, tmp)
+	repoRoot := repoRoot(t)
+	cmd := exec.Command("go", "run", "./cmd/tasksd",
+		"plan",
+		"--out", outDir,
+		"--validators-acceptance", validatorBin,
+	)
+	cmd.Dir = repoRoot
 	cmd.Stdout = &bytes.Buffer{}
 	cmd.Stderr = &bytes.Buffer{}
 	if err := cmd.Run(); err != nil {
-		t.Fatalf("tasksd plan: %v | %s", err, cmd.Stderr)
+		t.Fatalf("tasksd plan: %v\nstdout: %s\nstderr: %s", err, cmd.Stdout, cmd.Stderr)
 	}
 	contents, err := os.ReadFile(filepath.Join(outDir, "tasks.json"))
 	if err != nil {
@@ -128,12 +134,47 @@ func TestPlanCommandWithValidators(t *testing.T) {
 	if len(tf.Meta.ValidatorReports) == 0 {
 		t.Fatalf("expected validator reports recorded")
 	}
+	report := tf.Meta.ValidatorReports[0]
+	if report.Name == "" || report.Status == "" || report.InputHash == "" {
+		t.Fatalf("validator report incomplete: %+v", report)
+	}
 }
 
-func stubTasks() *m.TasksFile {
-	tf := &m.TasksFile{}
-	tf.Meta.Version = "v8"
-	tf.Meta.MinConfidence = 0.7
-	tf.Tasks = []m.Task{{ID: "T001", FeatureID: "F1", Title: "Do thing", Duration: m.DurationPERT{Optimistic: 1, MostLikely: 2, Pessimistic: 3}, DurationUnit: "hours", AcceptanceChecks: []m.AcceptanceCheck{{Type: "command", Cmd: "echo ok"}}}}
-	return tf
+func buildMockValidatorBinary(t *testing.T, dir string) string {
+	t.Helper()
+	source := `package main
+import (
+  "encoding/json"
+  "os"
+)
+func main() {
+  var payload map[string]any
+  _ = json.NewDecoder(os.Stdin).Decode(&payload)
+  json.NewEncoder(os.Stdout).Encode(map[string]string{"status":"pass","detail":"ok"})
+}
+`
+	src := filepath.Join(dir, "validator.go")
+	if err := os.WriteFile(src, []byte(source), 0o644); err != nil {
+		t.Fatalf("write validator: %v", err)
+	}
+	bin := filepath.Join(dir, "validator")
+	cmd := exec.Command("go", "build", "-o", bin, src)
+	cmd.Stdout = &bytes.Buffer{}
+	cmd.Stderr = &bytes.Buffer{}
+	if err := cmd.Run(); err != nil {
+		t.Fatalf("build validator: %v\nstdout: %s\nstderr: %s", err, cmd.Stdout, cmd.Stderr)
+	}
+	if runtime.GOOS == "windows" {
+		return bin + ".exe"
+	}
+	return bin
+}
+
+func repoRoot(t *testing.T) string {
+	t.Helper()
+	root, err := filepath.Abs(filepath.Join("..", ".."))
+	if err != nil {
+		t.Fatalf("repo root: %v", err)
+	}
+	return root
 }
