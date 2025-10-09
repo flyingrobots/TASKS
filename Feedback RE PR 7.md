@@ -1024,7 +1024,7 @@ task files and tooling can parse it consistently.
 
 ---
 
-- [ ] In docs/TEMPLATES.md around lines 1 to 90: several fenced code blocks (lines 7,
+- [x] In docs/TEMPLATES.md around lines 1 to 90: several fenced code blocks (lines 7,
 37, 41, 68, 72, 89) lack language specifiers and many fenced blocks and headings
 lack required blank lines; add appropriate language tags (use markdown for
 prose/code snippets, yaml for front-matter blocks, bash for shell/command
