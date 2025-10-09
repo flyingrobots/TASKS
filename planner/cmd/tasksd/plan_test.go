@@ -1,7 +1,10 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"testing"
 
@@ -101,4 +104,36 @@ func TestBuildTasksFromDocReadsFile(t *testing.T) {
 	if len(edges) != 0 {
 		t.Fatalf("expected no edges for single task, got %d", len(edges))
 	}
+}
+
+func TestPlanCommandWithValidators(t *testing.T) {
+	tmp := t.TempDir()
+	outDir := filepath.Join(tmp, "out")
+	validatorCmd := "go run ./internal/validators/testdata/mockvalidator/main.go"
+	cmd := exec.Command("go", "run", "./cmd/tasksd", "plan", "--out", outDir, "--validators-acceptance", validatorCmd)
+	cmd.Dir = filepath.Join("..", "..")
+	cmd.Stdout = &bytes.Buffer{}
+	cmd.Stderr = &bytes.Buffer{}
+	if err := cmd.Run(); err != nil {
+		t.Fatalf("tasksd plan: %v | %s", err, cmd.Stderr)
+	}
+	contents, err := os.ReadFile(filepath.Join(outDir, "tasks.json"))
+	if err != nil {
+		t.Fatalf("read tasks.json: %v", err)
+	}
+	var tf m.TasksFile
+	if err := json.Unmarshal(contents, &tf); err != nil {
+		t.Fatalf("unmarshal tasks.json: %v", err)
+	}
+	if len(tf.Meta.ValidatorReports) == 0 {
+		t.Fatalf("expected validator reports recorded")
+	}
+}
+
+func stubTasks() *m.TasksFile {
+	tf := &m.TasksFile{}
+	tf.Meta.Version = "v8"
+	tf.Meta.MinConfidence = 0.7
+	tf.Tasks = []m.Task{{ID: "T001", FeatureID: "F1", Title: "Do thing", Duration: m.DurationPERT{Optimistic: 1, MostLikely: 2, Pessimistic: 3}, DurationUnit: "hours", AcceptanceChecks: []m.AcceptanceCheck{{Type: "command", Cmd: "echo ok"}}}}
+	return tf
 }

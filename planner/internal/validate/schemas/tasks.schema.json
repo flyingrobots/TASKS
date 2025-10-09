@@ -10,7 +10,24 @@
       "properties": {
         "version": {"type": "string"},
         "min_confidence": {"type": "number"},
-        "artifact_hash": {"type": "string"}
+        "artifact_hash": {"type": "string"},
+        "validator_reports": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "status", "input_hash"],
+            "properties": {
+              "name": {"type": "string"},
+              "status": {"type": "string"},
+              "command": {"type": "string"},
+              "input_hash": {"type": "string"},
+              "cached": {"type": "boolean"},
+              "detail": {"type": "string"},
+              "raw_output": {}
+            },
+            "additionalProperties": false
+          }
+        }
       }
     },
     "tasks": {

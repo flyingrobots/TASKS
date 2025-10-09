@@ -170,6 +170,10 @@ Stub planner flags:
 - `--doc FILE` — optional Markdown spec; headings `##` become features; bullet items under a feature become tasks.
 - `--repo DIR` — optional repo path; includes a small codebase census summary in tasks.json meta.
 - `--out DIR` — output directory for artifacts.
+- `--validators-acceptance CMD` — optional command that validates acceptance checks (JSON payload on stdin).
+- `--validators-evidence CMD` — optional command that validates evidence quotes and confidence.
+- `--validators-interface CMD` — optional command that resolves producer/consumer interface compatibility.
+- `--validators-cache DIR` — cache directory for validator responses (defaults to `~/.tasksd/validator-cache`).
 
 Doc hints supported:
 - Task duration hints: `- Build tables (3h)` or `- Index docs (90m)`
