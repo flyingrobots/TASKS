@@ -11,21 +11,34 @@
 - External concerns (I/O, subprocess exec, cache) are invoked inline; swapping them requires integration tests.
 
 ## Target Architecture Overview
-```
-+---------------------------+
-| Application Services     |
-|  (Orchestrators)         |
-|   - PlanService          |
-|   - ExportService        |
-+-------------+-------------+
-              |
-      +-------+-------+
-      |   Domain Core |
-      |  (pure Go)    |
-      +---+-------+---+
-          |       |
-      Ports    Ports
-    (interfaces)
+```mermaid
+flowchart TD
+    subgraph ApplicationLayer[Application Services]
+        planSvc[PlanService]
+        exportSvc[ExportService]
+    end
+    subgraph DomainCore[Domain Core (pure Go)]
+        plannerEngine[Planner Engine]
+        executorEngine[Executor Engine]
+    end
+    subgraph Ports[Ports / Adapters]
+        docPort[DocPort]
+        validatorPort[ValidatorPort]
+        artifactPort[ArtifactPort]
+        analysisPort[AnalysisPort]
+        telemetryPort[TelemetryPort]
+    end
+
+    planSvc --> plannerEngine
+    exportSvc --> plannerEngine
+    plannerEngine --> validatorPort
+    plannerEngine --> docPort
+    plannerEngine --> analysisPort
+    plannerEngine --> artifactPort
+    executorEngine --> validatorPort
+    executorEngine --> telemetryPort
+    artifactPort -->|writes| Storage[(Artifacts)]
+    validatorPort -->|delegates| Validators[(Acceptance/Evidence/Interface Tools)]
 ```
 Ports / adapters:
 - **DocPort**: parse requests (file, string, remote spec) -> `[]Feature`, `[]TaskSpec`.
@@ -71,3 +84,26 @@ Ports / adapters:
 - docs/formal-spec.md §§3-15 — deterministic artifacts, validators, execution contract.
 - docs/go-architecture.md §"Validators" / §"Resource modeling".
 - README.md (stub CLI usage / validator flags).
+
+## Appendix: Adapter Interactions
+
+```mermaid
+sequenceDiagram
+    participant CLI as tasksd CLI
+    participant PlanSvc as PlanService
+    participant DocAdapter as Doc Adapter
+    participant Analysis as Census Adapter
+    participant Validator as Validator Adapter
+    participant Artifact as Artifact Adapter
+
+    CLI->>PlanSvc: Plan(request)
+    PlanSvc->>DocAdapter: Parse(spec)
+    DocAdapter-->>PlanSvc: Features/TaskSpecs
+    PlanSvc->>Analysis: RunCensus(repo)
+    Analysis-->>PlanSvc: CensusReport
+    PlanSvc->>Validator: Validate(tasks, dag, coord)
+    Validator-->>PlanSvc: ValidatorReports
+    PlanSvc->>Artifact: WriteArtifacts(plan)
+    Artifact-->>PlanSvc: HashSummary
+    PlanSvc-->>CLI: PlanResult (hashes + validator reports)
+```
