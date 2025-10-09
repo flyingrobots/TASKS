@@ -5,7 +5,7 @@ Scope: canonical JSON + hashing, schemas/models, repo census.
 Features: F001, F002, F003
 
 <!-- PROGRESS:START M1 -->
-3/4 done (75%)
+4/4 done (100%)
 <!-- PROGRESS:END M1 -->
 
 ## Links

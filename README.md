@@ -143,6 +143,14 @@ Makefile shortcuts (POSIX):
 Verify Graphviz:
 - `dot -V` should print the Graphviz version
 
+## **Contributing**
+
+- Day‑to‑day planning uses a markdown‑first, Git‑native tracker under `todo/`.
+- See `docs/todo-workflow.md` for task lifecycle, and use the scripts:
+  - `npm run todo:task:set-active -- T###`
+  - `npm run todo:task:set-finished -- T###`
+  - `npm run todo:update`
+
 ## **Quick Start: Stub Planning Flow**
 
 Until the full planner is complete, you can generate a stub plan and immediate DOT visualizations:

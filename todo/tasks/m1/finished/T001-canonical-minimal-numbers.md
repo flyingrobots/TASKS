@@ -3,7 +3,7 @@ id: T001
 milestone: m1
 features: [F001]
 title: Implement minimal-number canonical JSON
-status: active
+status: finished
 deps: []
 ---
 
