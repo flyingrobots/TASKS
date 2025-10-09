@@ -1016,7 +1016,7 @@ testability.
 
 ---
 
-- [ ] In todo/tasks/m2/finished/T060-generate-waves-preview.md around line 4, the
+- [x] In todo/tasks/m2/finished/T060-generate-waves-preview.md around line 4, the
 front matter uses the plural key "features: [F008]" but the repository schema
 expects the singular "feature". Replace the plural key with "feature: F008" (or
 "feature: \"F008\"" if quoting is used elsewhere) so the file matches the other
