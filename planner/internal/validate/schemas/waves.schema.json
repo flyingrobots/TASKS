@@ -10,8 +10,13 @@
       "additionalProperties": false,
       "properties": {
         "version": {"type": "string", "minLength": 1},
-        "planId": {"type": "string"},
-        "artifact_hash": {"type": "string"}
+        "planId": {"type": "string", "minLength": 1},
+        "artifact_hash": {
+          "type": "string",
+          "minLength": 64,
+          "maxLength": 64,
+          "pattern": "^[A-Fa-f0-9]{64}$"
+        }
       }
     },
     "waves": {

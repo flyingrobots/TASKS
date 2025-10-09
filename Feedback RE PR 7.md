@@ -640,7 +640,7 @@ Suggested change
 
 ---
 
-- [ ] In planner/internal/validate/schemas/waves.schema.json around lines 11 to 13,
+- [x] In planner/internal/validate/schemas/waves.schema.json around lines 11 to 13,
 the string fields "version", "planId", and "artifact_hash" currently accept
 empty strings; update their schemas to enforce non-empty values by adding
 "minLength": 1 for "version" and "planId", and for "artifact_hash" require a
