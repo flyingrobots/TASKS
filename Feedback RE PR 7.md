@@ -318,7 +318,7 @@ Suggested change
 
 ---
 
-- [ ] In planner/internal/planner/dag/dag.go around lines 22 to 39, the loop that
+- [x] In planner/internal/planner/dag/dag.go around lines 22 to 39, the loop that
 builds idx and order currently overwrites earlier entries when task IDs
 duplicate; detect duplicate IDs and fail loudly instead of silently overwriting:
 before assigning idx[t.ID] = i, check if t.ID already exists in idx and return

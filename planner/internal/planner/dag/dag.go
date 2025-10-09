@@ -21,10 +21,11 @@ func Build(tasks []m.Task, edges []m.Edge, minConfidence float64) (m.DagFile, er
     idx := map[string]int{}
     order := make([]string, 0, len(tasks))
     for i, t := range tasks {
-        if _, exists := idx[t.ID]; exists {
+        if prev, exists := idx[t.ID]; exists {
             df.Analysis.OK = false
-            df.Analysis.Errors = append(df.Analysis.Errors, fmt.Sprintf("duplicate task id %s", t.ID))
-            return df, fmt.Errorf("duplicate task id %s", t.ID)
+            detail := fmt.Sprintf("duplicate task id %s (first index %d, duplicate index %d)", t.ID, prev, i)
+            df.Analysis.Errors = append(df.Analysis.Errors, detail)
+            return df, errors.New(detail)
         }
         idx[t.ID] = i
         order = append(order, t.ID)
