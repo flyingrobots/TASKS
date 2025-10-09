@@ -13,7 +13,7 @@ Plan like a compiler. Execute like a swarm.
   ▄▄█ █▄▄ █▀█ █▀▀ ▄▄█   KE A PLAN
 ```
 
-## **Plan. Execute. Heal.**
+### **Plan. Execute. Heal.**
 From project chaos to deterministic calm.
 
 [![Version](https://img.shields.io/badge/version-v8.0--spec-blue.svg)](docs/v8/v8.md)
