@@ -20,7 +20,7 @@ deps: []
 
 ### Acceptance (machine-verifiable)
 
-```bash
+```json
 [
   {"type":"command","cmd":"go test ./...","timeoutSeconds":600}
 ]
