@@ -10,13 +10,11 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
-	"strings"
 	"time"
 
 	analysis "github.com/james/tasks-planner/internal/analysis"
 	"github.com/james/tasks-planner/internal/app/plan"
 	"github.com/james/tasks-planner/internal/canonjson"
-	"github.com/james/tasks-planner/internal/emitter"
 	"github.com/james/tasks-planner/internal/export/dot"
 	"github.com/james/tasks-planner/internal/hash"
 	m "github.com/james/tasks-planner/internal/model"
@@ -259,6 +257,8 @@ func runPlan() {
 
 	docLoader := plan.NewMarkdownDocLoader()
 
+	artifactWriter := plan.FileArtifactWriter{}
+
 	svc := plan.Service{
 		BuildTasks: func(ctx context.Context, docPath string) (plan.TasksResult, error) {
 			res, err := docLoader.Load(ctx, docPath)
@@ -289,13 +289,7 @@ func runPlan() {
 		BuildWaves: func(ctx context.Context, df m.DagFile, tasks []m.Task) (map[string]any, error) {
 			return buildWaves(df, tasks)
 		},
-		WriteArtifacts: func(ctx context.Context, out string, bundle plan.ArtifactBundle) (plan.ArtifactWriteResult, error) {
-			hashes, err := writeArtifacts(out, bundle.TasksFile, bundle.DagFile, bundle.Coordinator, bundle.Features, bundle.Waves, bundle.Titles, bundle.ValidatorReports)
-			if err != nil {
-				return plan.ArtifactWriteResult{}, err
-			}
-			return plan.ArtifactWriteResult{Hashes: hashes}, nil
-		},
+		WriteArtifacts: artifactWriter.Write,
 		NewValidatorRunner: func(cfg validators.Config) (plan.ValidatorRunner, error) {
 			return validators.NewRunner(cfg)
 		},
@@ -397,105 +391,6 @@ func buildWaves(df m.DagFile, tasks []m.Task) (map[string]any, error) {
 }
 
 const validatorDetailLimit = 2048
-
-func writeArtifacts(outDir string, tf *m.TasksFile, df *m.DagFile, coord *m.Coordinator, features map[string]any, waves map[string]any, titles map[string]string, validatorReports []validators.Report) (map[string]string, error) {
-	hashes := map[string]string{}
-	writeWithHash := func(name string, value any, setHash func(string)) error {
-		hashValue, err := emitter.WriteWithArtifactHash(join(outDir, name), value, setHash)
-		if err != nil {
-			return fmt.Errorf("%s: %w", name, err)
-		}
-		hashes[name] = hashValue
-		return nil
-	}
-
-	if err := writeWithHash("tasks.json", tf, func(h string) { tf.Meta.ArtifactHash = h }); err != nil {
-		return nil, err
-	}
-	df.Meta.TasksHash = hashes["tasks.json"]
-	df.Meta.ArtifactHash = ""
-	if err := writeWithHash("dag.json", df, func(h string) { df.Meta.ArtifactHash = h }); err != nil {
-		return nil, err
-	}
-
-	if meta, ok := waves["meta"].(map[string]any); ok {
-		meta["planId"] = hashes["tasks.json"]
-	}
-	if err := writeWithHash("waves.json", waves, func(h string) {
-		if meta, ok := waves["meta"].(map[string]any); ok {
-			meta["artifact_hash"] = h
-		}
-	}); err != nil {
-		return nil, err
-	}
-
-	if err := writeWithHash("features.json", features, func(h string) {
-		if meta, ok := features["meta"].(map[string]any); ok {
-			meta["artifact_hash"] = h
-		}
-	}); err != nil {
-		return nil, err
-	}
-
-	if err := writeWithHash("coordinator.json", coord, func(string) {}); err != nil {
-		return nil, err
-	}
-
-	if err := writePlanSummary(outDir, hashes, validatorReports); err != nil {
-		return nil, err
-	}
-
-	dagDot := dot.FromDagWithOptions(*df, titles, dot.Options{NodeLabel: "id-title", EdgeLabel: "type"})
-	if err := os.WriteFile(join(outDir, "dag.dot"), []byte(dagDot), 0o644); err != nil {
-		return nil, fmt.Errorf("write dag.dot: %w", err)
-	}
-	runtimeDot := dot.FromCoordinatorWithOptions(*coord, dot.Options{NodeLabel: "id-title", EdgeLabel: "type"})
-	if err := os.WriteFile(join(outDir, "runtime.dot"), []byte(runtimeDot), 0o644); err != nil {
-		return nil, fmt.Errorf("write runtime.dot: %w", err)
-	}
-	return hashes, nil
-}
-
-func writePlanSummary(outDir string, hashes map[string]string, validatorReports []validators.Report) error {
-	names := []string{"features.json", "tasks.json", "dag.json", "waves.json", "coordinator.json"}
-	var md strings.Builder
-	md.WriteString("# Plan (stub)\n\n")
-	md.WriteString("## Hashes\n\n")
-	for _, name := range names {
-		hashValue := hashes[name]
-		fmt.Fprintf(&md, "- %s: %s\n", name, hashValue)
-	}
-	if len(validatorReports) > 0 {
-		md.WriteString("\n## Validators\n\n")
-		for _, rep := range validatorReports {
-			cached := ""
-			if rep.Cached {
-				cached = " (cached)"
-			}
-			detail := truncateDetail(rep.Detail, validatorDetailLimit)
-			if detail == "" && len(rep.RawOutput) > 0 {
-				detail = truncateDetail(string(rep.RawOutput), validatorDetailLimit)
-			}
-			if detail != "" {
-				fmt.Fprintf(&md, "- %s: %s%s — %s\n", rep.Name, rep.Status, cached, detail)
-			} else {
-				fmt.Fprintf(&md, "- %s: %s%s\n", rep.Name, rep.Status, cached)
-			}
-		}
-	}
-	return os.WriteFile(join(outDir, "Plan.md"), []byte(md.String()), 0o644)
-}
-
-func truncateDetail(detail string, limit int) string {
-	if limit <= 0 {
-		return detail
-	}
-	runes := []rune(detail)
-	if len(runes) <= limit {
-		return detail
-	}
-	return string(runes[:limit]) + " … (truncated)"
-}
 
 // -----------------
 // validate
