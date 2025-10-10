@@ -5,13 +5,6 @@
 A mathematically pure DAG planner + a resilient AI execution runtime.
 Plan like a compiler. Execute like a swarm.
 
-```mermaid
-graph TB
-    tasks["T.A.S.K.S."]
-    tasks -->|"are"| sequenced["Sequenced key steps"]
-    sequenced -->|"sounds like"| plan["A plan"]
-```
-
 
 ### **Plan. Execute. Heal.**
 From project chaos to deterministic calm.
