@@ -14,6 +14,7 @@ import (
 	"time"
 
 	analysis "github.com/james/tasks-planner/internal/analysis"
+	"github.com/james/tasks-planner/internal/app/plan"
 	"github.com/james/tasks-planner/internal/canonjson"
 	"github.com/james/tasks-planner/internal/emitter"
 	"github.com/james/tasks-planner/internal/export/dot"
@@ -257,102 +258,74 @@ func runPlan() {
 		os.Exit(1)
 	}
 
-	tasks, featuresList, docEdges, docProvided, err := buildTasksFromDoc(*doc)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "plan: %v\n", err)
-		os.Exit(1)
-	}
-
-	var analysisVal any = map[string]any{}
-	if *repo != "" {
-		if a, err := analysisPkg(*repo); err == nil {
-			analysisVal = a
-		} else {
-			log.Printf("analysisPkg failed for repo %s: %v", *repo, err)
-		}
-	}
-
-	tf := m.TasksFile{}
-	tf.Meta.Version = "v8"
-	tf.Meta.MinConfidence = 0.7
-	tf.Meta.CodebaseAnalysis = analysisVal
-	tf.Meta.Autonormalization.Split = []string{}
-	tf.Meta.Autonormalization.Merged = []string{}
-	tf.Tasks = tasks
-
-	deps, resourceConflicts := inferDependencies(tasks, docEdges)
-	tf.Dependencies = deps
-	tf.ResourceConflicts = resourceConflicts
-
-	if docProvided {
-		for _, t := range tf.Tasks {
-			if len(t.AcceptanceChecks) == 0 {
-				fmt.Fprintf(os.Stderr, "task %s missing acceptance checks; add fenced ```acceptance``` block in spec\n", t.ID)
-				os.Exit(1)
+	svc := plan.Service{
+		BuildTasks: func(ctx context.Context, docPath string) (plan.TasksResult, error) {
+			tasks, featuresList, docEdges, docProvided, err := buildTasksFromDoc(docPath)
+			if err != nil {
+				return plan.TasksResult{}, err
 			}
-		}
-	}
-
-	if err := validate.TasksFile(&tf); err != nil {
-		fmt.Fprintf(os.Stderr, "tasks.json validation failed: %v\n", err)
-		os.Exit(1)
-	}
-
-	df, err := dagbuild.Build(tasks, tf.Dependencies, tf.Meta.MinConfidence)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "DAG build failed: %v\n", err)
-		os.Exit(1)
-	}
-	if err := validate.DagFile(&df); err != nil {
-		fmt.Fprintf(os.Stderr, "dag.json validation failed: %v\n", err)
-		os.Exit(1)
-	}
-
-	coord := makeCoordinator(tasks, tf.Dependencies)
-
-	waves, err := buildWaves(df, tasks)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "wavesim failed: %v\n", err)
-		os.Exit(1)
-	}
-
-	features := makeFeaturesArtifact(featuresList, tasks)
-	titles := taskTitles(tasks)
-
-	validatorPayload := validators.Payload{
-		Tasks:       &tf,
-		Dag:         &df,
-		Coordinator: &coord,
-	}
-	validatorCfg := validators.Config{
-		AcceptanceCmd: *acceptanceCmd,
-		EvidenceCmd:   *evidenceCmd,
-		InterfaceCmd:  *interfaceCmd,
-		CacheDir:      *validatorsCache,
-		Timeout:       *validatorsTimeout,
-	}
-	var validatorReports []validators.Report
-	if validatorCfg.AcceptanceCmd != "" || validatorCfg.EvidenceCmd != "" || validatorCfg.InterfaceCmd != "" {
-		runner, err := validators.NewRunner(validatorCfg)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "validator runner: %v\n", err)
-			os.Exit(1)
-		}
-		reports, runErr := runner.Run(context.Background(), validatorPayload)
-		tf.Meta.ValidatorReports = convertValidatorReports(reports)
-		validatorReports = reports
-		if runErr != nil {
-			if *validatorsStrict {
-				fmt.Fprintf(os.Stderr, "validators reported issues: %v\n", runErr)
-				os.Exit(1)
+			deps, conflicts := inferDependencies(tasks, docEdges)
+			return plan.TasksResult{
+				Tasks:             tasks,
+				Features:          toFeatureSummaries(featuresList),
+				Dependencies:      deps,
+				ResourceConflicts: conflicts,
+				DocProvided:       docProvided,
+			}, nil
+		},
+		AnalyzeRepo: func(ctx context.Context, repo string) (analysis.FileCensusCounts, error) {
+			if repo == "" {
+				return analysis.FileCensusCounts{}, nil
 			}
-			fmt.Fprintf(os.Stderr, "validators warning: %v\n", runErr)
-		}
+			counts, err := analysisPkg(repo)
+			if err != nil {
+				log.Printf("analysisPkg failed for repo %s: %v", repo, err)
+				return analysis.FileCensusCounts{}, nil
+			}
+			return counts, nil
+		},
+		BuildDAG: func(ctx context.Context, tasks []m.Task, deps []m.Edge, minConfidence float64) (m.DagFile, error) {
+			return dagbuild.Build(tasks, deps, minConfidence)
+		},
+		ValidateTasks: validate.TasksFile,
+		ValidateDag:   validate.DagFile,
+		BuildWaves: func(ctx context.Context, df m.DagFile, tasks []m.Task) (map[string]any, error) {
+			return buildWaves(df, tasks)
+		},
+		WriteArtifacts: func(ctx context.Context, out string, bundle plan.ArtifactBundle) (plan.ArtifactWriteResult, error) {
+			hashes, err := writeArtifacts(out, bundle.TasksFile, bundle.DagFile, bundle.Coordinator, bundle.Features, bundle.Waves, bundle.Titles, bundle.ValidatorReports)
+			if err != nil {
+				return plan.ArtifactWriteResult{}, err
+			}
+			return plan.ArtifactWriteResult{Hashes: hashes}, nil
+		},
+		NewValidatorRunner: func(cfg validators.Config) (plan.ValidatorRunner, error) {
+			return validators.NewRunner(cfg)
+		},
 	}
 
-	if err := writeArtifacts(*out, &tf, &df, &coord, features, waves, titles, validatorReports); err != nil {
-		fmt.Fprintf(os.Stderr, "write artifacts: %v\n", err)
+	req := plan.Request{
+		DocPath:       *doc,
+		RepoPath:      *repo,
+		OutDir:        *out,
+		MinConfidence: 0.7,
+		ValidatorConfig: validators.Config{
+			AcceptanceCmd: *acceptanceCmd,
+			EvidenceCmd:   *evidenceCmd,
+			InterfaceCmd:  *interfaceCmd,
+			CacheDir:      *validatorsCache,
+			Timeout:       *validatorsTimeout,
+		},
+		StrictValidators: *validatorsStrict,
+	}
+
+	res, err := svc.Plan(context.Background(), req)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%v\n", err)
 		os.Exit(1)
+	}
+	for _, warn := range res.Warnings {
+		fmt.Fprintf(os.Stderr, "validators warning: %s\n", warn)
 	}
 
 	fmt.Println("Plan stub written to", *out)
@@ -361,6 +334,17 @@ func runPlan() {
 type featureSummary struct {
 	ID    string
 	Title string
+}
+
+func toFeatureSummaries(in []featureSummary) []plan.FeatureSummary {
+	if len(in) == 0 {
+		return nil
+	}
+	out := make([]plan.FeatureSummary, 0, len(in))
+	for _, f := range in {
+		out = append(out, plan.FeatureSummary{ID: f.ID, Title: f.Title})
+	}
+	return out
 }
 
 func buildTasksFromDoc(docPath string) ([]m.Task, []featureSummary, []m.Edge, bool, error) {
@@ -567,40 +551,7 @@ func taskTitles(tasks []m.Task) map[string]string {
 
 const validatorDetailLimit = 2048
 
-func convertValidatorReports(src []validators.Report) []m.ValidatorReport {
-	if len(src) == 0 {
-		return nil
-	}
-	// Compile-time compatibility check between validators.Report and model.ValidatorReport.
-	var _ = func() m.ValidatorReport {
-		var r validators.Report
-		return m.ValidatorReport{
-			Name:      r.Name,
-			Status:    r.Status,
-			Command:   r.Command,
-			InputHash: r.InputHash,
-			Cached:    r.Cached,
-			Detail:    r.Detail,
-			RawOutput: r.RawOutput,
-		}
-	}
-	dst := make([]m.ValidatorReport, 0, len(src))
-	for _, rep := range src {
-		converted := m.ValidatorReport{
-			Name:      rep.Name,
-			Status:    rep.Status,
-			Command:   rep.Command,
-			InputHash: rep.InputHash,
-			Cached:    rep.Cached,
-			Detail:    truncateDetail(rep.Detail, validatorDetailLimit),
-			RawOutput: rep.RawOutput,
-		}
-		dst = append(dst, converted)
-	}
-	return dst
-}
-
-func writeArtifacts(outDir string, tf *m.TasksFile, df *m.DagFile, coord *m.Coordinator, features map[string]any, waves map[string]any, titles map[string]string, validatorReports []validators.Report) error {
+func writeArtifacts(outDir string, tf *m.TasksFile, df *m.DagFile, coord *m.Coordinator, features map[string]any, waves map[string]any, titles map[string]string, validatorReports []validators.Report) (map[string]string, error) {
 	hashes := map[string]string{}
 	writeWithHash := func(name string, value any, setHash func(string)) error {
 		hashValue, err := emitter.WriteWithArtifactHash(join(outDir, name), value, setHash)
@@ -612,12 +563,12 @@ func writeArtifacts(outDir string, tf *m.TasksFile, df *m.DagFile, coord *m.Coor
 	}
 
 	if err := writeWithHash("tasks.json", tf, func(h string) { tf.Meta.ArtifactHash = h }); err != nil {
-		return err
+		return nil, err
 	}
 	df.Meta.TasksHash = hashes["tasks.json"]
 	df.Meta.ArtifactHash = ""
 	if err := writeWithHash("dag.json", df, func(h string) { df.Meta.ArtifactHash = h }); err != nil {
-		return err
+		return nil, err
 	}
 
 	if meta, ok := waves["meta"].(map[string]any); ok {
@@ -628,7 +579,7 @@ func writeArtifacts(outDir string, tf *m.TasksFile, df *m.DagFile, coord *m.Coor
 			meta["artifact_hash"] = h
 		}
 	}); err != nil {
-		return err
+		return nil, err
 	}
 
 	if err := writeWithHash("features.json", features, func(h string) {
@@ -636,26 +587,26 @@ func writeArtifacts(outDir string, tf *m.TasksFile, df *m.DagFile, coord *m.Coor
 			meta["artifact_hash"] = h
 		}
 	}); err != nil {
-		return err
+		return nil, err
 	}
 
 	if err := writeWithHash("coordinator.json", coord, func(string) {}); err != nil {
-		return err
+		return nil, err
 	}
 
 	if err := writePlanSummary(outDir, hashes, validatorReports); err != nil {
-		return err
+		return nil, err
 	}
 
 	dagDot := dot.FromDagWithOptions(*df, titles, dot.Options{NodeLabel: "id-title", EdgeLabel: "type"})
 	if err := os.WriteFile(join(outDir, "dag.dot"), []byte(dagDot), 0o644); err != nil {
-		return fmt.Errorf("write dag.dot: %w", err)
+		return nil, fmt.Errorf("write dag.dot: %w", err)
 	}
 	runtimeDot := dot.FromCoordinatorWithOptions(*coord, dot.Options{NodeLabel: "id-title", EdgeLabel: "type"})
 	if err := os.WriteFile(join(outDir, "runtime.dot"), []byte(runtimeDot), 0o644); err != nil {
-		return fmt.Errorf("write runtime.dot: %w", err)
+		return nil, fmt.Errorf("write runtime.dot: %w", err)
 	}
-	return nil
+	return hashes, nil
 }
 
 func applyTaskDefaults(task *m.Task) {
