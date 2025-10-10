@@ -600,60 +600,72 @@ func convertValidatorReports(src []validators.Report) []m.ValidatorReport {
 	return dst
 }
 
+type artifactErrors []error
+
+func (a artifactErrors) Error() string {
+	if len(a) == 0 {
+		return ""
+	}
+	parts := make([]string, len(a))
+	for i, err := range a {
+		parts[i] = err.Error()
+	}
+	return strings.Join(parts, "; ")
+}
+
 func writeArtifacts(outDir string, tf *m.TasksFile, df *m.DagFile, coord *m.Coordinator, features map[string]any, waves map[string]any, titles map[string]string, validatorReports []validators.Report) error {
 	hashes := map[string]string{}
-	writeWithHash := func(name string, value any, setHash func(string)) error {
+	errs := artifactErrors{}
+	writeWithHash := func(name string, value any, setHash func(string)) {
 		hashValue, err := emitter.WriteWithArtifactHash(join(outDir, name), value, setHash)
 		if err != nil {
-			return fmt.Errorf("%s: %w", name, err)
+			errs = append(errs, fmt.Errorf("%s: %w", name, err))
+			return
 		}
 		hashes[name] = hashValue
-		return nil
+		setHash(hashValue)
 	}
 
-	if err := writeWithHash("tasks.json", tf, func(h string) { tf.Meta.ArtifactHash = h }); err != nil {
-		return err
+	writeWithHash("tasks.json", tf, func(h string) { tf.Meta.ArtifactHash = h })
+	if h, ok := hashes["tasks.json"]; ok {
+		df.Meta.TasksHash = h
 	}
-	df.Meta.TasksHash = hashes["tasks.json"]
 	df.Meta.ArtifactHash = ""
-	if err := writeWithHash("dag.json", df, func(h string) { df.Meta.ArtifactHash = h }); err != nil {
-		return err
-	}
+	writeWithHash("dag.json", df, func(h string) { df.Meta.ArtifactHash = h })
 
 	if meta, ok := waves["meta"].(map[string]any); ok {
-		meta["planId"] = hashes["tasks.json"]
+		if h, ok := hashes["tasks.json"]; ok {
+			meta["planId"] = h
+		}
 	}
-	if err := writeWithHash("waves.json", waves, func(h string) {
+	writeWithHash("waves.json", waves, func(h string) {
 		if meta, ok := waves["meta"].(map[string]any); ok {
 			meta["artifact_hash"] = h
 		}
-	}); err != nil {
-		return err
-	}
+	})
 
-	if err := writeWithHash("features.json", features, func(h string) {
+	writeWithHash("features.json", features, func(h string) {
 		if meta, ok := features["meta"].(map[string]any); ok {
 			meta["artifact_hash"] = h
 		}
-	}); err != nil {
-		return err
-	}
+	})
 
-	if err := writeWithHash("coordinator.json", coord, func(string) {}); err != nil {
-		return err
-	}
+	writeWithHash("coordinator.json", coord, func(string) {})
 
 	if err := writePlanSummary(outDir, hashes, validatorReports); err != nil {
-		return err
+		errs = append(errs, err)
 	}
 
 	dagDot := dot.FromDagWithOptions(*df, titles, dot.Options{NodeLabel: "id-title", EdgeLabel: "type"})
 	if err := os.WriteFile(join(outDir, "dag.dot"), []byte(dagDot), 0o644); err != nil {
-		return fmt.Errorf("write dag.dot: %w", err)
+		errs = append(errs, fmt.Errorf("write dag.dot: %w", err))
 	}
 	runtimeDot := dot.FromCoordinatorWithOptions(*coord, dot.Options{NodeLabel: "id-title", EdgeLabel: "type"})
 	if err := os.WriteFile(join(outDir, "runtime.dot"), []byte(runtimeDot), 0o644); err != nil {
-		return fmt.Errorf("write runtime.dot: %w", err)
+		errs = append(errs, fmt.Errorf("write runtime.dot: %w", err))
+	}
+	if len(errs) > 0 {
+		return errs
 	}
 	return nil
 }

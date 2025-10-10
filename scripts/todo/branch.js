@@ -1,9 +1,18 @@
 #!/usr/bin/env node
-const { execFileSync } = require('node:child_process');
+const { spawnSync } = require('node:child_process');
 
-function run(cmd, args, opts={}) {
-  try { return execFileSync(cmd, args, { stdio: 'inherit', ...opts }); }
-  catch (e) { process.exit(e.status || 1); }
+function run(cmd, args, opts = {}) {
+  const result = spawnSync(cmd, args, {
+    stdio: 'inherit',
+    encoding: 'utf8',
+    ...opts,
+  });
+  if (result.status !== 0) {
+    const err = new Error(`command failed: ${cmd} ${args.join(' ')}`);
+    err.result = result;
+    throw err;
+  }
+  return result;
 }
 
 function main() {
@@ -14,16 +23,34 @@ function main() {
     process.exit(1);
   }
   const branch = `feat/${feature}-task-${taskId}`;
-  run('git', ['fetch', 'origin']);
-  // refuse to overwrite existing branch
   try {
-    run('git', ['rev-parse', '--verify', branch], { stdio: 'pipe' });
+    run('git', ['fetch', 'origin']);
+  } catch (err) {
+    console.error('git fetch failed:', err.result?.stderr || err.message);
+    process.exit(err.result?.status || 1);
+  }
+
+  const existsCheck = spawnSync('git', ['rev-parse', '--verify', branch], {
+    stdio: 'pipe',
+    encoding: 'utf8',
+  });
+  if (existsCheck.status === 0) {
     console.error(`Branch ${branch} already exists. Aborting.`);
     process.exit(1);
-  } catch (_) {
-    // rev-parse failed -> branch does not exist; proceed
   }
-  run('git', ['checkout', '-b', branch, 'origin/main']);
+  if (existsCheck.error) {
+    console.error('Failed to check existing branches:', existsCheck.error.message);
+    process.exit(1);
+  }
+
+  const checkout = spawnSync('git', ['checkout', '-b', branch, 'origin/main'], {
+    stdio: 'inherit',
+    encoding: 'utf8',
+  });
+  if (checkout.status !== 0) {
+    console.error('git checkout failed:', checkout.stderr || 'unknown error');
+    process.exit(checkout.status || 1);
+  }
   console.log(`Switched to branch ${branch}`);
 }
 
