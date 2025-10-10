@@ -256,6 +256,7 @@ func runPlan() {
 	}
 
 	docLoader := plan.NewMarkdownDocLoader()
+	analyzer := plan.CensusAnalyzer{}
 
 	artifactWriter := plan.FileArtifactWriter{}
 
@@ -274,9 +275,9 @@ func runPlan() {
 			if repo == "" {
 				return analysis.FileCensusCounts{}, nil
 			}
-			counts, err := analysisPkg(repo)
+			counts, err := analyzer.Analyze(ctx, repo)
 			if err != nil {
-				log.Printf("analysisPkg failed for repo %s: %v", repo, err)
+				log.Printf("analysis failed for repo %s: %v", repo, err)
 				return analysis.FileCensusCounts{}, nil
 			}
 			return counts, nil
@@ -493,13 +494,4 @@ func runValidate() {
 		os.Exit(2)
 	}
 	fmt.Println("All artifacts valid.")
-}
-
-// analysisPkg wraps the codebase census but returns a compact map for embedding.
-func analysisPkg(path string) (analysis.FileCensusCounts, error) {
-	a, err := analysis.RunCensus(path)
-	if err != nil {
-		return analysis.FileCensusCounts{}, err
-	}
-	return analysis.FileCensusCounts{Files: len(a.Files), GoFiles: len(a.GoFiles)}, nil
 }
