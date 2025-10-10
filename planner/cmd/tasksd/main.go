@@ -18,7 +18,6 @@ import (
 	"github.com/james/tasks-planner/internal/hash"
 	m "github.com/james/tasks-planner/internal/model"
 	dagbuild "github.com/james/tasks-planner/internal/planner/dag"
-	wavesim "github.com/james/tasks-planner/internal/planner/wavesim"
 	"github.com/james/tasks-planner/internal/validate"
 	validators "github.com/james/tasks-planner/internal/validators"
 )
@@ -257,6 +256,7 @@ func runPlan() {
 	docLoader := plan.NewMarkdownDocLoader()
 	analyzer := plan.CensusAnalyzer{}
 	depResolver := plan.DefaultDependencyResolver{}
+	waveBuilder := plan.DefaultWaveBuilder{}
 	artifactWriter := plan.FileArtifactWriter{}
 
 	svc := plan.Service{
@@ -280,9 +280,7 @@ func runPlan() {
 		},
 		ValidateTasks: validate.TasksFile,
 		ValidateDag:   validate.DagFile,
-		BuildWaves: func(ctx context.Context, df m.DagFile, tasks []m.Task) (map[string]any, error) {
-			return buildWaves(df, tasks)
-		},
+		BuildWaves: waveBuilder.Build,
 		WriteArtifacts: artifactWriter.Write,
 		NewValidatorRunner: func(cfg validators.Config) (plan.ValidatorRunner, error) {
 			return validators.NewRunner(cfg)
@@ -314,35 +312,6 @@ func runPlan() {
 	}
 
 	fmt.Println("Plan stub written to", *out)
-}
-
-func makeCoordinator(tasks []m.Task, deps []m.Edge) m.Coordinator {
-	coord := m.Coordinator{}
-	coord.Version = "v8"
-	coord.Graph.Nodes = tasks
-	coord.Graph.Edges = deps
-	coord.Config.Resources.Catalog = map[string]struct {
-		Capacity  int    `json:"capacity"`
-		Mode      string `json:"mode"`
-		LockOrder int    `json:"lock_order"`
-	}{}
-	coord.Config.Resources.Profiles = map[string]map[string]int{"default": {}}
-	coord.Config.Policies.ConcurrencyMax = 4
-	coord.Config.Policies.LockOrdering = []string{}
-	coord.Metrics.Estimates.P50TotalHours = 6
-	coord.Metrics.Estimates.LongestPathLength = 3
-	coord.Metrics.Estimates.WidthApprox = 1
-	return coord
-}
-
-func buildWaves(df m.DagFile, tasks []m.Task) (map[string]any, error) {
-	waves := map[string]any{"meta": map[string]any{"version": "v8", "planId": "", "artifact_hash": ""}}
-	ids, err := wavesim.Generate(df, tasks)
-	if err != nil {
-		return nil, err
-	}
-	waves["waves"] = ids
-	return waves, nil
 }
 
 const validatorDetailLimit = 2048
