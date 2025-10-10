@@ -56,6 +56,7 @@ type Service struct {
 	AnalyzeRepo        func(ctx context.Context, repo string) (analysis.FileCensusCounts, error)
 	ResolveDeps        func(tasks []m.Task, docEdges []m.Edge) ([]m.Edge, map[string]any)
 	BuildDAG           func(ctx context.Context, tasks []m.Task, deps []m.Edge, minConfidence float64) (m.DagFile, error)
+	BuildCoordinator   func(tasks []m.Task, deps []m.Edge) m.Coordinator
 	ValidateTasks      func(tf *m.TasksFile) error
 	ValidateDag        func(df *m.DagFile) error
 	BuildWaves         func(ctx context.Context, df m.DagFile, tasks []m.Task) (map[string]any, error)
@@ -146,7 +147,12 @@ func (s Service) Plan(ctx context.Context, req Request) (Result, error) {
 
 	titles := taskTitles(tf.Tasks)
 
-	coord := makeCoordinator(tf.Tasks, tf.Dependencies)
+	var coord m.Coordinator
+	if s.BuildCoordinator != nil {
+		coord = s.BuildCoordinator(tf.Tasks, tf.Dependencies)
+	} else {
+		coord = makeCoordinator(tf.Tasks, tf.Dependencies)
+	}
 
 	var validatorReports []validators.Report
 	var warnings []string

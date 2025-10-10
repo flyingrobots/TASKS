@@ -257,6 +257,7 @@ func runPlan() {
 	analyzer := plan.CensusAnalyzer{}
 	depResolver := plan.DefaultDependencyResolver{}
 	waveBuilder := plan.DefaultWaveBuilder{}
+	coordBuilder := plan.DefaultCoordinatorBuilder{}
 	artifactWriter := plan.FileArtifactWriter{}
 
 	svc := plan.Service{
@@ -278,10 +279,11 @@ func runPlan() {
 		BuildDAG: func(ctx context.Context, tasks []m.Task, deps []m.Edge, minConfidence float64) (m.DagFile, error) {
 			return dagbuild.Build(tasks, deps, minConfidence)
 		},
-		ValidateTasks: validate.TasksFile,
-		ValidateDag:   validate.DagFile,
-		BuildWaves: waveBuilder.Build,
-		WriteArtifacts: artifactWriter.Write,
+		ValidateTasks:    validate.TasksFile,
+		ValidateDag:      validate.DagFile,
+		BuildWaves:       waveBuilder.Build,
+		BuildCoordinator: coordBuilder.Build,
+		WriteArtifacts:   artifactWriter.Write,
 		NewValidatorRunner: func(cfg validators.Config) (plan.ValidatorRunner, error) {
 			return validators.NewRunner(cfg)
 		},
