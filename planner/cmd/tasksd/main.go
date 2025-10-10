@@ -623,7 +623,6 @@ func writeArtifacts(outDir string, tf *m.TasksFile, df *m.DagFile, coord *m.Coor
 			return
 		}
 		hashes[name] = hashValue
-		setHash(hashValue)
 	}
 
 	writeWithHash("tasks.json", tf, func(h string) { tf.Meta.ArtifactHash = h })

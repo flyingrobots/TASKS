@@ -2,14 +2,19 @@
 const { spawnSync } = require('node:child_process');
 
 function run(cmd, args, opts = {}) {
+  const stdio = opts.stdio ?? 'inherit';
   const result = spawnSync(cmd, args, {
-    stdio: 'inherit',
+    stdio,
     encoding: 'utf8',
     ...opts,
   });
   if (result.status !== 0) {
-    const err = new Error(`command failed: ${cmd} ${args.join(' ')}`);
-    err.result = result;
+    const err = new Error(`command failed: ${cmd} ${args.join(' ')} (exit ${result.status ?? 'unknown'})`);
+    err.exitStatus = result.status ?? 1;
+    if (stdio === 'pipe') {
+      err.stdout = result.stdout?.toString();
+      err.stderr = result.stderr?.toString();
+    }
     throw err;
   }
   return result;
@@ -26,30 +31,26 @@ function main() {
   try {
     run('git', ['fetch', 'origin']);
   } catch (err) {
-    console.error('git fetch failed:', err.result?.stderr || err.message);
-    process.exit(err.result?.status || 1);
+    console.error('git fetch failed:', err.stderr?.trim() || err.message);
+    process.exit(err.exitStatus || 1);
   }
 
-  const existsCheck = spawnSync('git', ['rev-parse', '--verify', branch], {
-    stdio: 'pipe',
-    encoding: 'utf8',
-  });
-  if (existsCheck.status === 0) {
+  try {
+    run('git', ['rev-parse', '--verify', branch], { stdio: 'pipe' });
     console.error(`Branch ${branch} already exists. Aborting.`);
     process.exit(1);
-  }
-  if (existsCheck.error) {
-    console.error('Failed to check existing branches:', existsCheck.error.message);
-    process.exit(1);
+  } catch (err) {
+    if ((err.exitStatus ?? 0) !== 128) {
+      console.error('Failed to check existing branches:', err.stderr?.trim() || err.message);
+      process.exit(err.exitStatus || 1);
+    }
   }
 
-  const checkout = spawnSync('git', ['checkout', '-b', branch, 'origin/main'], {
-    stdio: 'inherit',
-    encoding: 'utf8',
-  });
-  if (checkout.status !== 0) {
-    console.error('git checkout failed:', checkout.stderr || 'unknown error');
-    process.exit(checkout.status || 1);
+  try {
+    run('git', ['checkout', '-b', branch, 'origin/main']);
+  } catch (err) {
+    console.error('git checkout failed:', err.stderr?.trim() || err.message);
+    process.exit(err.exitStatus || 1);
   }
   console.log(`Switched to branch ${branch}`);
 }
