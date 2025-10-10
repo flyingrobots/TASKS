@@ -59,7 +59,6 @@ func Build(tasks []m.Task, edges []m.Edge, minConfidence float64) (m.DagFile, er
 			continue
 		}
 		kept = append(kept, edgeRec{From: e.From, To: e.To, Type: e.Type})
-		df.Metrics.KeptByType[typeKey]++
 	}
 
 	// build adjacency
@@ -237,6 +236,13 @@ func Build(tasks []m.Task, edges []m.Edge, minConfidence float64) (m.DagFile, er
 			Transitive bool   `json:"transitive"`
 		}{From: e.F, To: e.T, Type: e.Ty, Transitive: false})
 	}
+
+	// Recompute kept edge counts after transitive reduction.
+	counts := map[string]int{}
+	for _, edge := range df.Edges {
+		counts[edgeTypeKey(edge.Type)]++
+	}
+	df.Metrics.KeptByType = counts
 
 	// Metrics
 	df.Metrics.MinConfidenceApplied = minConfidence

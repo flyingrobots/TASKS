@@ -220,12 +220,36 @@ func runPlan() {
 	doc := fs.String("doc", "", "Path to plan document (unused in stub)")
 	repo := fs.String("repo", ".", "Path to codebase for census (optional)")
 	out := fs.String("out", "./plans", "Output directory for artifacts")
-	acceptanceCmd := fs.String("validators-acceptance", "", "Command to invoke the acceptance validator (reads JSON on stdin)")
-	evidenceCmd := fs.String("validators-evidence", "", "Command to invoke the evidence validator")
-	interfaceCmd := fs.String("validators-interface", "", "Command to invoke the interface validator")
-	validatorsCache := fs.String("validators-cache", "", "Directory for validator result cache")
-	validatorsTimeout := fs.Duration("validators-timeout", 30*time.Second, "Timeout per validator command")
-	validatorsStrict := fs.Bool("validators-strict", false, "Fail the plan when any validator reports an error")
+	acceptanceCmd := fs.String(
+		"validators-acceptance",
+		"",
+		"Executable path or shell command for the acceptance validator; tasksd runs it via the system shell, streams canonical plan JSON on stdin, and expects a JSON report on stdout.",
+	)
+	evidenceCmd := fs.String(
+		"validators-evidence",
+		"",
+		"Executable path or shell command for the evidence validator; supports arguments and runs via the system shell. Output must be JSON on stdout matching the validator report schema.",
+	)
+	interfaceCmd := fs.String(
+		"validators-interface",
+		"",
+		"Executable path or shell command for the interface validator; executed through the system shell with JSON input on stdin and JSON report expected on stdout.",
+	)
+	validatorsCache := fs.String(
+		"validators-cache",
+		"",
+		"Filesystem directory for cached validator reports (created if missing).",
+	)
+	validatorsTimeout := fs.Duration(
+		"validators-timeout",
+		30*time.Second,
+		"Timeout applied to each validator command invocation.",
+	)
+	validatorsStrict := fs.Bool(
+		"validators-strict",
+		false,
+		"Exit with an error when any validator fails (default logs warnings only).",
+	)
 	_ = fs.Parse(os.Args[2:])
 
 	if err := os.MkdirAll(*out, 0o755); err != nil {

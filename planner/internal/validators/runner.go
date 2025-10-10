@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 
@@ -54,7 +55,10 @@ func NewRunner(cfg Config) (*Runner, error) {
 	}
 	cacheDir := cfg.CacheDir
 	if cacheDir == "" {
-		home, _ := os.UserHomeDir()
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return nil, fmt.Errorf("validators: resolve cache dir (set --validators-cache): %w", err)
+		}
 		if home == "" {
 			return nil, errors.New("validators: resolve cache dir (set --validators-cache)")
 		}
@@ -182,8 +186,9 @@ func normalizeJSON(raw []byte) json.RawMessage {
 	if trimmed[0] == '{' || trimmed[0] == '[' {
 		return json.RawMessage(trimmed)
 	}
-	quoted, _ := json.Marshal(string(trimmed))
-	return json.RawMessage(quoted)
+	// Use strconv.Quote to avoid Marshal errors while preserving JSON string encoding.
+	quoted := strconv.Quote(string(trimmed))
+	return json.RawMessage([]byte(quoted))
 }
 
 func interpretOutput(raw json.RawMessage) (string, string) {
