@@ -17,7 +17,6 @@ import (
 	"github.com/james/tasks-planner/internal/export/dot"
 	"github.com/james/tasks-planner/internal/hash"
 	m "github.com/james/tasks-planner/internal/model"
-	dagbuild "github.com/james/tasks-planner/internal/planner/dag"
 	"github.com/james/tasks-planner/internal/validate"
 	validators "github.com/james/tasks-planner/internal/validators"
 )
@@ -253,40 +252,17 @@ func runPlan() {
 		os.Exit(1)
 	}
 
-	docLoader := plan.NewMarkdownDocLoader()
-	analyzer := plan.CensusAnalyzer{}
-	depResolver := plan.DefaultDependencyResolver{}
-	waveBuilder := plan.DefaultWaveBuilder{}
-	coordBuilder := plan.DefaultCoordinatorBuilder{}
-	artifactWriter := plan.FileArtifactWriter{}
-
-	svc := plan.Service{
-		BuildTasks: func(ctx context.Context, docPath string) (plan.TasksResult, error) {
-			return docLoader.Load(ctx, docPath)
-		},
-		AnalyzeRepo: func(ctx context.Context, repo string) (analysis.FileCensusCounts, error) {
-			if repo == "" {
-				return analysis.FileCensusCounts{}, nil
-			}
-			counts, err := analyzer.Analyze(ctx, repo)
-			if err != nil {
-				log.Printf("analysis failed for repo %s: %v", repo, err)
-				return analysis.FileCensusCounts{}, nil
-			}
-			return counts, nil
-		},
-		ResolveDeps: depResolver.Resolve,
-		BuildDAG: func(ctx context.Context, tasks []m.Task, deps []m.Edge, minConfidence float64) (m.DagFile, error) {
-			return dagbuild.Build(tasks, deps, minConfidence)
-		},
-		ValidateTasks:    validate.TasksFile,
-		ValidateDag:      validate.DagFile,
-		BuildWaves:       waveBuilder.Build,
-		BuildCoordinator: coordBuilder.Build,
-		WriteArtifacts:   artifactWriter.Write,
-		NewValidatorRunner: func(cfg validators.Config) (plan.ValidatorRunner, error) {
-			return validators.NewRunner(cfg)
-		},
+	svc := plan.NewDefaultService()
+	svc.AnalyzeRepo = func(ctx context.Context, repo string) (analysis.FileCensusCounts, error) {
+		if repo == "" {
+			return analysis.FileCensusCounts{}, nil
+		}
+		counts, err := plan.CensusAnalyzer{}.Analyze(ctx, repo)
+		if err != nil {
+			log.Printf("analysis failed for repo %s: %v", repo, err)
+			return analysis.FileCensusCounts{}, nil
+		}
+		return counts, nil
 	}
 
 	req := plan.Request{

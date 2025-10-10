@@ -257,7 +257,7 @@ That is directly aligned with the deterministic-output guarantees you called out
 
 The planner does six things in order, as prose—not magic.
 
-> Implementation note: `cmd/tasksd` delegates orchestration to `internal/app/plan.Service`. The CLI wires filesystem/validator/doc adapters; the service coordinates task loading, DAG build, validation, wave preview, and artifact emission. This keeps the domain workflow pure and lets tests exercise the planner with in-memory adapters.
+> Implementation note: `cmd/tasksd` delegates orchestration to `internal/app/plan.Service`. The default wiring lives in `plan.NewDefaultService()`, which assembles the Markdown doc loader, census analyzer, dependency resolver, wave simulator, coordinator builder, artifact writer, and validator runner behind small interfaces. The CLI only overrides behavior (e.g., logging analysis failures) while the service coordinates task loading, DAG build, validation, wave preview, and artifact emission. This keeps the domain workflow pure and lets tests exercise the planner with in-memory adapters.
 
 **First**, it ingests the PLAN_DOC and runs a codebase census. In practice, we shell out to ast-grep for polyglot patterns (Prisma, Drizzle, Knex, Sequelize, Rails), deployment YAMLs, test fixtures, and environment access hotspots; we then normalize findings into tasks.json.meta.codebase_analysis.shared_resources with names, locations, constraints, and rationales. This is straight from your enhanced codebase-first method. 
 
