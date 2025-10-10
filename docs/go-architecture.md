@@ -279,6 +279,8 @@ Finally, tasksd emits artifacts with canonical JSON and embedded SHA-256 hashes,
 
 ## **The executor (slapsd) in Go, exactly how it runs**
 
+> Implementation note: `slapsd` now delegates to `internal/app/exec.Service` (via `exec.NewDefaultService`). The default wiring currently stubs the runtime loop, but the shape of the adapter boundary is established so frontier scheduling, resource arbitration, and validator reruns can be injected just like the planner’s ports.
+
 At startup, slapsd loads **coordinator.json**, registers resource capacities per profile (local/ci/prod), and builds a pure structural graph (edges: hard structural only). It spawns the main loop:
 
 1. **Frontier formation**: all tasks whose hard predecessors are complete move to the ready set.
