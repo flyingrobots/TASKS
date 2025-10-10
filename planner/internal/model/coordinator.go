@@ -17,8 +17,8 @@ type Coordinator struct {
 			Profiles map[string]map[string]int `json:"profiles"`
 		} `json:"resources"`
 		Policies struct {
-			ConcurrencyMax           int              `json:"concurrency_max"`
-			LockOrdering             []string         `json:"lock_ordering"`
+			ConcurrencyMax           int            `json:"concurrency_max"`
+			LockOrdering             []string       `json:"lock_ordering"`
 			CircuitBreakerThresholds map[string]any `json:"circuit_breaker_thresholds"`
 		} `json:"policies"`
 	} `json:"config"`

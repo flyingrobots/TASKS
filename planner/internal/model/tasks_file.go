@@ -11,8 +11,9 @@ type TasksFile struct {
 			Split  []string `json:"split"`
 			Merged []string `json:"merged"`
 		} `json:"autonormalization"`
+		ValidatorReports []ValidatorReport `json:"validator_reports,omitempty"`
 	} `json:"meta"`
-	Tasks        []Task         `json:"tasks"`
-	Dependencies []Edge         `json:"dependencies"`
+	Tasks             []Task         `json:"tasks"`
+	Dependencies      []Edge         `json:"dependencies"`
 	ResourceConflicts map[string]any `json:"resource_conflicts,omitempty"`
 }

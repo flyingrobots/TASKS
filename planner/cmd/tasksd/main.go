@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -10,6 +11,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 
 	analysis "github.com/james/tasks-planner/internal/analysis"
 	"github.com/james/tasks-planner/internal/canonjson"
@@ -21,6 +23,7 @@ import (
 	docp "github.com/james/tasks-planner/internal/planner/docparse"
 	wavesim "github.com/james/tasks-planner/internal/planner/wavesim"
 	"github.com/james/tasks-planner/internal/validate"
+	validators "github.com/james/tasks-planner/internal/validators"
 )
 
 func usage() {
@@ -217,6 +220,36 @@ func runPlan() {
 	doc := fs.String("doc", "", "Path to plan document (unused in stub)")
 	repo := fs.String("repo", ".", "Path to codebase for census (optional)")
 	out := fs.String("out", "./plans", "Output directory for artifacts")
+	acceptanceCmd := fs.String(
+		"validators-acceptance",
+		"",
+		"Executable path or shell command for the acceptance validator; tasksd runs it via the system shell, streams canonical plan JSON on stdin, and expects a JSON report on stdout.",
+	)
+	evidenceCmd := fs.String(
+		"validators-evidence",
+		"",
+		"Executable path or shell command for the evidence validator; supports arguments and runs via the system shell. Output must be JSON on stdout matching the validator report schema.",
+	)
+	interfaceCmd := fs.String(
+		"validators-interface",
+		"",
+		"Executable path or shell command for the interface validator; executed through the system shell with JSON input on stdin and JSON report expected on stdout.",
+	)
+	validatorsCache := fs.String(
+		"validators-cache",
+		"",
+		"Filesystem directory for cached validator reports (created if missing).",
+	)
+	validatorsTimeout := fs.Duration(
+		"validators-timeout",
+		30*time.Second,
+		"Timeout applied to each validator command invocation.",
+	)
+	validatorsStrict := fs.Bool(
+		"validators-strict",
+		false,
+		"Exit with an error when any validator fails (default logs warnings only).",
+	)
 	_ = fs.Parse(os.Args[2:])
 
 	if err := os.MkdirAll(*out, 0o755); err != nil {
@@ -286,7 +319,38 @@ func runPlan() {
 	features := makeFeaturesArtifact(featuresList, tasks)
 	titles := taskTitles(tasks)
 
-	if err := writeArtifacts(*out, &tf, &df, &coord, features, waves, titles); err != nil {
+	validatorPayload := validators.Payload{
+		Tasks:       &tf,
+		Dag:         &df,
+		Coordinator: &coord,
+	}
+	validatorCfg := validators.Config{
+		AcceptanceCmd: *acceptanceCmd,
+		EvidenceCmd:   *evidenceCmd,
+		InterfaceCmd:  *interfaceCmd,
+		CacheDir:      *validatorsCache,
+		Timeout:       *validatorsTimeout,
+	}
+	var validatorReports []validators.Report
+	if validatorCfg.AcceptanceCmd != "" || validatorCfg.EvidenceCmd != "" || validatorCfg.InterfaceCmd != "" {
+		runner, err := validators.NewRunner(validatorCfg)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "validator runner: %v\n", err)
+			os.Exit(1)
+		}
+		reports, runErr := runner.Run(context.Background(), validatorPayload)
+		tf.Meta.ValidatorReports = convertValidatorReports(reports)
+		validatorReports = reports
+		if runErr != nil {
+			if *validatorsStrict {
+				fmt.Fprintf(os.Stderr, "validators reported issues: %v\n", runErr)
+				os.Exit(1)
+			}
+			fmt.Fprintf(os.Stderr, "validators warning: %v\n", runErr)
+		}
+	}
+
+	if err := writeArtifacts(*out, &tf, &df, &coord, features, waves, titles, validatorReports); err != nil {
 		fmt.Fprintf(os.Stderr, "write artifacts: %v\n", err)
 		os.Exit(1)
 	}
@@ -501,7 +565,42 @@ func taskTitles(tasks []m.Task) map[string]string {
 	return titles
 }
 
-func writeArtifacts(outDir string, tf *m.TasksFile, df *m.DagFile, coord *m.Coordinator, features map[string]any, waves map[string]any, titles map[string]string) error {
+const validatorDetailLimit = 2048
+
+func convertValidatorReports(src []validators.Report) []m.ValidatorReport {
+	if len(src) == 0 {
+		return nil
+	}
+	// Compile-time compatibility check between validators.Report and model.ValidatorReport.
+	var _ = func() m.ValidatorReport {
+		var r validators.Report
+		return m.ValidatorReport{
+			Name:      r.Name,
+			Status:    r.Status,
+			Command:   r.Command,
+			InputHash: r.InputHash,
+			Cached:    r.Cached,
+			Detail:    r.Detail,
+			RawOutput: r.RawOutput,
+		}
+	}
+	dst := make([]m.ValidatorReport, 0, len(src))
+	for _, rep := range src {
+		converted := m.ValidatorReport{
+			Name:      rep.Name,
+			Status:    rep.Status,
+			Command:   rep.Command,
+			InputHash: rep.InputHash,
+			Cached:    rep.Cached,
+			Detail:    truncateDetail(rep.Detail, validatorDetailLimit),
+			RawOutput: rep.RawOutput,
+		}
+		dst = append(dst, converted)
+	}
+	return dst
+}
+
+func writeArtifacts(outDir string, tf *m.TasksFile, df *m.DagFile, coord *m.Coordinator, features map[string]any, waves map[string]any, titles map[string]string, validatorReports []validators.Report) error {
 	hashes := map[string]string{}
 	writeWithHash := func(name string, value any, setHash func(string)) error {
 		hashValue, err := emitter.WriteWithArtifactHash(join(outDir, name), value, setHash)
@@ -544,7 +643,7 @@ func writeArtifacts(outDir string, tf *m.TasksFile, df *m.DagFile, coord *m.Coor
 		return err
 	}
 
-	if err := writePlanSummary(outDir, hashes); err != nil {
+	if err := writePlanSummary(outDir, hashes, validatorReports); err != nil {
 		return err
 	}
 
@@ -594,7 +693,7 @@ func normalizeKey(v string) string {
 	return strings.ToLower(strings.TrimSpace(v))
 }
 
-func writePlanSummary(outDir string, hashes map[string]string) error {
+func writePlanSummary(outDir string, hashes map[string]string, validatorReports []validators.Report) error {
 	names := []string{"features.json", "tasks.json", "dag.json", "waves.json", "coordinator.json"}
 	var md strings.Builder
 	md.WriteString("# Plan (stub)\n\n")
@@ -603,7 +702,36 @@ func writePlanSummary(outDir string, hashes map[string]string) error {
 		hashValue := hashes[name]
 		fmt.Fprintf(&md, "- %s: %s\n", name, hashValue)
 	}
+	if len(validatorReports) > 0 {
+		md.WriteString("\n## Validators\n\n")
+		for _, rep := range validatorReports {
+			cached := ""
+			if rep.Cached {
+				cached = " (cached)"
+			}
+			detail := truncateDetail(rep.Detail, validatorDetailLimit)
+			if detail == "" && len(rep.RawOutput) > 0 {
+				detail = truncateDetail(string(rep.RawOutput), validatorDetailLimit)
+			}
+			if detail != "" {
+				fmt.Fprintf(&md, "- %s: %s%s — %s\n", rep.Name, rep.Status, cached, detail)
+			} else {
+				fmt.Fprintf(&md, "- %s: %s%s\n", rep.Name, rep.Status, cached)
+			}
+		}
+	}
 	return os.WriteFile(join(outDir, "Plan.md"), []byte(md.String()), 0o644)
+}
+
+func truncateDetail(detail string, limit int) string {
+	if limit <= 0 {
+		return detail
+	}
+	runes := []rune(detail)
+	if len(runes) <= limit {
+		return detail
+	}
+	return string(runes[:limit]) + " … (truncated)"
 }
 
 // -----------------
