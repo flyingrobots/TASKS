@@ -5,13 +5,13 @@
 A mathematically pure DAG planner + a resilient AI execution runtime.
 Plan like a compiler. Execute like a swarm.
 
+```mermaid
+graph TB
+    tasks["T.A.S.K.S."]
+    tasks -->|"are"| sequenced["Sequenced key steps"]
+    sequenced -->|"sounds like"| plan["A plan"]
 ```
-  ▀█▀ ▄▀█ █▀▀ █▄▀ █▀▀   TASKS ARE
-   █  █▀█ ▄▄█ █ █ ▄▄█   SEQUENCED
-                        KEY STEPS
-  █▀▀ █   ▄▀█ █▀█ █▀▀   SOUNDS LI
-  ▄▄█ █▄▄ █▀█ █▀▀ ▄▄█   KE A PLAN
-```
+
 
 ### **Plan. Execute. Heal.**
 From project chaos to deterministic calm.
@@ -66,11 +66,13 @@ T.A.S.K.S. is designed to be accessible and powerful, whether you're using it as
 
 This is what your plan looks like under the hood. Pure DAG. No resource noise.
 
+```mermaid
+graph LR
+    A --> B --> D
+    A --> C
+    C --> D
 ```
-A ─→ B ─→ D
-│         ↑
-└──→ C ───┘
-```
+
 
 For more detailed CLI examples and usage patterns, see `docs/cli-demo.md`.
 
@@ -96,11 +98,14 @@ A **resilient execution runtime** that consumes the T.A.S.K.S. plan. It:
 -   **Monitors Telemetry** for failure patterns and applies **Circuit Breakers** and **Hot Patches**.
 -   **Records Provenance** with an append-only JSONL ledger for full auditability.
 
+```mermaid
+graph LR
+    doc["Raw Project Doc"] --> tasks["T.A.S.K.S."]
+    tasks --> plan["Mathematically Optimized Plan"]
+    plan --> slaps["S.L.A.P.S."]
+    slaps --> reality["Auditable Reality"]
 ```
-Raw Project Doc → T.A.S.K.S. → Mathematically Optimized Plan → S.L.A.P.S. → Auditable Reality
-      📄               🔬🔧              📊                        🚀              ✅
-                   (auto-healing)                                (self-healing)
-```
+
 
 ## **Why T.A.S.K.S. + S.L.A.P.S. v8.0?**
 
