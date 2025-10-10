@@ -257,6 +257,8 @@ That is directly aligned with the deterministic-output guarantees you called out
 
 The planner does six things in order, as prose—not magic.
 
+> Implementation note: `cmd/tasksd` delegates orchestration to `internal/app/plan.Service`. The CLI wires filesystem/validator/doc adapters; the service coordinates task loading, DAG build, validation, wave preview, and artifact emission. This keeps the domain workflow pure and lets tests exercise the planner with in-memory adapters.
+
 **First**, it ingests the PLAN_DOC and runs a codebase census. In practice, we shell out to ast-grep for polyglot patterns (Prisma, Drizzle, Knex, Sequelize, Rails), deployment YAMLs, test fixtures, and environment access hotspots; we then normalize findings into tasks.json.meta.codebase_analysis.shared_resources with names, locations, constraints, and rationales. This is straight from your enhanced codebase-first method. 
 
 **Second**, it extracts features (5–25), each with priority and evidence, from the spec; the feature extractor is deliberately simple: section headings + requirement phrases → features, with evidence tracked for later validation and confidence. That matches the v1/v2 approach to grounded features.   
