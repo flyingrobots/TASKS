@@ -100,10 +100,10 @@ A **resilient execution runtime** that consumes the T.A.S.K.S. plan. It:
 
 ```mermaid
 graph LR
-    doc["Raw Project Doc"] --> tasks["T.A.S.K.S."]
+    doc((Raw Project Doc)) --> tasks["T.A.S.K.S."]
     tasks --> plan["Mathematically Optimized Plan"]
     plan --> slaps["S.L.A.P.S."]
-    slaps --> reality["Auditable Reality"]
+    slaps --> reality((Auditable Reality))
 ```
 
 
