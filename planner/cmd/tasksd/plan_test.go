@@ -66,47 +66,6 @@ func TestInferDependenciesResourceEdges(t *testing.T) {
 	}
 }
 
-func TestBuildTasksFromDocFallback(t *testing.T) {
-	tasks, features, edges, docProvided, err := buildTasksFromDoc("")
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if docProvided {
-		t.Fatalf("expected fallback stub when no doc present")
-	}
-	if len(tasks) == 0 || len(features) == 0 {
-		t.Fatalf("expected stub tasks and features, got %d tasks %d features", len(tasks), len(features))
-	}
-	if len(edges) != 0 {
-		t.Fatalf("expected no edges from stub doc, got %d", len(edges))
-	}
-}
-
-func TestBuildTasksFromDocReadsFile(t *testing.T) {
-	tmp := t.TempDir()
-	path := filepath.Join(tmp, "plan.md")
-	content := "## Feature Alpha\n- First task"
-	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
-		t.Fatalf("write doc: %v", err)
-	}
-	tasks, features, edges, docProvided, err := buildTasksFromDoc(path)
-	if err != nil {
-		t.Fatalf("unexpected error parsing doc: %v", err)
-	}
-	if !docProvided {
-		t.Fatalf("expected docProvided to be true")
-	}
-	if len(tasks) != 1 {
-		t.Fatalf("expected 1 task, got %d", len(tasks))
-	}
-	if len(features) == 0 {
-		t.Fatalf("expected at least one feature summary")
-	}
-	if len(edges) != 0 {
-		t.Fatalf("expected no edges for single task, got %d", len(edges))
-	}
-}
-
 func TestPlanCommandWithValidators(t *testing.T) {
 	tmp := t.TempDir()
 	outDir := filepath.Join(tmp, "out")

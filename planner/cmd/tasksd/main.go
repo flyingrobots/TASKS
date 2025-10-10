@@ -21,7 +21,6 @@ import (
 	"github.com/james/tasks-planner/internal/hash"
 	m "github.com/james/tasks-planner/internal/model"
 	dagbuild "github.com/james/tasks-planner/internal/planner/dag"
-	docp "github.com/james/tasks-planner/internal/planner/docparse"
 	wavesim "github.com/james/tasks-planner/internal/planner/wavesim"
 	"github.com/james/tasks-planner/internal/validate"
 	validators "github.com/james/tasks-planner/internal/validators"
@@ -258,20 +257,18 @@ func runPlan() {
 		os.Exit(1)
 	}
 
+	docLoader := plan.NewMarkdownDocLoader()
+
 	svc := plan.Service{
 		BuildTasks: func(ctx context.Context, docPath string) (plan.TasksResult, error) {
-			tasks, featuresList, docEdges, docProvided, err := buildTasksFromDoc(docPath)
+			res, err := docLoader.Load(ctx, docPath)
 			if err != nil {
 				return plan.TasksResult{}, err
 			}
-			deps, conflicts := inferDependencies(tasks, docEdges)
-			return plan.TasksResult{
-				Tasks:             tasks,
-				Features:          toFeatureSummaries(featuresList),
-				Dependencies:      deps,
-				ResourceConflicts: conflicts,
-				DocProvided:       docProvided,
-			}, nil
+			deps, conflicts := inferDependencies(res.Tasks, res.Dependencies)
+			res.Dependencies = deps
+			res.ResourceConflicts = conflicts
+			return res, nil
 		},
 		AnalyzeRepo: func(ctx context.Context, repo string) (analysis.FileCensusCounts, error) {
 			if repo == "" {
@@ -329,116 +326,6 @@ func runPlan() {
 	}
 
 	fmt.Println("Plan stub written to", *out)
-}
-
-type featureSummary struct {
-	ID    string
-	Title string
-}
-
-func toFeatureSummaries(in []featureSummary) []plan.FeatureSummary {
-	if len(in) == 0 {
-		return nil
-	}
-	out := make([]plan.FeatureSummary, 0, len(in))
-	for _, f := range in {
-		out = append(out, plan.FeatureSummary{ID: f.ID, Title: f.Title})
-	}
-	return out
-}
-
-func buildTasksFromDoc(docPath string) ([]m.Task, []featureSummary, []m.Edge, bool, error) {
-	if docPath == "" || !exists(docPath) {
-		tasks, features := stubTasksAndFeatures()
-		return tasks, features, nil, false, nil
-	}
-	bs, err := os.ReadFile(docPath)
-	if err != nil {
-		return nil, nil, nil, false, fmt.Errorf("read --doc: %w", err)
-	}
-	feats, tks := docp.ParseMarkdown(string(bs))
-	if len(feats) == 0 && len(tks) == 0 {
-		fmt.Fprintln(os.Stderr, "Doc parsed empty; falling back to stub plan")
-		tasks, features := stubTasksAndFeatures()
-		return tasks, features, nil, false, nil
-	}
-	featuresList := make([]featureSummary, 0, len(feats))
-	for _, f := range feats {
-		featuresList = append(featuresList, featureSummary{ID: f.ID, Title: f.Title})
-	}
-	tasks := make([]m.Task, 0, len(tks))
-	titleToID := map[string]string{}
-	var parseErrors []string
-	for i, spec := range tks {
-		id := fmt.Sprintf("T%03d", i+1)
-		if len(spec.Errors) > 0 {
-			for _, e := range spec.Errors {
-				parseErrors = append(parseErrors, fmt.Sprintf("%s: %s", spec.Title, e))
-			}
-		}
-		task := m.Task{
-			ID:        id,
-			FeatureID: spec.FeatureID,
-			Title:     spec.Title,
-			Duration:  m.DurationPERT{Optimistic: 1, MostLikely: 2, Pessimistic: 3},
-		}
-		if spec.Hours > 0 {
-			ml := spec.Hours
-			task.Duration = m.DurationPERT{Optimistic: ml * 0.5, MostLikely: ml, Pessimistic: ml * 2}
-		}
-		if len(spec.Accept) > 0 {
-			task.AcceptanceChecks = append(task.AcceptanceChecks, spec.Accept...)
-		}
-		applyTaskDefaults(&task)
-		tasks = append(tasks, task)
-		titleToID[normalizeKey(spec.Title)] = id
-	}
-	if len(parseErrors) > 0 {
-		return nil, nil, nil, false, fmt.Errorf("doc parse errors: %s", strings.Join(parseErrors, "; "))
-	}
-	docEdges := []m.Edge{}
-	for _, spec := range tks {
-		toID := titleToID[normalizeKey(spec.Title)]
-		if toID == "" {
-			continue
-		}
-		for _, raw := range spec.After {
-			fromID := resolveTaskID(raw, titleToID)
-			if fromID == "" {
-				continue
-			}
-			docEdges = append(docEdges, m.Edge{From: fromID, To: toID, Type: "sequential", IsHard: true, Confidence: 1.0})
-		}
-	}
-	if len(featuresList) == 0 {
-		featuresList = featuresFromTasks(tasks)
-	}
-	return tasks, featuresList, docEdges, true, nil
-}
-
-func stubTasksAndFeatures() ([]m.Task, []featureSummary) {
-	base := []struct {
-		id        string
-		featureID string
-		title     string
-	}{
-		{"T001", "F1", "Setup DB"},
-		{"T002", "F1", "Migrate Schema"},
-		{"T003", "F1", "API Handlers"},
-	}
-	tasks := make([]m.Task, 0, len(base))
-	for _, spec := range base {
-		task := m.Task{
-			ID:        spec.id,
-			FeatureID: spec.featureID,
-			Title:     spec.title,
-			Duration:  m.DurationPERT{Optimistic: 1, MostLikely: 2, Pessimistic: 3},
-		}
-		applyTaskDefaults(&task)
-		tasks = append(tasks, task)
-	}
-	features := []featureSummary{{ID: "F1", Title: "Core DB + API"}}
-	return tasks, features
 }
 
 func inferDependencies(tasks []m.Task, baseEdges []m.Edge) ([]m.Edge, map[string]any) {
@@ -509,46 +396,6 @@ func buildWaves(df m.DagFile, tasks []m.Task) (map[string]any, error) {
 	return waves, nil
 }
 
-func makeFeaturesArtifact(features []featureSummary, tasks []m.Task) map[string]any {
-	if len(features) == 0 {
-		features = featuresFromTasks(tasks)
-	}
-	sort.Slice(features, func(i, j int) bool { return features[i].ID < features[j].ID })
-	entries := make([]any, 0, len(features))
-	for _, f := range features {
-		entries = append(entries, map[string]any{"id": f.ID, "title": f.Title})
-	}
-	return map[string]any{
-		"meta":     map[string]any{"version": "v8", "artifact_hash": ""},
-		"features": entries,
-	}
-}
-
-func featuresFromTasks(tasks []m.Task) []featureSummary {
-	seen := map[string]bool{}
-	features := []featureSummary{}
-	for _, t := range tasks {
-		if t.FeatureID == "" {
-			continue
-		}
-		if seen[t.FeatureID] {
-			continue
-		}
-		features = append(features, featureSummary{ID: t.FeatureID, Title: t.FeatureID})
-		seen[t.FeatureID] = true
-	}
-	sort.Slice(features, func(i, j int) bool { return features[i].ID < features[j].ID })
-	return features
-}
-
-func taskTitles(tasks []m.Task) map[string]string {
-	titles := make(map[string]string, len(tasks))
-	for _, t := range tasks {
-		titles[t.ID] = t.Title
-	}
-	return titles
-}
-
 const validatorDetailLimit = 2048
 
 func writeArtifacts(outDir string, tf *m.TasksFile, df *m.DagFile, coord *m.Coordinator, features map[string]any, waves map[string]any, titles map[string]string, validatorReports []validators.Report) (map[string]string, error) {
@@ -607,41 +454,6 @@ func writeArtifacts(outDir string, tf *m.TasksFile, df *m.DagFile, coord *m.Coor
 		return nil, fmt.Errorf("write runtime.dot: %w", err)
 	}
 	return hashes, nil
-}
-
-func applyTaskDefaults(task *m.Task) {
-	if len(task.AcceptanceChecks) == 0 {
-		task.AcceptanceChecks = []m.AcceptanceCheck{{Type: "command", Cmd: "echo ok", Timeout: 5}}
-	}
-	if task.DurationUnit == "" {
-		task.DurationUnit = "hours"
-	}
-	task.ExecutionLogging.Format = "JSONL"
-	if len(task.ExecutionLogging.RequiredFields) == 0 {
-		task.ExecutionLogging.RequiredFields = []string{"timestamp", "task_id", "step", "status", "message"}
-	}
-	task.Compensation.Idempotent = true
-}
-
-func resolveTaskID(token string, titleToID map[string]string) string {
-	trimmed := strings.TrimSpace(token)
-	if len(trimmed) > 1 && (trimmed[0] == 'T' || trimmed[0] == 't') {
-		isNumeric := true
-		for _, r := range trimmed[1:] {
-			if r < '0' || r > '9' {
-				isNumeric = false
-				break
-			}
-		}
-		if isNumeric {
-			return strings.ToUpper(trimmed)
-		}
-	}
-	return titleToID[normalizeKey(trimmed)]
-}
-
-func normalizeKey(v string) string {
-	return strings.ToLower(strings.TrimSpace(v))
 }
 
 func writePlanSummary(outDir string, hashes map[string]string, validatorReports []validators.Report) error {
