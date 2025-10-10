@@ -3,19 +3,27 @@ const { spawnSync } = require('node:child_process');
 
 function run(cmd, args, opts = {}) {
   const stdio = opts.stdio ?? 'inherit';
-  const result = spawnSync(cmd, args, {
-    stdio,
-    encoding: 'utf8',
-    ...opts,
-  });
-  if (result.status !== 0) {
-    const err = new Error(`command failed: ${cmd} ${args.join(' ')} (exit ${result.status ?? 'unknown'})`);
-    err.exitStatus = result.status ?? 1;
-    if (stdio === 'pipe') {
-      err.stdout = result.stdout?.toString();
-      err.stderr = result.stderr?.toString();
-    }
-    throw err;
+	const result = spawnSync(cmd, args, {
+		stdio,
+		encoding: 'utf8',
+		...opts,
+	});
+	if (result.status !== 0) {
+		const err = new Error(`command failed: ${cmd} ${args.join(' ')} (exit ${result.status ?? 'unknown'})`);
+		err.exitStatus = result.status ?? 1;
+		if (result.error) {
+			err.cause = result.error;
+			err.message += `: ${result.error.message}`;
+			err.code = result.error.code ?? err.code;
+		}
+		if (result.signal) {
+			err.signal = result.signal;
+		}
+		if (stdio === 'pipe') {
+			err.stdout = result.stdout?.toString();
+			err.stderr = result.stderr?.toString();
+		}
+		throw err;
   }
   return result;
 }

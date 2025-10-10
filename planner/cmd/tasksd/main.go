@@ -613,6 +613,10 @@ func (a artifactErrors) Error() string {
 	return strings.Join(parts, "; ")
 }
 
+func (a artifactErrors) Unwrap() []error {
+	return []error(a)
+}
+
 func writeArtifacts(outDir string, tf *m.TasksFile, df *m.DagFile, coord *m.Coordinator, features map[string]any, waves map[string]any, titles map[string]string, validatorReports []validators.Report) error {
 	hashes := map[string]string{}
 	errs := artifactErrors{}
