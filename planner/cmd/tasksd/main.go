@@ -9,7 +9,6 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"sort"
 	"time"
 
 	analysis "github.com/james/tasks-planner/internal/analysis"
@@ -257,19 +256,12 @@ func runPlan() {
 
 	docLoader := plan.NewMarkdownDocLoader()
 	analyzer := plan.CensusAnalyzer{}
-
+	depResolver := plan.DefaultDependencyResolver{}
 	artifactWriter := plan.FileArtifactWriter{}
 
 	svc := plan.Service{
 		BuildTasks: func(ctx context.Context, docPath string) (plan.TasksResult, error) {
-			res, err := docLoader.Load(ctx, docPath)
-			if err != nil {
-				return plan.TasksResult{}, err
-			}
-			deps, conflicts := inferDependencies(res.Tasks, res.Dependencies)
-			res.Dependencies = deps
-			res.ResourceConflicts = conflicts
-			return res, nil
+			return docLoader.Load(ctx, docPath)
 		},
 		AnalyzeRepo: func(ctx context.Context, repo string) (analysis.FileCensusCounts, error) {
 			if repo == "" {
@@ -282,6 +274,7 @@ func runPlan() {
 			}
 			return counts, nil
 		},
+		ResolveDeps: depResolver.Resolve,
 		BuildDAG: func(ctx context.Context, tasks []m.Task, deps []m.Edge, minConfidence float64) (m.DagFile, error) {
 			return dagbuild.Build(tasks, deps, minConfidence)
 		},
@@ -321,45 +314,6 @@ func runPlan() {
 	}
 
 	fmt.Println("Plan stub written to", *out)
-}
-
-func inferDependencies(tasks []m.Task, baseEdges []m.Edge) ([]m.Edge, map[string]any) {
-	deps := append([]m.Edge{}, baseEdges...)
-	if len(deps) == 0 && len(tasks) >= 2 {
-		for i := 0; i < len(tasks)-1; i++ {
-			typ := "sequential"
-			if i > 0 {
-				typ = "technical"
-			}
-			deps = append(deps, m.Edge{From: tasks[i].ID, To: tasks[i+1].ID, Type: typ, IsHard: true, Confidence: 1.0})
-		}
-	}
-	resToTasks := map[string][]string{}
-	for _, task := range tasks {
-		for _, r := range task.Resources.Exclusive {
-			resToTasks[r] = append(resToTasks[r], task.ID)
-		}
-	}
-	resourceConflicts := map[string]any{}
-	keys := make([]string, 0, len(resToTasks))
-	for k := range resToTasks {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-	for _, r := range keys {
-		ids := resToTasks[r]
-		sort.Strings(ids)
-		if len(ids) < 2 {
-			continue
-		}
-		resourceConflicts[r] = map[string]any{"type": "exclusive", "tasks": ids}
-		for i := 0; i < len(ids); i++ {
-			for j := i + 1; j < len(ids); j++ {
-				deps = append(deps, m.Edge{From: ids[i], To: ids[j], Type: "resource", Subtype: "mutual_exclusion", IsHard: true, Confidence: 1.0})
-			}
-		}
-	}
-	return deps, resourceConflicts
 }
 
 func makeCoordinator(tasks []m.Task, deps []m.Edge) m.Coordinator {

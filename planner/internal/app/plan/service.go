@@ -54,6 +54,7 @@ type ValidatorRunner interface {
 type Service struct {
 	BuildTasks         func(ctx context.Context, docPath string) (TasksResult, error)
 	AnalyzeRepo        func(ctx context.Context, repo string) (analysis.FileCensusCounts, error)
+	ResolveDeps        func(tasks []m.Task, docEdges []m.Edge) ([]m.Edge, map[string]any)
 	BuildDAG           func(ctx context.Context, tasks []m.Task, deps []m.Edge, minConfidence float64) (m.DagFile, error)
 	ValidateTasks      func(tf *m.TasksFile) error
 	ValidateDag        func(df *m.DagFile) error
@@ -104,8 +105,14 @@ func (s Service) Plan(ctx context.Context, req Request) (Result, error) {
 	tf.Meta.Autonormalization.Split = []string{}
 	tf.Meta.Autonormalization.Merged = []string{}
 	tf.Tasks = tasksRes.Tasks
-	tf.Dependencies = tasksRes.Dependencies
-	tf.ResourceConflicts = tasksRes.ResourceConflicts
+	if s.ResolveDeps != nil {
+		deps, conflicts := s.ResolveDeps(tasksRes.Tasks, tasksRes.Dependencies)
+		tf.Dependencies = deps
+		tf.ResourceConflicts = conflicts
+	} else {
+		tf.Dependencies = tasksRes.Dependencies
+		tf.ResourceConflicts = tasksRes.ResourceConflicts
+	}
 
 	if tasksRes.DocProvided {
 		for _, task := range tf.Tasks {
