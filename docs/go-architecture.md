@@ -257,6 +257,8 @@ That is directly aligned with the deterministic-output guarantees you called out
 
 The planner does six things in order, as prose—not magic.
 
+> Implementation note: `cmd/tasksd` delegates orchestration to `internal/app/plan.Service`. The default wiring lives in `plan.NewDefaultService()`, which assembles the Markdown doc loader, census analyzer, dependency resolver, wave simulator, coordinator builder, artifact writer, and validator runner behind small interfaces. The CLI only overrides behavior (e.g., logging analysis failures) while the service coordinates task loading, DAG build, validation, wave preview, and artifact emission. This keeps the domain workflow pure and lets tests exercise the planner with in-memory adapters.
+
 **First**, it ingests the PLAN_DOC and runs a codebase census. In practice, we shell out to ast-grep for polyglot patterns (Prisma, Drizzle, Knex, Sequelize, Rails), deployment YAMLs, test fixtures, and environment access hotspots; we then normalize findings into tasks.json.meta.codebase_analysis.shared_resources with names, locations, constraints, and rationales. This is straight from your enhanced codebase-first method. 
 
 **Second**, it extracts features (5–25), each with priority and evidence, from the spec; the feature extractor is deliberately simple: section headings + requirement phrases → features, with evidence tracked for later validation and confidence. That matches the v1/v2 approach to grounded features.   
@@ -276,6 +278,8 @@ Finally, tasksd emits artifacts with canonical JSON and embedded SHA-256 hashes,
 ---
 
 ## **The executor (slapsd) in Go, exactly how it runs**
+
+> Implementation note: `slapsd` now delegates to `internal/app/exec.Service` (via `exec.NewDefaultService`). The default wiring currently stubs the runtime loop, but the shape of the adapter boundary is established so frontier scheduling, resource arbitration, and validator reruns can be injected just like the planner’s ports.
 
 At startup, slapsd loads **coordinator.json**, registers resource capacities per profile (local/ci/prod), and builds a pure structural graph (edges: hard structural only). It spawns the main loop:
 
