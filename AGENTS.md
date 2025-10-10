@@ -216,3 +216,11 @@ Next steps (suggested)
 7. Commit after ensuring tests pass; update documentation to match behavior.
 8. Update project artifacts (task files, indexes, etc.) and commit.
 9. Push the branch and open a PR.
+{"date": "2025-10-09", "time": "19:30", "summary": "Added retroactive test mandate for legacy code toward 80% coverage goal.", "topics": [{"topic": "Legacy Test Coverage Policy", "what": "Require tests whenever existing files are modified", "why": "Raise repository coverage above 80%", "context": "Supplement to TDD workflow", "issue": "Historical code lacks tests", "resolution": "Documented requirement to add suites for touched files", "future_work": "Track coverage progress and enforce during reviews", "time_percent": 100}], "key_decisions": ["Mandate tests for any modified legacy file", "Target 80% coverage by next milestone"], "action_items": []}
+
+
+### Legacy Test Coverage Policy
+- When modifying an existing code file that lacks tests, add a corresponding test suite before committing changes.
+- Maintain focus on behavioral coverage; prefer integration-style checks where practical.
+- Aim for ≥80%% repository test coverage by the next milestone.
+- Track new coverage gaps and address them incrementally in follow-up tasks.
