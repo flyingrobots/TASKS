@@ -123,10 +123,14 @@ func (s Service) Plan(ctx context.Context, req Request) (Result, error) {
 	}
 
 	if tasksRes.DocProvided {
+		var missing []string
 		for _, task := range tf.Tasks {
 			if len(task.AcceptanceChecks) == 0 {
-				return Result{}, fmt.Errorf("task %s missing acceptance checks", task.ID)
+				missing = append(missing, task.ID)
 			}
+		}
+		if len(missing) > 0 {
+			return Result{}, fmt.Errorf("missing acceptance checks for tasks: %s", strings.Join(missing, ", "))
 		}
 	}
 
