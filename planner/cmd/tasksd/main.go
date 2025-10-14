@@ -6,7 +6,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -270,8 +269,7 @@ func runPlan() {
 		}
 		counts, err := plan.CensusAnalyzer{}.Analyze(ctx, repo)
 		if err != nil {
-			log.Printf("analysis failed for repo %s: %v", repo, err)
-			return analysis.FileCensusCounts{}, nil
+			return analysis.FileCensusCounts{}, fmt.Errorf("analyze repo %s: %w", repo, err)
 		}
 		return counts, nil
 	}
