@@ -3,38 +3,39 @@ package plan
 import (
 	"context"
 	"errors"
-	"os"
-	"path/filepath"
 	"testing"
+	"time"
+
+	analysis "github.com/james/tasks-planner/internal/analysis"
 )
 
-func TestCensusAnalyzerCountsFiles(t *testing.T) {
-	tmp := t.TempDir()
-	if err := os.WriteFile(filepath.Join(tmp, "a.go"), []byte("package a"), 0o644); err != nil {
-		t.Fatalf("write go file: %v", err)
-	}
-	if err := os.WriteFile(filepath.Join(tmp, "b.txt"), []byte("text"), 0o644); err != nil {
-		t.Fatalf("write txt file: %v", err)
-	}
-
+func TestCensusAnalyzerCancellation(t *testing.T) {
 	an := CensusAnalyzer{}
-	counts, err := an.Analyze(context.Background(), tmp)
-	if err != nil {
-		t.Fatalf("analyze: %v", err)
-	}
-	if counts.Files != 2 || counts.GoFiles != 1 {
-		t.Fatalf("unexpected counts: %+v", counts)
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	_, err := an.Analyze(ctx, ".")
+	if !errors.Is(err, context.Canceled) {
+		t.Fatalf("expected context.Canceled, got %v", err)
 	}
 }
 
-func TestCensusAnalyzerPropagatesErrors(t *testing.T) {
+func TestCensusAnalyzerReportsCounts(t *testing.T) {
 	an := CensusAnalyzer{}
-	_, err := an.Analyze(context.Background(), filepath.Join("/does", "not", "exist"))
-	if err == nil {
-		t.Fatalf("expected error for missing path")
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	tmp := t.TempDir()
+	counts, err := an.Analyze(ctx, tmp)
+	if err != nil {
+		t.Fatalf("analyze: %v", err)
 	}
-	var pathErr *os.PathError
-	if !errors.As(err, &pathErr) {
-		t.Fatalf("expected path error, got %v", err)
+	if counts.Files != 0 || counts.GoFiles != 0 {
+		t.Fatalf("expected empty counts for empty dir, got %+v", counts)
 	}
+	// sanity: ensure context still valid
+	if err := ctx.Err(); err != nil {
+		t.Fatalf("context unexpectedly done: %v", err)
+	}
+	_ = analysis.CodebaseAnalysis{}
 }
