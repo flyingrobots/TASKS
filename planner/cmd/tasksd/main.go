@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -667,10 +668,7 @@ func writeArtifacts(outDir string, tf *m.TasksFile, df *m.DagFile, coord *m.Coor
 	if err := os.WriteFile(join(outDir, "runtime.dot"), []byte(runtimeDot), 0o644); err != nil {
 		errs = append(errs, fmt.Errorf("write runtime.dot: %w", err))
 	}
-	if len(errs) > 0 {
-		return errs
-	}
-	return nil
+	return errors.Join([]error(errs)...)
 }
 
 func applyTaskDefaults(task *m.Task) {
