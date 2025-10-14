@@ -33,3 +33,15 @@ func TestDefaultDependencyResolverResources(t *testing.T) {
 		t.Fatalf("expected only fallback precedence edge, got %d", got)
 	}
 }
+
+func TestDefaultDependencyResolverDeduplicatesExclusiveResources(t *testing.T) {
+	tasks := []m.Task{{ID: "T001"}}
+	tasks[0].Resources.Exclusive = []string{"db", "db", ""}
+	deps, conflicts := DefaultDependencyResolver{}.Resolve(tasks, nil)
+	if len(conflicts) != 0 {
+		t.Fatalf("expected no resource conflicts for single task, got %+v", conflicts)
+	}
+	if len(deps) != 0 {
+		t.Fatalf("expected no resource edges, got %+v", deps)
+	}
+}

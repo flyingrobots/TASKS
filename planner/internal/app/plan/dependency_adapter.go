@@ -28,7 +28,15 @@ func (DefaultDependencyResolver) Resolve(tasks []m.Task, baseEdges []m.Edge) ([]
 
 	resToTasks := map[string][]string{}
 	for _, task := range tasks {
+		seen := make(map[string]struct{}, len(task.Resources.Exclusive))
 		for _, r := range task.Resources.Exclusive {
+			if r == "" {
+				continue
+			}
+			if _, ok := seen[r]; ok {
+				continue
+			}
+			seen[r] = struct{}{}
 			resToTasks[r] = append(resToTasks[r], task.ID)
 		}
 	}
