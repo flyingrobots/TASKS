@@ -179,11 +179,36 @@ func (s Service) Plan(ctx context.Context, req Request) (Result, error) {
 		if len(modelReports) > 0 {
 			tf.Meta.ValidatorReports = modelReports
 		}
-		if runErr != nil {
-			if req.StrictValidators {
+
+		var failedReports []m.ValidatorReport
+		for _, rep := range modelReports {
+			status := strings.ToLower(strings.TrimSpace(rep.Status))
+			if status == m.ValidatorStatusFail || status == m.ValidatorStatusError || status == "failed" {
+				failedReports = append(failedReports, rep)
+			}
+		}
+		if req.StrictValidators {
+			if len(failedReports) > 0 {
+				names := make([]string, 0, len(failedReports))
+				for _, rep := range failedReports {
+					names = append(names, rep.Name)
+				}
+				return Result{}, fmt.Errorf("validators failed: %s", strings.Join(names, ", "))
+			}
+			if runErr != nil {
 				return Result{}, fmt.Errorf("validators: %w", runErr)
 			}
-			warnings = append(warnings, runErr.Error())
+		} else {
+			if runErr != nil {
+				warnings = append(warnings, runErr.Error())
+			}
+			for _, rep := range failedReports {
+				msg := fmt.Sprintf("validator %s reported %s", rep.Name, rep.Status)
+				if detail := strings.TrimSpace(rep.Detail); detail != "" {
+					msg += fmt.Sprintf(" — %s", detail)
+				}
+				warnings = append(warnings, msg)
+			}
 		}
 	}
 

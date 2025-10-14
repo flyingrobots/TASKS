@@ -3,6 +3,7 @@ package plan_test
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 
 	analysis "github.com/james/tasks-planner/internal/analysis"
@@ -149,8 +150,18 @@ func TestServicePlanValidatorWarnings(t *testing.T) {
 	if len(res.ValidatorReports) != 1 || res.ValidatorReports[0].Status != m.ValidatorStatusFail {
 		t.Fatalf("unexpected validator reports: %+v", res.ValidatorReports)
 	}
-	if len(res.Warnings) != 1 {
-		t.Fatalf("expected warning, got %+v", res.Warnings)
+	if len(res.Warnings) != 2 {
+		t.Fatalf("expected 2 warnings, got %+v", res.Warnings)
+	}
+	foundStatusWarning := false
+	for _, warn := range res.Warnings {
+		if strings.Contains(warn, "validator acceptance") {
+			foundStatusWarning = true
+			break
+		}
+	}
+	if !foundStatusWarning {
+		t.Fatalf("expected status warning in %+v", res.Warnings)
 	}
 }
 
@@ -183,5 +194,38 @@ func TestServicePlanValidatorStrictFailure(t *testing.T) {
 	})
 	if err == nil {
 		t.Fatalf("expected error with strict validators")
+	}
+}
+
+func TestServicePlanValidatorStrictStatusFailure(t *testing.T) {
+	runner := &stubRunner{reports: []validators.Report{{Name: "acceptance", Status: m.ValidatorStatusFail}}}
+	svc := plan.Service{
+		BuildTasks: func(ctx context.Context, docPath string) (plan.TasksResult, error) {
+			return plan.TasksResult{Tasks: []m.Task{{ID: "T001", Title: "Do", AcceptanceChecks: []m.AcceptanceCheck{{Type: "command", Cmd: "echo ok"}}}}, DocProvided: false}, nil
+		},
+		AnalyzeRepo: func(context.Context, string) (analysis.FileCensusCounts, error) {
+			return analysis.FileCensusCounts{}, nil
+		},
+		BuildDAG:      func(context.Context, []m.Task, []m.Edge, float64) (*m.DagFile, error) { return &m.DagFile{}, nil },
+		ValidateTasks: func(*m.TasksFile) error { return nil },
+		ValidateDAG:   func(*m.DagFile) error { return nil },
+		BuildWaves: func(context.Context, *m.DagFile, []m.Task) (map[string]any, error) {
+			return map[string]any{"meta": map[string]any{"version": "v8"}}, nil
+		},
+		WriteArtifacts: func(context.Context, string, plan.ArtifactBundle) (plan.ArtifactWriteResult, error) {
+			return plan.ArtifactWriteResult{Hashes: map[string]string{"tasks.json": "hash"}}, nil
+		},
+		NewValidatorRunner: func(validators.Config) (plan.ValidatorRunner, error) {
+			return runner, nil
+		},
+	}
+
+	_, err := svc.Plan(context.Background(), plan.Request{
+		OutDir:           "./plans",
+		ValidatorConfig:  validators.Config{AcceptanceCmd: "accept"},
+		StrictValidators: true,
+	})
+	if err == nil {
+		t.Fatalf("expected error for failing validator status")
 	}
 }
