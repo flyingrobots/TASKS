@@ -40,7 +40,7 @@ func (l FilesystemCoordinatorLoader) read(path string) ([]byte, error) {
 
 // NewDefaultService assembles the executor service with default adapters.
 func NewDefaultService() Service {
-	loader := FilesystemCoordinatorLoader{ReadFile: os.ReadFile}
+	loader := FilesystemCoordinatorLoader{}
 	return Service{
 		LoadCoordinator: loader.Load,
 		InitRuntime:     func(ctx context.Context, coord m.Coordinator) error { return nil },
