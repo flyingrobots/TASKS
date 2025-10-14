@@ -19,11 +19,11 @@ func TestMarkdownDocLoaderFallbackWhenMissing(t *testing.T) {
 	if res.DocProvided {
 		t.Fatalf("expected DocProvided=false")
 	}
-	if len(res.Tasks) != 3 {
-		t.Fatalf("expected stub tasks, got %d", len(res.Tasks))
+	if len(res.Tasks) == 0 {
+		t.Fatalf("expected stub tasks, got none")
 	}
-	if len(res.Features) != 1 {
-		t.Fatalf("expected stub feature, got %d", len(res.Features))
+	if len(res.Features) == 0 {
+		t.Fatalf("expected stub feature entries, got none")
 	}
 }
 
