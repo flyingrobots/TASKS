@@ -26,9 +26,15 @@ func NewMarkdownDocLoader() MarkdownDocLoader {
 }
 
 func (l MarkdownDocLoader) Load(ctx context.Context, docPath string) (TasksResult, error) {
+	if err := ctx.Err(); err != nil {
+		return TasksResult{}, err
+	}
 	if docPath == "" {
 		tasks, features := stubPlan()
 		return TasksResult{Tasks: tasks, Features: features, DocProvided: false}, nil
+	}
+	if err := ctx.Err(); err != nil {
+		return TasksResult{}, err
 	}
 	info, err := os.Stat(docPath)
 	if err != nil {
@@ -41,7 +47,10 @@ func (l MarkdownDocLoader) Load(ctx context.Context, docPath string) (TasksResul
 	if info.IsDir() {
 		return TasksResult{}, fmt.Errorf("--doc points to a directory: %s", docPath)
 	}
-	raw, err := l.read(docPath)
+	if err := ctx.Err(); err != nil {
+		return TasksResult{}, err
+	}
+	raw, err := l.read(ctx, docPath)
 	if err != nil {
 		return TasksResult{}, fmt.Errorf("read --doc: %w", err)
 	}
@@ -105,11 +114,26 @@ func (l MarkdownDocLoader) Load(ctx context.Context, docPath string) (TasksResul
 	return TasksResult{Tasks: tasks, Features: features, Dependencies: edges, DocProvided: true}, nil
 }
 
-func (l MarkdownDocLoader) read(path string) ([]byte, error) {
-	if l.ReadFile != nil {
-		return l.ReadFile(path)
+func (l MarkdownDocLoader) read(ctx context.Context, path string) ([]byte, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
 	}
-	return os.ReadFile(path)
+	var (
+		data []byte
+		err  error
+	)
+	if l.ReadFile != nil {
+		data, err = l.ReadFile(path)
+	} else {
+		data, err = os.ReadFile(path)
+	}
+	if err != nil {
+		return nil, err
+	}
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	return data, nil
 }
 
 func stubPlan() ([]m.Task, []FeatureSummary) {
