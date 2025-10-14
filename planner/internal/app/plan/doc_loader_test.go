@@ -50,11 +50,30 @@ func TestMarkdownDocLoaderParsesFile(t *testing.T) {
 	if len(res.Tasks) != 2 {
 		t.Fatalf("expected 2 tasks, got %d", len(res.Tasks))
 	}
-	if res.Tasks[0].ID != "T001" || res.Tasks[1].ID != "T002" {
-		t.Fatalf("unexpected task IDs: %v", res.Tasks)
+	byTitle := map[string]m.Task{}
+	for _, task := range res.Tasks {
+		byTitle[task.Title] = task
+	}
+	login, ok := byTitle["Implement login"]
+	if !ok {
+		t.Fatalf("missing Implement login task: %+v", res.Tasks)
+	}
+	setup, ok := byTitle["Setup DB"]
+	if !ok {
+		t.Fatalf("missing Setup DB task: %+v", res.Tasks)
 	}
 	if len(res.Dependencies) == 0 {
 		t.Fatalf("expected dependencies from doc")
+	}
+	found := false
+	for _, dep := range res.Dependencies {
+		if dep.From == setup.ID && dep.To == login.ID {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Fatalf("expected dependency from %s to %s, got %+v", setup.ID, login.ID, res.Dependencies)
 	}
 }
 
