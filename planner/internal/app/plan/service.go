@@ -40,7 +40,7 @@ type ArtifactBundle struct {
 	Features         map[string]any
 	Waves            map[string]any
 	Titles           map[string]string
-	ValidatorReports []validators.Report
+	ValidatorReports []m.ValidatorReport
 }
 
 // ArtifactWriteResult summarizes the outcome of the artifact writer.
@@ -157,7 +157,7 @@ func (s Service) Plan(ctx context.Context, req Request) (Result, error) {
 		coord = makeCoordinator(tf.Tasks, tf.Dependencies)
 	}
 
-	var validatorReports []validators.Report
+	var validatorReports []m.ValidatorReport
 	var warnings []string
 	if s.NewValidatorRunner != nil && validatorConfigured(req.ValidatorConfig) {
 		runner, err := s.NewValidatorRunner(req.ValidatorConfig)
@@ -166,8 +166,8 @@ func (s Service) Plan(ctx context.Context, req Request) (Result, error) {
 		}
 		payload := validators.Payload{Tasks: tf, Dag: &dagFile, Coordinator: &coord}
 		reports, runErr := runner.Run(ctx, payload)
-		validatorReports = reports
 		modelReports := convertValidatorReports(reports)
+		validatorReports = modelReports
 		if len(modelReports) > 0 {
 			tf.Meta.ValidatorReports = modelReports
 		}

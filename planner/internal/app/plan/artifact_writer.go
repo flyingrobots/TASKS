@@ -10,7 +10,6 @@ import (
 	"github.com/james/tasks-planner/internal/emitter"
 	"github.com/james/tasks-planner/internal/export/dot"
 	m "github.com/james/tasks-planner/internal/model"
-	"github.com/james/tasks-planner/internal/validators"
 )
 
 const validatorDetailLimit = 2048
@@ -88,7 +87,7 @@ func (a artifactErrors) Error() string {
 
 func (a artifactErrors) Unwrap() []error { return []error(a) }
 
-func writePlanSummary(out string, hashes map[string]string, validatorReports []validators.Report) error {
+func writePlanSummary(out string, hashes map[string]string, validatorReports []m.ValidatorReport) error {
 	names := []string{"features.json", "tasks.json", "dag.json", "waves.json", "coordinator.json"}
 	var sb strings.Builder
 	sb.WriteString("# Plan (stub)\n\n")

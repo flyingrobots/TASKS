@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	m "github.com/james/tasks-planner/internal/model"
-	"github.com/james/tasks-planner/internal/validators"
 )
 
 func TestFileArtifactWriterWritesArtifacts(t *testing.T) {
@@ -36,7 +35,7 @@ func TestFileArtifactWriterWritesArtifacts(t *testing.T) {
 		Features:    makeFeaturesArtifact([]FeatureSummary{{ID: "F1", Title: "Feature"}}),
 		Waves:       waves,
 		Titles:      map[string]string{"T001": "Do thing"},
-		ValidatorReports: []validators.Report{{
+		ValidatorReports: []m.ValidatorReport{{
 			Name:      "acceptance",
 			Status:    m.ValidatorStatusPass,
 			Command:   "accept",
