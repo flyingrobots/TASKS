@@ -9,7 +9,7 @@ import (
 
 func TestDefaultWaveBuilderBuildsWaves(t *testing.T) {
 	builder := DefaultWaveBuilder{}
-	var df m.DagFile
+	df := &m.DagFile{}
 	df.Meta.Version = "v8"
 	df.Nodes = []struct {
 		ID                  string `json:"id"`

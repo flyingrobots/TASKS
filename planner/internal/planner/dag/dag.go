@@ -14,8 +14,8 @@ type edgeRec struct{ From, To, Type string }
 
 // Build builds a minimized DAG from tasks and edges, applying confidence and hardness filters,
 // detecting cycles, computing layering depths, longest path (critical path), and removing transitive edges.
-func Build(tasks []m.Task, edges []m.Edge, minConfidence float64) (m.DagFile, error) {
-	df := m.DagFile{}
+func Build(tasks []m.Task, edges []m.Edge, minConfidence float64) (*m.DagFile, error) {
+	df := &m.DagFile{}
 	df.Meta.Version = "v8"
 	if df.Metrics.KeptByType == nil {
 		df.Metrics.KeptByType = map[string]int{}

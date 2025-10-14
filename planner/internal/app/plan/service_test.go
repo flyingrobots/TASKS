@@ -42,8 +42,8 @@ func TestServicePlanSuccess(t *testing.T) {
 			}
 			return analysis.FileCensusCounts{Files: 10, GoFiles: 5}, nil
 		},
-		BuildDAG: func(ctx context.Context, tasks []m.Task, deps []m.Edge, minConfidence float64) (m.DagFile, error) {
-			df := m.DagFile{}
+		BuildDAG: func(ctx context.Context, tasks []m.Task, deps []m.Edge, minConfidence float64) (*m.DagFile, error) {
+			df := &m.DagFile{}
 			df.Meta.Version = "v8"
 			df.Nodes = []struct {
 				ID                  string `json:"id"`
@@ -55,7 +55,7 @@ func TestServicePlanSuccess(t *testing.T) {
 		},
 		ValidateTasks: func(tf *m.TasksFile) error { return nil },
 		ValidateDag:   func(df *m.DagFile) error { return nil },
-		BuildWaves: func(ctx context.Context, df m.DagFile, tasks []m.Task) (map[string]any, error) {
+		BuildWaves: func(ctx context.Context, df *m.DagFile, tasks []m.Task) (map[string]any, error) {
 			return map[string]any{"meta": map[string]any{"version": "v8"}, "waves": [][]string{{"T001"}}}, nil
 		},
 		WriteArtifacts: func(ctx context.Context, out string, bundle plan.ArtifactBundle) (plan.ArtifactWriteResult, error) {
@@ -117,12 +117,12 @@ func TestServicePlanValidatorWarnings(t *testing.T) {
 		AnalyzeRepo: func(ctx context.Context, repo string) (analysis.FileCensusCounts, error) {
 			return analysis.FileCensusCounts{}, nil
 		},
-		BuildDAG: func(ctx context.Context, tasks []m.Task, deps []m.Edge, minConfidence float64) (m.DagFile, error) {
-			return m.DagFile{}, nil
+		BuildDAG: func(ctx context.Context, tasks []m.Task, deps []m.Edge, minConfidence float64) (*m.DagFile, error) {
+			return &m.DagFile{}, nil
 		},
 		ValidateTasks: func(tf *m.TasksFile) error { return nil },
 		ValidateDag:   func(df *m.DagFile) error { return nil },
-		BuildWaves: func(ctx context.Context, df m.DagFile, tasks []m.Task) (map[string]any, error) {
+		BuildWaves: func(ctx context.Context, df *m.DagFile, tasks []m.Task) (map[string]any, error) {
 			return map[string]any{"meta": map[string]any{"version": "v8"}}, nil
 		},
 		WriteArtifacts: func(ctx context.Context, out string, bundle plan.ArtifactBundle) (plan.ArtifactWriteResult, error) {
@@ -161,10 +161,10 @@ func TestServicePlanValidatorStrictFailure(t *testing.T) {
 		AnalyzeRepo: func(context.Context, string) (analysis.FileCensusCounts, error) {
 			return analysis.FileCensusCounts{}, nil
 		},
-		BuildDAG:      func(context.Context, []m.Task, []m.Edge, float64) (m.DagFile, error) { return m.DagFile{}, nil },
+		BuildDAG:      func(context.Context, []m.Task, []m.Edge, float64) (*m.DagFile, error) { return &m.DagFile{}, nil },
 		ValidateTasks: func(*m.TasksFile) error { return nil },
 		ValidateDag:   func(*m.DagFile) error { return nil },
-		BuildWaves: func(ctx context.Context, df m.DagFile, tasks []m.Task) (map[string]any, error) {
+		BuildWaves: func(ctx context.Context, df *m.DagFile, tasks []m.Task) (map[string]any, error) {
 			return map[string]any{"meta": map[string]any{"version": "v8"}}, nil
 		},
 		WriteArtifacts: func(context.Context, string, plan.ArtifactBundle) (plan.ArtifactWriteResult, error) {

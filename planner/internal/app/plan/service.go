@@ -58,11 +58,11 @@ type Service struct {
 	BuildTasks         func(ctx context.Context, docPath string) (TasksResult, error)
 	AnalyzeRepo        func(ctx context.Context, repo string) (analysis.FileCensusCounts, error)
 	ResolveDeps        func(tasks []m.Task, docEdges []m.Edge) ([]m.Edge, map[string]any)
-	BuildDAG           func(ctx context.Context, tasks []m.Task, deps []m.Edge, minConfidence float64) (m.DagFile, error)
+	BuildDAG           func(ctx context.Context, tasks []m.Task, deps []m.Edge, minConfidence float64) (*m.DagFile, error)
 	BuildCoordinator   func(tasks []m.Task, deps []m.Edge) m.Coordinator
 	ValidateTasks      func(tf *m.TasksFile) error
 	ValidateDag        func(df *m.DagFile) error
-	BuildWaves         func(ctx context.Context, df m.DagFile, tasks []m.Task) (map[string]any, error)
+	BuildWaves         func(ctx context.Context, df *m.DagFile, tasks []m.Task) (map[string]any, error)
 	WriteArtifacts     func(ctx context.Context, out string, bundle ArtifactBundle) (ArtifactWriteResult, error)
 	NewValidatorRunner func(cfg validators.Config) (ValidatorRunner, error)
 }
@@ -134,7 +134,7 @@ func (s Service) Plan(ctx context.Context, req Request) (Result, error) {
 	if err != nil {
 		return Result{}, fmt.Errorf("build dag: %w", err)
 	}
-	if err := s.ValidateDag(&dagFile); err != nil {
+	if err := s.ValidateDag(dagFile); err != nil {
 		return Result{}, fmt.Errorf("validate dag: %w", err)
 	}
 
@@ -164,7 +164,7 @@ func (s Service) Plan(ctx context.Context, req Request) (Result, error) {
 		if err != nil {
 			return Result{}, fmt.Errorf("validator runner: %w", err)
 		}
-		payload := validators.Payload{Tasks: tf, Dag: &dagFile, Coordinator: &coord}
+		payload := validators.Payload{Tasks: tf, Dag: dagFile, Coordinator: &coord}
 		reports, runErr := runner.Run(ctx, payload)
 		modelReports := convertValidatorReports(reports)
 		validatorReports = modelReports
@@ -181,7 +181,7 @@ func (s Service) Plan(ctx context.Context, req Request) (Result, error) {
 
 	artifactBundle := ArtifactBundle{
 		TasksFile:        tf,
-		DagFile:          &dagFile,
+		DagFile:          dagFile,
 		Coordinator:      &coord,
 		Features:         makeFeaturesArtifact(features),
 		Waves:            waves,
