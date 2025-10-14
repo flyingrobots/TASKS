@@ -8,7 +8,9 @@ import (
 	"io"
 	"log"
 	"os"
+	"os/signal"
 	"path/filepath"
+	"syscall"
 	"time"
 
 	analysis "github.com/james/tasks-planner/internal/analysis"
@@ -290,7 +292,10 @@ func runPlan() {
 		StrictValidators: *validatorsStrict,
 	}
 
-	res, err := svc.Plan(context.Background(), req)
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer cancel()
+
+	res, err := svc.Plan(ctx, req)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
 		os.Exit(1)
