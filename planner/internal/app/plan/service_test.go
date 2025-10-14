@@ -54,7 +54,7 @@ func TestServicePlanSuccess(t *testing.T) {
 			return df, nil
 		},
 		ValidateTasks: func(tf *m.TasksFile) error { return nil },
-		ValidateDag:   func(df *m.DagFile) error { return nil },
+		ValidateDAG:   func(df *m.DagFile) error { return nil },
 		BuildWaves: func(ctx context.Context, df *m.DagFile, tasks []m.Task) (map[string]any, error) {
 			return map[string]any{"meta": map[string]any{"version": "v8"}, "waves": [][]string{{"T001"}}}, nil
 		},
@@ -121,7 +121,7 @@ func TestServicePlanValidatorWarnings(t *testing.T) {
 			return &m.DagFile{}, nil
 		},
 		ValidateTasks: func(tf *m.TasksFile) error { return nil },
-		ValidateDag:   func(df *m.DagFile) error { return nil },
+		ValidateDAG:   func(df *m.DagFile) error { return nil },
 		BuildWaves: func(ctx context.Context, df *m.DagFile, tasks []m.Task) (map[string]any, error) {
 			return map[string]any{"meta": map[string]any{"version": "v8"}}, nil
 		},
@@ -163,7 +163,7 @@ func TestServicePlanValidatorStrictFailure(t *testing.T) {
 		},
 		BuildDAG:      func(context.Context, []m.Task, []m.Edge, float64) (*m.DagFile, error) { return &m.DagFile{}, nil },
 		ValidateTasks: func(*m.TasksFile) error { return nil },
-		ValidateDag:   func(*m.DagFile) error { return nil },
+		ValidateDAG:   func(*m.DagFile) error { return nil },
 		BuildWaves: func(ctx context.Context, df *m.DagFile, tasks []m.Task) (map[string]any, error) {
 			return map[string]any{"meta": map[string]any{"version": "v8"}}, nil
 		},

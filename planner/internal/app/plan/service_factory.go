@@ -27,7 +27,7 @@ func NewDefaultService() Service {
 		},
 		BuildCoordinator: coord.Build,
 		ValidateTasks:    validate.TasksFile,
-		ValidateDag:      validate.DagFile,
+		ValidateDAG:      validate.DagFile,
 		BuildWaves:       waves.Build,
 		WriteArtifacts:   artifacts.Write,
 		NewValidatorRunner: func(cfg validators.Config) (ValidatorRunner, error) {

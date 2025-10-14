@@ -61,7 +61,7 @@ type Service struct {
 	BuildDAG           func(ctx context.Context, tasks []m.Task, deps []m.Edge, minConfidence float64) (*m.DagFile, error)
 	BuildCoordinator   func(tasks []m.Task, deps []m.Edge) m.Coordinator
 	ValidateTasks      func(tf *m.TasksFile) error
-	ValidateDag        func(df *m.DagFile) error
+	ValidateDAG        func(df *m.DagFile) error
 	BuildWaves         func(ctx context.Context, df *m.DagFile, tasks []m.Task) (map[string]any, error)
 	WriteArtifacts     func(ctx context.Context, out string, bundle ArtifactBundle) (ArtifactWriteResult, error)
 	NewValidatorRunner func(cfg validators.Config) (ValidatorRunner, error)
@@ -86,7 +86,7 @@ type Result struct {
 
 // Plan executes the planning workflow.
 func (s Service) Plan(ctx context.Context, req Request) (Result, error) {
-	if s.BuildTasks == nil || s.AnalyzeRepo == nil || s.BuildDAG == nil || s.ValidateTasks == nil || s.ValidateDag == nil || s.BuildWaves == nil || s.WriteArtifacts == nil {
+	if s.BuildTasks == nil || s.AnalyzeRepo == nil || s.BuildDAG == nil || s.ValidateTasks == nil || s.ValidateDAG == nil || s.BuildWaves == nil || s.WriteArtifacts == nil {
 		return Result{}, errors.New("plan service: missing required adapters")
 	}
 
@@ -134,7 +134,7 @@ func (s Service) Plan(ctx context.Context, req Request) (Result, error) {
 	if err != nil {
 		return Result{}, fmt.Errorf("build dag: %w", err)
 	}
-	if err := s.ValidateDag(dagFile); err != nil {
+	if err := s.ValidateDAG(dagFile); err != nil {
 		return Result{}, fmt.Errorf("validate dag: %w", err)
 	}
 
