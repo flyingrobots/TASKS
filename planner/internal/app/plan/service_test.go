@@ -46,12 +46,7 @@ func TestServicePlanSuccess(t *testing.T) {
 		BuildDAG: func(ctx context.Context, tasks []m.Task, deps []m.Edge, minConfidence float64) (*m.DagFile, error) {
 			df := &m.DagFile{}
 			df.Meta.Version = "v8"
-			df.Nodes = []struct {
-				ID                  string `json:"id"`
-				Depth               int    `json:"depth"`
-				CriticalPath        bool   `json:"critical_path"`
-				ParallelOpportunity int    `json:"parallel_opportunity"`
-			}{{ID: "T001", Depth: 0}}
+			df.Nodes = []m.DagNode{{ID: "T001", Depth: 0}}
 			return df, nil
 		},
 		ValidateTasks: func(tf *m.TasksFile) error { return nil },

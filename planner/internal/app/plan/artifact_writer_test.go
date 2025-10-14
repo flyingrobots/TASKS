@@ -20,12 +20,8 @@ func TestFileArtifactWriterWritesArtifacts(t *testing.T) {
 	tf.Tasks = []m.Task{{ID: "T001", Title: "Do thing"}}
 	df := &m.DagFile{}
 	df.Meta.Version = "v8"
-	df.Nodes = []struct {
-		ID                  string `json:"id"`
-		Depth               int    `json:"depth"`
-		CriticalPath        bool   `json:"critical_path"`
-		ParallelOpportunity int    `json:"parallel_opportunity"`
-	}{{ID: "T001", Depth: 0}}
+	df.Nodes = []m.DagNode{{ID: "T001", Depth: 0}}
+	df.Edges = []m.DagEdge{}
 
 	waves := &m.WavesArtifact{Meta: m.WavesMeta{Version: "v8"}, Waves: [][]string{{"T001"}}}
 	bundle := ArtifactBundle{
@@ -75,23 +71,13 @@ func TestFileArtifactWriterAggregatesErrors(t *testing.T) {
 		t.Fatalf("write file: %v", err)
 	}
 	writer := FileArtifactWriter{}
+	tf := &m.TasksFile{}
+	tf.Meta.Version = "v8"
+	df := &m.DagFile{}
+	df.Meta.Version = "v8"
 	bundle := ArtifactBundle{
-		TasksFile: &m.TasksFile{Meta: struct {
-			Version           string  `json:"version"`
-			MinConfidence     float64 `json:"min_confidence"`
-			ArtifactHash      string  `json:"artifact_hash"`
-			CodebaseAnalysis  any     `json:"codebase_analysis"`
-			Autonormalization struct {
-				Split  []string `json:"split"`
-				Merged []string `json:"merged"`
-			} `json:"autonormalization"`
-			ValidatorReports []m.ValidatorReport `json:"validator_reports,omitempty"`
-		}{Version: "v8"}},
-		DagFile: &m.DagFile{Meta: struct {
-			Version      string `json:"version"`
-			ArtifactHash string `json:"artifact_hash"`
-			TasksHash    string `json:"tasks_hash"`
-		}{Version: "v8"}},
+		TasksFile:   tf,
+		DagFile:     df,
 		Coordinator: &m.Coordinator{Version: "v8"},
 		Features:    &m.FeaturesArtifact{Meta: m.ArtifactMeta{Version: "v8"}},
 		Waves:       &m.WavesArtifact{Meta: m.WavesMeta{Version: "v8"}},

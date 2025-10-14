@@ -11,18 +11,8 @@ func TestDefaultWaveBuilderBuildsWaves(t *testing.T) {
 	builder := DefaultWaveBuilder{}
 	df := &m.DagFile{}
 	df.Meta.Version = "v8"
-	df.Nodes = []struct {
-		ID                  string `json:"id"`
-		Depth               int    `json:"depth"`
-		CriticalPath        bool   `json:"critical_path"`
-		ParallelOpportunity int    `json:"parallel_opportunity"`
-	}{{ID: "T001", Depth: 0}}
-	df.Edges = []struct {
-		From       string `json:"from"`
-		To         string `json:"to"`
-		Type       string `json:"type"`
-		Transitive bool   `json:"transitive"`
-	}{}
+	df.Nodes = []m.DagNode{{ID: "T001", Depth: 0}}
+	df.Edges = []m.DagEdge{}
 
 	tasks := []m.Task{{ID: "T001"}}
 	waves, err := builder.Build(context.Background(), df, tasks)
