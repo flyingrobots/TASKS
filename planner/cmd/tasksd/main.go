@@ -304,7 +304,7 @@ func runPlan() {
 		fmt.Fprintf(os.Stderr, "validators warning: %s\n", warn)
 	}
 
-	fmt.Println("Plan stub written to", *out)
+	fmt.Println("Plan written to", *out)
 }
 
 const validatorDetailLimit = 2048
