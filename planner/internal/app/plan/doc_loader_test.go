@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -93,6 +94,7 @@ func TestMarkdownDocLoaderPropagatesParseErrors(t *testing.T) {
 
 func TestApplyTaskDefaults(t *testing.T) {
 	task := m.Task{}
+	task.Duration = m.DurationPERT{Optimistic: 1, MostLikely: 2, Pessimistic: 3}
 	applyTaskDefaults(&task)
 	if len(task.AcceptanceChecks) == 0 {
 		t.Fatalf("expected default acceptance check")
@@ -102,5 +104,15 @@ func TestApplyTaskDefaults(t *testing.T) {
 	}
 	if task.ExecutionLogging.Format != "JSONL" {
 		t.Fatalf("expected JSONL logging format")
+	}
+	expectedFields := []string{"timestamp", "task_id", "step", "status", "message"}
+	if !reflect.DeepEqual(task.ExecutionLogging.RequiredFields, expectedFields) {
+		t.Fatalf("unexpected required fields: %+v", task.ExecutionLogging.RequiredFields)
+	}
+	if !task.Compensation.Idempotent {
+		t.Fatalf("expected compensation to be idempotent")
+	}
+	if task.Duration.Optimistic > task.Duration.MostLikely || task.Duration.MostLikely > task.Duration.Pessimistic {
+		t.Fatalf("duration PERT out of order: %+v", task.Duration)
 	}
 }
