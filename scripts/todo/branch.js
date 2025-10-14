@@ -55,7 +55,7 @@ function main() {
   }
 
   try {
-    run('git', ['checkout', '-b', branch, 'origin/main']);
+    run('git', ['checkout', '-b', branch, 'origin/main'], { stdio: 'pipe' });
   } catch (err) {
     console.error('git checkout failed:', err.stderr?.trim() || err.message);
     process.exit(err.exitStatus || 1);
