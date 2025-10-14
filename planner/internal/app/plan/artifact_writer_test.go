@@ -32,7 +32,7 @@ func TestFileArtifactWriterWritesArtifacts(t *testing.T) {
 		TasksFile:   tf,
 		DagFile:     df,
 		Coordinator: &m.Coordinator{Version: "v8"},
-		Features:    makeFeaturesArtifact([]FeatureSummary{{ID: "F1", Title: "Feature"}}),
+		Features:    makeFeaturesArtifact([]FeatureSummary{{ID: "F001", Title: "Feature"}}),
 		Waves:       waves,
 		Titles:      taskTitles(tf.Tasks),
 		ValidatorReports: []m.ValidatorReport{{

@@ -24,8 +24,8 @@ func (s *stubRunner) Run(ctx context.Context, payload validators.Payload) ([]val
 }
 
 func TestServicePlanSuccess(t *testing.T) {
-	tasks := []m.Task{{ID: "T001", Title: "Do thing", FeatureID: "F1", AcceptanceChecks: []m.AcceptanceCheck{{Type: "command", Cmd: "echo ok"}}, Duration: m.DurationPERT{Optimistic: 1, MostLikely: 2, Pessimistic: 3}, DurationUnit: "hours"}}
-	features := []plan.FeatureSummary{{ID: "F1", Title: "Feature One"}}
+	tasks := []m.Task{{ID: "T001", Title: "Do thing", FeatureID: "F001", AcceptanceChecks: []m.AcceptanceCheck{{Type: "command", Cmd: "echo ok"}}, Duration: m.DurationPERT{Optimistic: 1, MostLikely: 2, Pessimistic: 3}, DurationUnit: "hours"}}
+	features := []plan.FeatureSummary{{ID: "F001", Title: "Feature One"}}
 	deps := []m.Edge{}
 
 	runner := &stubRunner{reports: []validators.Report{{Name: "acceptance", Status: m.ValidatorStatusPass, Command: "echo pass", InputHash: "abcd", Detail: "ok"}}}

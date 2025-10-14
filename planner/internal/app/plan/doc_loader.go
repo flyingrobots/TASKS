@@ -147,9 +147,9 @@ func stubPlan() ([]m.Task, []FeatureSummary) {
 		featureID string
 		title     string
 	}{
-		{"T001", "F1", "Setup DB"},
-		{"T002", "F1", "Migrate Schema"},
-		{"T003", "F1", "API Handlers"},
+		{"T001", "F001", "Setup DB"},
+		{"T002", "F001", "Migrate Schema"},
+		{"T003", "F001", "API Handlers"},
 	}
 	tasks := make([]m.Task, 0, len(base))
 	for _, spec := range base {
@@ -162,7 +162,7 @@ func stubPlan() ([]m.Task, []FeatureSummary) {
 		applyTaskDefaults(&task)
 		tasks = append(tasks, task)
 	}
-	return tasks, []FeatureSummary{{ID: "F1", Title: "Core DB + API"}}
+	return tasks, []FeatureSummary{{ID: "F001", Title: "Core DB + API"}}
 }
 
 func applyTaskDefaults(task *m.Task) {
