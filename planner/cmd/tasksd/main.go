@@ -212,7 +212,7 @@ func join(dir, name string) string { return filepath.Join(dir, name) }
 
 func runPlan() {
 	fs := flag.NewFlagSet("plan", flag.ExitOnError)
-	doc := fs.String("doc", "", "Path to plan document (unused in stub)")
+	doc := fs.String("doc", "", "Path to plan document (markdown)")
 	repo := fs.String("repo", ".", "Path to codebase for census (optional)")
 	out := fs.String("out", "./plans", "Output directory for artifacts")
 	acceptanceCmd := fs.String(
