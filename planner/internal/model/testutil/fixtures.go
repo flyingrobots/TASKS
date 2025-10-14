@@ -9,7 +9,7 @@ func StubTasksFile() *m.TasksFile {
 	tf.Meta.MinConfidence = 0.7
 	tf.Tasks = []m.Task{{
 		ID:        "T001",
-		FeatureID: "F1",
+		FeatureID: "F001",
 		Title:     "Do thing",
 		Duration: m.DurationPERT{
 			Optimistic:  1,
