@@ -50,6 +50,12 @@ func TestServiceRunPropagatesErrors(t *testing.T) {
 		LoadCoordinator: func(path string) (m.Coordinator, error) {
 			return m.Coordinator{}, errors.New("boom")
 		},
+		InitRuntime: func(ctx context.Context, coord m.Coordinator) error {
+			return nil
+		},
+		RunLoop: func(ctx context.Context) error {
+			return nil
+		},
 	}
 	if err := svc.Run(context.Background(), "coord.json"); err == nil {
 		t.Fatalf("expected error")
