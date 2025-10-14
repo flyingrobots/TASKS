@@ -22,7 +22,7 @@ func NewDefaultService() Service {
 		BuildTasks:  docLoader.Load,
 		AnalyzeRepo: analyzer.Analyze,
 		ResolveDeps: deps.Resolve,
-		BuildDAG: func(ctx context.Context, tasks []m.Task, edges []m.Edge, minConfidence float64) (*m.DagFile, error) {
+		BuildDAG: func(_ context.Context, tasks []m.Task, edges []m.Edge, minConfidence float64) (*m.DagFile, error) {
 			return dagbuild.Build(tasks, edges, minConfidence)
 		},
 		BuildCoordinator: coord.Build,
