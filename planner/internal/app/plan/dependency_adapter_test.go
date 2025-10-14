@@ -26,10 +26,10 @@ func TestDefaultDependencyResolverResources(t *testing.T) {
 	tasks[0].Resources.Exclusive = []string{"db"}
 	tasks[1].Resources.Exclusive = []string{"db"}
 	deps, conflicts := DefaultDependencyResolver{}.Resolve(tasks, nil)
-	if len(conflicts) != 1 {
-		t.Fatalf("expected resource conflict, got %+v", conflicts)
+	if got := len(conflicts); got != 1 {
+		t.Fatalf("expected 1 resource conflict, got %d (%+v)", got, conflicts)
 	}
-	if len(deps) < 2 {
-		t.Fatalf("expected resource edges, got %d", len(deps))
+	if got := len(deps); got != 1 {
+		t.Fatalf("expected only fallback precedence edge, got %d", got)
 	}
 }

@@ -46,11 +46,6 @@ func (DefaultDependencyResolver) Resolve(tasks []m.Task, baseEdges []m.Edge) ([]
 			continue
 		}
 		resourceConflicts[r] = map[string]any{"type": "exclusive", "tasks": ids}
-		for i := 0; i < len(ids); i++ {
-			for j := i + 1; j < len(ids); j++ {
-				deps = append(deps, m.Edge{From: ids[i], To: ids[j], Type: "resource", Subtype: "mutual_exclusion", IsHard: true, Confidence: 1.0})
-			}
-		}
 	}
 
 	return deps, resourceConflicts
