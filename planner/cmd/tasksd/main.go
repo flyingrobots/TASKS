@@ -215,6 +215,11 @@ func runPlan() {
 	doc := fs.String("doc", "", "Path to plan document (markdown)")
 	repo := fs.String("repo", ".", "Path to codebase for census (optional)")
 	out := fs.String("out", "./plans", "Output directory for artifacts")
+	minConfidenceFlag := fs.Float64(
+		"min-confidence",
+		0.7,
+		"Minimum confidence threshold [0.0-1.0] applied to inferred edges.",
+	)
 	acceptanceCmd := fs.String(
 		"validators-acceptance",
 		"",
@@ -251,6 +256,10 @@ func runPlan() {
 		fmt.Fprintf(os.Stderr, "Failed to create output dir %s: %v\n", *out, err)
 		os.Exit(1)
 	}
+	if *minConfidenceFlag < 0 || *minConfidenceFlag > 1 {
+		fmt.Fprintf(os.Stderr, "Invalid --min-confidence %.3f (expected range 0.0-1.0)\n", *minConfidenceFlag)
+		os.Exit(1)
+	}
 
 	svc := plan.NewDefaultService()
 	svc.AnalyzeRepo = func(ctx context.Context, repo string) (analysis.FileCensusCounts, error) {
@@ -265,10 +274,12 @@ func runPlan() {
 		return counts, nil
 	}
 
+	minConfidence := *minConfidenceFlag
 	req := plan.Request{
-		DocPath:  *doc,
-		RepoPath: *repo,
-		OutDir:   *out,
+		DocPath:       *doc,
+		RepoPath:      *repo,
+		OutDir:        *out,
+		MinConfidence: &minConfidence,
 		ValidatorConfig: validators.Config{
 			AcceptanceCmd: *acceptanceCmd,
 			EvidenceCmd:   *evidenceCmd,
