@@ -190,9 +190,7 @@ func resolveTaskID(token string, titleToID map[string]string) string {
 				return ""
 			}
 		}
-		if len(trimmed) == 4 {
-			return strings.ToUpper(trimmed)
-		}
+		return strings.ToUpper(trimmed)
 	}
 	return titleToID[normalizeKey(trimmed)]
 }

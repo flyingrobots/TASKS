@@ -134,3 +134,10 @@ func TestApplyTaskDefaults(t *testing.T) {
 		t.Fatalf("duration PERT out of order: %+v", task.Duration)
 	}
 }
+
+func TestResolveTaskIDAllowsLongerIDs(t *testing.T) {
+	got := resolveTaskID("T12345", map[string]string{"task": "T001"})
+	if got != "T12345" {
+		t.Fatalf("expected T12345, got %q", got)
+	}
+}
