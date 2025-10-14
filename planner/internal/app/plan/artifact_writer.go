@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/james/tasks-planner/internal/emitter"
@@ -90,7 +91,12 @@ func (a artifactErrors) Error() string {
 func (a artifactErrors) Unwrap() []error { return []error(a) }
 
 func writePlanSummary(out string, hashes map[string]string, validatorReports []m.ValidatorReport) error {
-	names := []string{"features.json", "tasks.json", "dag.json", "waves.json", "coordinator.json"}
+	names := make([]string, 0, len(hashes))
+	for name := range hashes {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+
 	var sb strings.Builder
 	sb.WriteString("# Plan (stub)\n\n")
 	sb.WriteString("## Hashes\n\n")
