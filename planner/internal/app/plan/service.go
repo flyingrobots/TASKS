@@ -272,11 +272,7 @@ func makeCoordinator(tasks []m.Task, deps []m.Edge) m.Coordinator {
 	coord.Version = schemaVersion
 	coord.Graph.Nodes = tasks
 	coord.Graph.Edges = deps
-	coord.Config.Resources.Catalog = map[string]struct {
-		Capacity  int    `json:"capacity"`
-		Mode      string `json:"mode"`
-		LockOrder int    `json:"lock_order"`
-	}{}
+	coord.Config.Resources.Catalog = map[string]m.ResourceSpec{}
 	coord.Config.Resources.Profiles = map[string]map[string]int{"default": {}}
 	coord.Config.Policies.LockOrdering = []string{}
 	return coord

@@ -1,5 +1,12 @@
 package model
 
+// ResourceSpec defines a resource catalog entry for coordinator.json.
+type ResourceSpec struct {
+	Capacity  int    `json:"capacity"`
+	Mode      string `json:"mode"`
+	LockOrder int    `json:"lock_order"`
+}
+
 // Coordinator represents the coordinator.json contract passed from the planner to the executor.
 type Coordinator struct {
 	Version string `json:"version"`
@@ -9,11 +16,7 @@ type Coordinator struct {
 	} `json:"graph"`
 	Config struct {
 		Resources struct {
-			Catalog map[string]struct {
-				Capacity  int    `json:"capacity"`
-				Mode      string `json:"mode"`
-				LockOrder int    `json:"lock_order"`
-			} `json:"catalog"`
+			Catalog  map[string]ResourceSpec   `json:"catalog"`
 			Profiles map[string]map[string]int `json:"profiles"`
 		} `json:"resources"`
 		Policies struct {
