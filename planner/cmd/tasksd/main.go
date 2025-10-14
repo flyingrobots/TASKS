@@ -601,26 +601,9 @@ func convertValidatorReports(src []validators.Report) []m.ValidatorReport {
 	return dst
 }
 
-type artifactErrors []error
-
-func (a artifactErrors) Error() string {
-	if len(a) == 0 {
-		return ""
-	}
-	parts := make([]string, len(a))
-	for i, err := range a {
-		parts[i] = err.Error()
-	}
-	return strings.Join(parts, "; ")
-}
-
-func (a artifactErrors) Unwrap() []error {
-	return []error(a)
-}
-
 func writeArtifacts(outDir string, tf *m.TasksFile, df *m.DagFile, coord *m.Coordinator, features map[string]any, waves map[string]any, titles map[string]string, validatorReports []validators.Report) error {
 	hashes := map[string]string{}
-	errs := artifactErrors{}
+	var errs []error
 	writeWithHash := func(name string, value any, setHash func(string)) {
 		hashValue, err := emitter.WriteWithArtifactHash(join(outDir, name), value, setHash)
 		if err != nil {
@@ -668,7 +651,7 @@ func writeArtifacts(outDir string, tf *m.TasksFile, df *m.DagFile, coord *m.Coor
 	if err := os.WriteFile(join(outDir, "runtime.dot"), []byte(runtimeDot), 0o644); err != nil {
 		errs = append(errs, fmt.Errorf("write runtime.dot: %w", err))
 	}
-	return errors.Join([]error(errs)...)
+	return errors.Join(errs...)
 }
 
 func applyTaskDefaults(task *m.Task) {
