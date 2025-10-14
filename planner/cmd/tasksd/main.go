@@ -653,7 +653,7 @@ func writeArtifacts(outDir string, tf *m.TasksFile, df *m.DagFile, coord *m.Coor
 		}
 	})
 
-	writeWithHash("coordinator.json", coord, func(string) {})
+	writeWithHash("coordinator.json", coord, nil)
 
 	if err := writePlanSummary(outDir, hashes, validatorReports); err != nil {
 		errs = append(errs, err)
