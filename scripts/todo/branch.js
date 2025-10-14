@@ -37,7 +37,7 @@ function main() {
   }
   const branch = `feat/${feature}-task-${taskId}`;
   try {
-    run('git', ['fetch', 'origin']);
+    run('git', ['fetch', 'origin'], { stdio: 'pipe' });
   } catch (err) {
     console.error('git fetch failed:', err.stderr?.trim() || err.message);
     process.exit(err.exitStatus || 1);
