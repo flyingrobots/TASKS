@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -15,7 +16,7 @@ func main() {
 
 	svc := execapp.NewDefaultService()
 	if err := svc.Run(context.Background(), *coordPath); err != nil {
-		if err == execapp.ErrLoopNotImplemented {
+		if errors.Is(err, execapp.ErrLoopNotImplemented) {
 			fmt.Fprintln(os.Stderr, "slapsd: execution loop not yet implemented (stub)")
 			os.Exit(1)
 		}
