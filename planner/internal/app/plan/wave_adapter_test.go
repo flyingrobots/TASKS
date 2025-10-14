@@ -29,12 +29,10 @@ func TestDefaultWaveBuilderBuildsWaves(t *testing.T) {
 	if err != nil {
 		t.Fatalf("build waves: %v", err)
 	}
-	meta, ok := waves["meta"].(map[string]any)
-	if !ok || meta["version"] != "v8" {
-		t.Fatalf("expected meta with version v8, got %+v", meta)
+	if waves.Meta.Version != schemaVersion {
+		t.Fatalf("expected meta version %s, got %+v", schemaVersion, waves.Meta)
 	}
-	vals, ok := waves["waves"].([][]string)
-	if !ok || len(vals) != 1 {
-		t.Fatalf("expected waves array, got %+v", waves["waves"])
+	if len(waves.Waves) != 1 {
+		t.Fatalf("expected waves array, got %+v", waves.Waves)
 	}
 }

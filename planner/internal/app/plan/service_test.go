@@ -56,8 +56,8 @@ func TestServicePlanSuccess(t *testing.T) {
 		},
 		ValidateTasks: func(tf *m.TasksFile) error { return nil },
 		ValidateDAG:   func(df *m.DagFile) error { return nil },
-		BuildWaves: func(ctx context.Context, df *m.DagFile, tasks []m.Task) (map[string]any, error) {
-			return map[string]any{"meta": map[string]any{"version": "v8"}, "waves": [][]string{{"T001"}}}, nil
+		BuildWaves: func(ctx context.Context, df *m.DagFile, tasks []m.Task) (*m.WavesArtifact, error) {
+			return &m.WavesArtifact{Meta: m.WavesMeta{Version: "v8", ArtifactHash: ""}, Waves: [][]string{{"T001"}}}, nil
 		},
 		WriteArtifacts: func(ctx context.Context, out string, bundle plan.ArtifactBundle) (plan.ArtifactWriteResult, error) {
 			if out != "./plans" {
@@ -124,8 +124,8 @@ func TestServicePlanValidatorWarnings(t *testing.T) {
 		},
 		ValidateTasks: func(tf *m.TasksFile) error { return nil },
 		ValidateDAG:   func(df *m.DagFile) error { return nil },
-		BuildWaves: func(ctx context.Context, df *m.DagFile, tasks []m.Task) (map[string]any, error) {
-			return map[string]any{"meta": map[string]any{"version": "v8"}}, nil
+		BuildWaves: func(ctx context.Context, df *m.DagFile, tasks []m.Task) (*m.WavesArtifact, error) {
+			return &m.WavesArtifact{Meta: m.WavesMeta{Version: "v8"}}, nil
 		},
 		WriteArtifacts: func(ctx context.Context, out string, bundle plan.ArtifactBundle) (plan.ArtifactWriteResult, error) {
 			return plan.ArtifactWriteResult{Hashes: map[string]string{"tasks.json": "hash1"}}, nil
@@ -176,8 +176,8 @@ func TestServicePlanValidatorStrictFailure(t *testing.T) {
 		BuildDAG:      func(context.Context, []m.Task, []m.Edge, float64) (*m.DagFile, error) { return &m.DagFile{}, nil },
 		ValidateTasks: func(*m.TasksFile) error { return nil },
 		ValidateDAG:   func(*m.DagFile) error { return nil },
-		BuildWaves: func(ctx context.Context, df *m.DagFile, tasks []m.Task) (map[string]any, error) {
-			return map[string]any{"meta": map[string]any{"version": "v8"}}, nil
+		BuildWaves: func(ctx context.Context, df *m.DagFile, tasks []m.Task) (*m.WavesArtifact, error) {
+			return &m.WavesArtifact{Meta: m.WavesMeta{Version: "v8"}}, nil
 		},
 		WriteArtifacts: func(context.Context, string, plan.ArtifactBundle) (plan.ArtifactWriteResult, error) {
 			return plan.ArtifactWriteResult{Hashes: map[string]string{"tasks.json": "hash"}}, nil
@@ -209,8 +209,8 @@ func TestServicePlanValidatorStrictStatusFailure(t *testing.T) {
 		BuildDAG:      func(context.Context, []m.Task, []m.Edge, float64) (*m.DagFile, error) { return &m.DagFile{}, nil },
 		ValidateTasks: func(*m.TasksFile) error { return nil },
 		ValidateDAG:   func(*m.DagFile) error { return nil },
-		BuildWaves: func(context.Context, *m.DagFile, []m.Task) (map[string]any, error) {
-			return map[string]any{"meta": map[string]any{"version": "v8"}}, nil
+		BuildWaves: func(context.Context, *m.DagFile, []m.Task) (*m.WavesArtifact, error) {
+			return &m.WavesArtifact{Meta: m.WavesMeta{Version: "v8"}}, nil
 		},
 		WriteArtifacts: func(context.Context, string, plan.ArtifactBundle) (plan.ArtifactWriteResult, error) {
 			return plan.ArtifactWriteResult{Hashes: map[string]string{"tasks.json": "hash"}}, nil

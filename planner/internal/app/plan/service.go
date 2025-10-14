@@ -37,9 +37,9 @@ type ArtifactBundle struct {
 	TasksFile        *m.TasksFile
 	DagFile          *m.DagFile
 	Coordinator      *m.Coordinator
-	Features         map[string]any
-	Waves            map[string]any
-	Titles           map[string]string
+	Features         *m.FeaturesArtifact
+	Waves            *m.WavesArtifact
+	Titles           *m.TitlesArtifact
 	ValidatorReports []m.ValidatorReport
 }
 
@@ -62,7 +62,7 @@ type Service struct {
 	BuildCoordinator   func(tasks []m.Task, deps []m.Edge) m.Coordinator
 	ValidateTasks      func(tf *m.TasksFile) error
 	ValidateDAG        func(df *m.DagFile) error
-	BuildWaves         func(ctx context.Context, df *m.DagFile, tasks []m.Task) (map[string]any, error)
+	BuildWaves         func(ctx context.Context, df *m.DagFile, tasks []m.Task) (*m.WavesArtifact, error)
 	WriteArtifacts     func(ctx context.Context, out string, bundle ArtifactBundle) (ArtifactWriteResult, error)
 	NewValidatorRunner func(cfg validators.Config) (ValidatorRunner, error)
 }
@@ -256,14 +256,14 @@ func featuresFromTasks(tasks []m.Task) []FeatureSummary {
 	return summaries
 }
 
-func makeFeaturesArtifact(features []FeatureSummary) map[string]any {
-	entries := make([]any, 0, len(features))
+func makeFeaturesArtifact(features []FeatureSummary) *m.FeaturesArtifact {
+	entries := make([]m.FeatureEntry, 0, len(features))
 	for _, f := range features {
-		entries = append(entries, map[string]any{"id": f.ID, "title": f.Title})
+		entries = append(entries, m.FeatureEntry{ID: f.ID, Title: f.Title})
 	}
-	return map[string]any{
-		"meta":     map[string]any{"version": schemaVersion, "artifact_hash": ""},
-		"features": entries,
+	return &m.FeaturesArtifact{
+		Meta:     m.ArtifactMeta{Version: schemaVersion, ArtifactHash: ""},
+		Features: entries,
 	}
 }
 

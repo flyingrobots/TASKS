@@ -27,14 +27,14 @@ func TestFileArtifactWriterWritesArtifacts(t *testing.T) {
 		ParallelOpportunity int    `json:"parallel_opportunity"`
 	}{{ID: "T001", Depth: 0}}
 
-	waves := map[string]any{"meta": map[string]any{"version": "v8"}, "waves": [][]string{{"T001"}}}
+	waves := &m.WavesArtifact{Meta: m.WavesMeta{Version: "v8"}, Waves: [][]string{{"T001"}}}
 	bundle := ArtifactBundle{
 		TasksFile:   tf,
 		DagFile:     df,
 		Coordinator: &m.Coordinator{Version: "v8"},
 		Features:    makeFeaturesArtifact([]FeatureSummary{{ID: "F1", Title: "Feature"}}),
 		Waves:       waves,
-		Titles:      map[string]string{"T001": "Do thing"},
+		Titles:      taskTitles(tf.Tasks),
 		ValidatorReports: []m.ValidatorReport{{
 			Name:      "acceptance",
 			Status:    m.ValidatorStatusPass,
@@ -93,8 +93,8 @@ func TestFileArtifactWriterAggregatesErrors(t *testing.T) {
 			TasksHash    string `json:"tasks_hash"`
 		}{Version: "v8"}},
 		Coordinator: &m.Coordinator{Version: "v8"},
-		Features:    map[string]any{"meta": map[string]any{"version": "v8"}},
-		Waves:       map[string]any{"meta": map[string]any{"version": "v8"}},
+		Features:    &m.FeaturesArtifact{Meta: m.ArtifactMeta{Version: "v8"}},
+		Waves:       &m.WavesArtifact{Meta: m.WavesMeta{Version: "v8"}},
 	}
 
 	_, err := writer.Write(context.Background(), path, bundle)

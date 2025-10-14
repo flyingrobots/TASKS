@@ -33,26 +33,24 @@ func (FileArtifactWriter) Write(ctx context.Context, out string, bundle Artifact
 	writeWithHash("tasks.json", bundle.TasksFile, func(h string) { bundle.TasksFile.Meta.ArtifactHash = h })
 	if h, ok := hashes["tasks.json"]; ok {
 		bundle.DagFile.Meta.TasksHash = h
+		if bundle.Waves != nil {
+			bundle.Waves.Meta.PlanID = h
+		}
 	}
 	bundle.DagFile.Meta.ArtifactHash = ""
 	writeWithHash("dag.json", bundle.DagFile, func(h string) { bundle.DagFile.Meta.ArtifactHash = h })
 
-	if meta, ok := bundle.Waves["meta"].(map[string]any); ok {
-		if h, ok := hashes["tasks.json"]; ok {
-			meta["planId"] = h
-		}
+	if bundle.Waves != nil {
+		writeWithHash("waves.json", bundle.Waves, func(h string) {
+			bundle.Waves.Meta.ArtifactHash = h
+		})
 	}
-	writeWithHash("waves.json", bundle.Waves, func(h string) {
-		if meta, ok := bundle.Waves["meta"].(map[string]any); ok {
-			meta["artifact_hash"] = h
-		}
-	})
 
-	writeWithHash("features.json", bundle.Features, func(h string) {
-		if meta, ok := bundle.Features["meta"].(map[string]any); ok {
-			meta["artifact_hash"] = h
-		}
-	})
+	if bundle.Features != nil {
+		writeWithHash("features.json", bundle.Features, func(h string) {
+			bundle.Features.Meta.ArtifactHash = h
+		})
+	}
 
 	writeWithHash("coordinator.json", bundle.Coordinator, func(string) {})
 
@@ -60,7 +58,11 @@ func (FileArtifactWriter) Write(ctx context.Context, out string, bundle Artifact
 		errs = append(errs, err)
 	}
 
-	dagDot := dot.FromDagWithOptions(*bundle.DagFile, bundle.Titles, dot.Options{NodeLabel: "id-title", EdgeLabel: "type"})
+	titleMap := map[string]string{}
+	if bundle.Titles != nil && bundle.Titles.Titles != nil {
+		titleMap = bundle.Titles.Titles
+	}
+	dagDot := dot.FromDagWithOptions(*bundle.DagFile, titleMap, dot.Options{NodeLabel: "id-title", EdgeLabel: "type"})
 	if err := os.WriteFile(filepath.Join(out, "dag.dot"), []byte(dagDot), 0o644); err != nil {
 		errs = append(errs, fmt.Errorf("write dag.dot: %w", err))
 	}
@@ -128,10 +130,13 @@ func truncateDetail(detail string, limit int) string {
 	return string(runes[:limit]) + " … (truncated)"
 }
 
-func taskTitles(tasks []m.Task) map[string]string {
+func taskTitles(tasks []m.Task) *m.TitlesArtifact {
 	titles := make(map[string]string, len(tasks))
 	for _, t := range tasks {
 		titles[t.ID] = t.Title
 	}
-	return titles
+	return &m.TitlesArtifact{
+		Meta:   m.ArtifactMeta{Version: schemaVersion, ArtifactHash: ""},
+		Titles: titles,
+	}
 }
