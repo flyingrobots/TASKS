@@ -12,7 +12,10 @@ import (
 	"github.com/james/tasks-planner/internal/validators"
 )
 
-const defaultMinConfidence = 0.7
+const (
+	defaultMinConfidence = 0.7
+	schemaVersion        = "v8"
+)
 
 // FeatureSummary represents a lightweight feature descriptor produced by the spec loader.
 type FeatureSummary struct {
@@ -93,7 +96,7 @@ func (s Service) Plan(ctx context.Context, req Request) (Result, error) {
 	}
 
 	tf := &m.TasksFile{}
-	tf.Meta.Version = "v8"
+	tf.Meta.Version = schemaVersion
 	tf.Meta.MinConfidence = req.MinConfidence
 	if tf.Meta.MinConfidence == 0 {
 		tf.Meta.MinConfidence = defaultMinConfidence
@@ -226,14 +229,14 @@ func makeFeaturesArtifact(features []FeatureSummary) map[string]any {
 		entries = append(entries, map[string]any{"id": f.ID, "title": f.Title})
 	}
 	return map[string]any{
-		"meta":     map[string]any{"version": "v8", "artifact_hash": ""},
+		"meta":     map[string]any{"version": schemaVersion, "artifact_hash": ""},
 		"features": entries,
 	}
 }
 
 func makeCoordinator(tasks []m.Task, deps []m.Edge) m.Coordinator {
 	coord := m.Coordinator{}
-	coord.Version = "v8"
+	coord.Version = schemaVersion
 	coord.Graph.Nodes = tasks
 	coord.Graph.Edges = deps
 	coord.Config.Resources.Catalog = map[string]struct {
