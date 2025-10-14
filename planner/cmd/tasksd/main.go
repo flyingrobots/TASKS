@@ -266,10 +266,9 @@ func runPlan() {
 	}
 
 	req := plan.Request{
-		DocPath:       *doc,
-		RepoPath:      *repo,
-		OutDir:        *out,
-		MinConfidence: 0.7,
+		DocPath:  *doc,
+		RepoPath: *repo,
+		OutDir:   *out,
 		ValidatorConfig: validators.Config{
 			AcceptanceCmd: *acceptanceCmd,
 			EvidenceCmd:   *evidenceCmd,

@@ -75,11 +75,12 @@ func TestServicePlanSuccess(t *testing.T) {
 		},
 	}
 
+	minConf := 0.5
 	req := plan.Request{
 		DocPath:          "spec.md",
 		RepoPath:         "./repo",
 		OutDir:           "./plans",
-		MinConfidence:    0.5,
+		MinConfidence:    &minConf,
 		ValidatorConfig:  validators.Config{AcceptanceCmd: "accept"},
 		StrictValidators: false,
 	}

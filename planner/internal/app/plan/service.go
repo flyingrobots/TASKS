@@ -72,7 +72,7 @@ type Request struct {
 	DocPath          string
 	RepoPath         string
 	OutDir           string
-	MinConfidence    float64
+	MinConfidence    *float64
 	ValidatorConfig  validators.Config
 	StrictValidators bool
 }
@@ -97,9 +97,13 @@ func (s Service) Plan(ctx context.Context, req Request) (Result, error) {
 
 	tf := &m.TasksFile{}
 	tf.Meta.Version = schemaVersion
-	tf.Meta.MinConfidence = req.MinConfidence
-	if tf.Meta.MinConfidence == 0 {
+	switch {
+	case req.MinConfidence == nil:
 		tf.Meta.MinConfidence = defaultMinConfidence
+	case *req.MinConfidence < 0 || *req.MinConfidence > 1:
+		return Result{}, fmt.Errorf("minConfidence out of range [0,1]: %v", *req.MinConfidence)
+	default:
+		tf.Meta.MinConfidence = *req.MinConfidence
 	}
 	census, err := s.AnalyzeRepo(ctx, req.RepoPath)
 	if err != nil {
