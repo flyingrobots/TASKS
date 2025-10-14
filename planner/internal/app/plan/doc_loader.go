@@ -88,7 +88,12 @@ func (l MarkdownDocLoader) Load(ctx context.Context, docPath string) (TasksResul
 		}
 		applyTaskDefaults(&task)
 		tasks = append(tasks, task)
-		titleToID[normalizeKey(spec.Title)] = id
+		key := normalizeKey(spec.Title)
+		if prev, ok := titleToID[key]; ok && prev != id {
+			parseErrors = append(parseErrors, fmt.Sprintf("duplicate task title %q (IDs %s and %s) — use explicit IDs in 'after:'", spec.Title, prev, id))
+		} else {
+			titleToID[key] = id
+		}
 	}
 	if len(parseErrors) > 0 {
 		return TasksResult{}, fmt.Errorf("doc parse errors: %s", strings.Join(parseErrors, "; "))

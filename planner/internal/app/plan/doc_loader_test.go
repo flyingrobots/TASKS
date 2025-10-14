@@ -92,6 +92,24 @@ func TestMarkdownDocLoaderPropagatesParseErrors(t *testing.T) {
 	}
 }
 
+func TestMarkdownDocLoaderRejectsDuplicateTitles(t *testing.T) {
+	tmp := t.TempDir()
+	path := filepath.Join(tmp, "plan.md")
+	content := strings.Join([]string{
+		"## Feature",
+		"- Repeat Task",
+		"- Repeat Task",
+	}, "\n")
+	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+		t.Fatalf("write file: %v", err)
+	}
+	loader := NewMarkdownDocLoader()
+	_, err := loader.Load(context.Background(), path)
+	if err == nil || !strings.Contains(err.Error(), "duplicate task title") {
+		t.Fatalf("expected duplicate title error, got %v", err)
+	}
+}
+
 func TestApplyTaskDefaults(t *testing.T) {
 	task := m.Task{}
 	task.Duration = m.DurationPERT{Optimistic: 1, MostLikely: 2, Pessimistic: 3}
