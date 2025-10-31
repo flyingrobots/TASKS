@@ -1,8 +1,20 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Dependency checks
+for cmd in gh jq; do
+  if ! command -v "$cmd" >/dev/null 2>&1; then
+    echo "ERROR: required command '$cmd' not found in PATH" >&2
+    exit 127
+  fi
+done
+
 # Seed rough Depth values for the Project v2 titled "TASKS + SLAPS OVERVIEW".
-# Usage: GITHUB_TOKEN=... ./scripts/gh/seed-overview-depths.sh
+# Usage:
+#   GITHUB_TOKEN=... [OWNER=owner] [REPO_NAME=repo] ./scripts/gh/seed-overview-depths.sh
+#
+# Notes:
+# - OWNER and REPO_NAME default to values derived from the current git remote.
 
 owner=${OWNER:-$(git remote get-url origin | sed -E 's#.*github.com[:/]([^/]+)/.*#\1#')}
 repo=${REPO_NAME:-$(git remote get-url origin | sed -E 's#.*/([^/]+?)(\.git)?$#\1#' | sed 's/.git$//')}
@@ -28,4 +40,3 @@ pairs=(
   40:0 41:0 42:0 43:0 44:0 45:0 46:1 47:1 48:2 49:2 50:1 51:3 52:2 53:2 54:3 55:3 56:2 57:3 58:3 59:2 60:3 61:3
 )
 for kv in "${pairs[@]}"; do num=${kv%%:*}; d=${kv#*:}; set_depth "$num" "$d"; done
-

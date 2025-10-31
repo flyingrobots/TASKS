@@ -1,6 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Dependency checks
+for cmd in gh jq; do
+  if ! command -v "$cmd" >/dev/null 2>&1; then
+    echo "ERROR: required command '$cmd' not found in PATH" >&2
+    exit 127
+  fi
+done
+
 # Overview: Generates a project-wide DAG of GitHub issues by reading:
 # - Epic → Child links from epic issue checklists ("- [ ] #<num>")
 # - Blocked-by from body lines containing "Blocked by" followed by issue refs (e.g., "#23, #24")
@@ -36,7 +44,10 @@ tmpdir=$(mktemp -d)
 trap 'rm -rf "$tmpdir"' EXIT
 
 echo "Fetching issues from $REPO ..." >&2
-gh issue list --repo "$REPO" --state open -L 300 --json number,title,labels,url > "$tmpdir/issues.json"
+if ! gh issue list --repo "$REPO" --state open -L 300 --json number,title,labels,url > "$tmpdir/issues.json"; then
+  echo "ERROR: failed to list issues for $REPO" >&2
+  exit 1
+fi
 
 # Get epic checklist bodies (we use these to infer epic→child edges)
 epics=$(jq -r '.[] | select(.title|test("^Epic:")) | .number' "$tmpdir/issues.json")

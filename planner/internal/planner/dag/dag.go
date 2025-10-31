@@ -201,15 +201,10 @@ func Build(tasks []m.Task, edges []m.Edge, minConfidence float64) (*m.DagFile, e
 	// Stable order by ID
 	sortedIDs := append([]string(nil), order...)
 	sort.Strings(sortedIDs)
-	for _, id := range sortedIDs {
-		i := idx[id]
-		df.Nodes = append(df.Nodes, struct {
-			ID                  string `json:"id"`
-			Depth               int    `json:"depth"`
-			CriticalPath        bool   `json:"critical_path"`
-			ParallelOpportunity int    `json:"parallel_opportunity"`
-		}{ID: id, Depth: depth[i], CriticalPath: contains(critPath, id), ParallelOpportunity: 1})
-	}
+    for _, id := range sortedIDs {
+        i := idx[id]
+        df.Nodes = append(df.Nodes, m.DagNode{ID: id, Depth: depth[i], CriticalPath: contains(critPath, id), ParallelOpportunity: 1})
+    }
 
 	// Fill edges (non-transitive only)
 	// Render deterministically by from,to ordering

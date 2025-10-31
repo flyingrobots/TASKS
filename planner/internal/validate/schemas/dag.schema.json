@@ -6,11 +6,11 @@
   "properties": {
     "meta": {
       "type": "object",
-      "required": ["version", "artifact_hash", "tasks_hash"],
+      "required": ["version", "artifactHash", "tasksHash"],
       "properties": {
         "version": {"type": "string"},
-        "artifact_hash": {"type": "string"},
-        "tasks_hash": {"type": "string"}
+        "artifactHash": {"type": "string"},
+        "tasksHash": {"type": "string"}
       }
     },
     "nodes": {
@@ -18,12 +18,12 @@
       "minItems": 1,
       "items": {
         "type": "object",
-        "required": ["id", "depth", "critical_path", "parallel_opportunity"],
+        "required": ["id", "depth", "criticalPath", "parallelOpportunity"],
         "properties": {
           "id": {"type": "string"},
           "depth": {"type": "integer", "minimum": 0},
-          "critical_path": {"type": "boolean"},
-          "parallel_opportunity": {"type": "integer", "minimum": 0}
+          "criticalPath": {"type": "boolean"},
+          "parallelOpportunity": {"type": "integer", "minimum": 0}
         },
         "additionalProperties": false
       }
@@ -45,18 +45,18 @@
     "metrics": {
       "type": "object",
       "properties": {
-        "min_confidence_applied": {"type":"number"},
-        "kept_by_type": {"type":"object", "additionalProperties": {"type":"integer"}},
-        "dropped_by_type": {"type":"object", "additionalProperties": {"type":"integer"}},
+        "minConfidenceApplied": {"type":"number"},
+        "keptByType": {"type":"object", "additionalProperties": {"type":"integer"}},
+        "droppedByType": {"type":"object", "additionalProperties": {"type":"integer"}},
         "nodes": {"type":"integer"},
         "edges": {"type":"integer"},
-        "edge_density": {"type":"number"},
-        "width_approx": {"type":"integer"},
-        "longest_path_length": {"type":"integer"},
-        "critical_path": {"type":"array", "items": {"type":"string"}},
-        "isolated_tasks": {"type":"integer"},
-        "verb_first_pct": {"type":"number"},
-        "evidence_coverage": {"type":"number"}
+        "edgeDensity": {"type":"number"},
+        "widthApprox": {"type":"integer"},
+        "longestPathLength": {"type":"integer"},
+        "criticalPath": {"type":"array", "items": {"type":"string"}},
+        "isolatedTasks": {"type":"integer"},
+        "verbFirstPct": {"type":"number"},
+        "evidenceCoverage": {"type":"number"}
       },
       "additionalProperties": false
     },

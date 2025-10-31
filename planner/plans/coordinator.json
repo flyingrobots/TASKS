@@ -1,9 +1,9 @@
 {
   "config": {
     "policies": {
-      "circuit_breaker_thresholds": null,
-      "concurrency_max": 0,
-      "lock_ordering": []
+      "circuitBreakerThresholds": null,
+      "concurrencyMax": 0,
+      "lockOrdering": []
     },
     "resources": {
       "catalog": {},
@@ -31,7 +31,7 @@
     ],
     "nodes": [
       {
-        "acceptance_checks": [
+        "acceptanceChecks": [
           {
             "cmd": "echo ok",
             "timeoutSeconds": 5,
@@ -39,17 +39,20 @@
           }
         ],
         "compensation": {
-          "idempotent": true
+          "idempotent": true,
+          "strategy": "check_before_create",
+          "rationale": "Creates database only if not present",
+          "rollback_cmd": "echo 'manual cleanup: drop DB'"
         },
         "duration": {
-          "mostLikely": 2,
           "optimistic": 1,
-          "pessimistic": 3
+          "mostLikely": 2,
+          "pessimistic": 4
         },
         "durationUnits": "hours",
-        "execution_logging": {
+        "executionLogging": {
           "format": "JSONL",
-          "required_fields": [
+          "requiredFields": [
             "timestamp",
             "task_id",
             "step",
@@ -57,14 +60,16 @@
             "message"
           ]
         },
-        "feature_id": "F001",
+        "featureID": "F001",
         "id": "T001",
         "resources": {},
-        "source_evidence": null,
+        "sourceEvidence": [
+          {"type":"code_analysis","files":["planner/internal/model/task.go:1"],"excerpt":"Task model and logging fields","confidence":0.9}
+        ],
         "title": "Setup DB"
       },
       {
-        "acceptance_checks": [
+        "acceptanceChecks": [
           {
             "cmd": "echo ok",
             "timeoutSeconds": 5,
@@ -72,17 +77,19 @@
           }
         ],
         "compensation": {
-          "idempotent": true
+          "idempotent": true,
+          "strategy": "versioned_migrations",
+          "rollback_cmd": "db/migrate down --to previous"
         },
         "duration": {
-          "mostLikely": 2,
           "optimistic": 1,
-          "pessimistic": 3
+          "mostLikely": 4,
+          "pessimistic": 8
         },
         "durationUnits": "hours",
-        "execution_logging": {
+        "executionLogging": {
           "format": "JSONL",
-          "required_fields": [
+          "requiredFields": [
             "timestamp",
             "task_id",
             "step",
@@ -90,14 +97,16 @@
             "message"
           ]
         },
-        "feature_id": "F001",
+        "featureID": "F001",
         "id": "T002",
         "resources": {},
-        "source_evidence": null,
+        "sourceEvidence": [
+          {"type":"github_issue","url":"https://github.com/flyingrobots/TASKS/issues/24","excerpt":"Locks for migrations","confidence":0.85}
+        ],
         "title": "Migrate Schema"
       },
       {
-        "acceptance_checks": [
+        "acceptanceChecks": [
           {
             "cmd": "echo ok",
             "timeoutSeconds": 5,
@@ -105,17 +114,19 @@
           }
         ],
         "compensation": {
-          "idempotent": true
+          "idempotent": true,
+          "strategy": "blue_green_deploy",
+          "rollback_cmd": "deploy rollback --service api"
         },
         "duration": {
-          "mostLikely": 2,
-          "optimistic": 1,
-          "pessimistic": 3
+          "optimistic": 2,
+          "mostLikely": 6,
+          "pessimistic": 12
         },
         "durationUnits": "hours",
-        "execution_logging": {
+        "executionLogging": {
           "format": "JSONL",
-          "required_fields": [
+          "requiredFields": [
             "timestamp",
             "task_id",
             "step",
@@ -123,19 +134,21 @@
             "message"
           ]
         },
-        "feature_id": "F001",
+        "featureID": "F001",
         "id": "T003",
         "resources": {},
-        "source_evidence": null,
+        "sourceEvidence": [
+          {"type":"docs","url":"README.md","excerpt":"API handlers described","confidence":0.8}
+        ],
         "title": "API Handlers"
       }
     ]
   },
   "metrics": {
     "estimates": {
-      "longest_path_length": 0,
-      "p50_total_hours": 0,
-      "width_approx": 0
+      "longestPathLength": 0,
+      "p50TotalHours": 0,
+      "widthApprox": 0
     }
   },
   "version": "v8"

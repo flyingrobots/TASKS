@@ -1,7 +1,7 @@
 {
   "meta": {
-    "artifact_hash": "8d819ff8e81d78ebc8eacad7017e20123dcf73b1543996f6abf20a360b736482",
-    "planId": "119ac3b45ca13927eeebd7b7738cbb48d241983e0f7543a9f7e36c9e4dcb56ba",
+    "artifactHash": "7df36cbe62f64107b9c42117851cad2bfe28eb5b20460ead0f6784a8d133d3bf",
+    "planID": "119ac3b45ca13927eeebd7b7738cbb48d241983e0f7543a9f7e36c9e4dcb56ba",
     "version": "v8"
   },
   "waves": [

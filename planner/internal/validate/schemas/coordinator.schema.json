@@ -20,7 +20,22 @@
         }
       }
     },
-    "config": {"type": "object"}
+    "config": {
+      "type": "object",
+      "properties": {
+        "resources": {"type": "object"},
+        "policies": {
+          "type": "object",
+          "properties": {
+            "circuitBreakerThresholds": {"type": ["object","null"]},
+            "concurrencyMax": {"type": "integer"},
+            "lockOrdering": {"type": "array", "items": {"type": "string"}}
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    }
   },
   "additionalProperties": true
 }

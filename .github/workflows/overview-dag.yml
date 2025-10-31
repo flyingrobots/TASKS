@@ -41,8 +41,12 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git fetch origin "refs/heads/${BRANCH}:refs/heads/${BRANCH}" --depth=1 || true
-          git checkout "$BRANCH" || git switch -C "$BRANCH"
+          set -e
+          git fetch origin "refs/heads/${BRANCH}:refs/heads/${BRANCH}" --depth=1
+          if ! git checkout "$BRANCH" 2>/dev/null; then
+            echo "checkout failed; creating $BRANCH" >&2
+            git checkout -B "$BRANCH"
+          fi
           mkdir -p docs
           git add docs/overview-dag.svg
           if ! git diff --cached --quiet; then
@@ -55,6 +59,7 @@ jobs:
           REPO: ${{ github.repository }}
           BRANCH: ${{ github.head_ref }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          TMPFILE: ${{ runner.temp }}/dag-comment.md
         run: |
           RAW_URL="https://raw.githubusercontent.com/${REPO}/${BRANCH}/docs/overview-dag.svg"
           {
@@ -69,7 +74,7 @@ jobs:
             echo "<img src=\"${RAW_URL}\" alt=\"Overview DAG\"/>"
             echo
             echo "</details>"
-          } > .github/workflows/.dag-comment.md
+          } > "$TMPFILE"
       - name: Upload DAG artifacts
         if: success()
         uses: actions/upload-artifact@v4
@@ -83,4 +88,4 @@ jobs:
         uses: marocchino/sticky-pull-request-comment@v2
         with:
           recreate: true
-          path: .github/workflows/.dag-comment.md
+          path: ${{ runner.temp }}/dag-comment.md

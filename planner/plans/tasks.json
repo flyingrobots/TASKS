@@ -16,21 +16,21 @@
     }
   ],
   "meta": {
-    "artifact_hash": "119ac3b45ca13927eeebd7b7738cbb48d241983e0f7543a9f7e36c9e4dcb56ba",
+    "artifactHash": "f0ead2eb2df2d813f2cf11383ab2d1a46c9e577a783b521c0b78dc0f6e4c8435",
     "autonormalization": {
       "merged": [],
       "split": []
     },
-    "codebase_analysis": {
+    "codebaseAnalysis": {
       "files": 1984,
-      "go_files": 54
+      "goFiles": 54
     },
-    "min_confidence": 0.7,
+    "minConfidence": 0.7,
     "version": "v8"
   },
   "tasks": [
     {
-      "acceptance_checks": [
+      "acceptanceChecks": [
         {
           "cmd": "echo ok",
           "timeoutSeconds": 5,
@@ -38,17 +38,20 @@
         }
       ],
       "compensation": {
-        "idempotent": true
+        "idempotent": true,
+        "strategy": "check_before_create",
+        "rationale": "Creates database only if it does not already exist",
+        "rollback_cmd": "echo 'manual cleanup: drop DB if partially created'"
       },
       "duration": {
-        "mostLikely": 2,
         "optimistic": 1,
-        "pessimistic": 3
+        "mostLikely": 2,
+        "pessimistic": 4
       },
       "durationUnits": "hours",
-      "execution_logging": {
+      "executionLogging": {
         "format": "JSONL",
-        "required_fields": [
+        "requiredFields": [
           "timestamp",
           "task_id",
           "step",
@@ -56,14 +59,23 @@
           "message"
         ]
       },
-      "feature_id": "F001",
+      "featureID": "F001",
       "id": "T001",
       "resources": {},
-      "source_evidence": null,
+      "sourceEvidence": [
+        {
+          "type": "code_analysis",
+          "files": [
+            "planner/internal/model/task.go:1"
+          ],
+          "excerpt": "Task struct and execution logging fields defined; DB setup aligns with resource catalog patterns",
+          "confidence": 0.9
+        }
+      ],
       "title": "Setup DB"
     },
     {
-      "acceptance_checks": [
+      "acceptanceChecks": [
         {
           "cmd": "echo ok",
           "timeoutSeconds": 5,
@@ -71,17 +83,20 @@
         }
       ],
       "compensation": {
-        "idempotent": true
+        "idempotent": true,
+        "strategy": "versioned_migrations",
+        "rationale": "Migrations are idempotent when versioned and checked before apply",
+        "rollback_cmd": "db/migrate down --to previous"
       },
       "duration": {
-        "mostLikely": 2,
         "optimistic": 1,
-        "pessimistic": 3
+        "mostLikely": 4,
+        "pessimistic": 8
       },
       "durationUnits": "hours",
-      "execution_logging": {
+      "executionLogging": {
         "format": "JSONL",
-        "required_fields": [
+        "requiredFields": [
           "timestamp",
           "task_id",
           "step",
@@ -89,14 +104,21 @@
           "message"
         ]
       },
-      "feature_id": "F001",
+      "featureID": "F001",
       "id": "T002",
       "resources": {},
-      "source_evidence": null,
+      "sourceEvidence": [
+        {
+          "type": "github_issue",
+          "url": "https://github.com/flyingrobots/TASKS/issues/24",
+          "excerpt": "B3 — Exclusive lock manager informs migration serialization",
+          "confidence": 0.85
+        }
+      ],
       "title": "Migrate Schema"
     },
     {
-      "acceptance_checks": [
+      "acceptanceChecks": [
         {
           "cmd": "echo ok",
           "timeoutSeconds": 5,
@@ -104,17 +126,20 @@
         }
       ],
       "compensation": {
-        "idempotent": true
+        "idempotent": true,
+        "strategy": "blue_green_deploy",
+        "rationale": "Handlers deployed behind a switch; safe rollback",
+        "rollback_cmd": "deploy rollback --service api"
       },
       "duration": {
-        "mostLikely": 2,
-        "optimistic": 1,
-        "pessimistic": 3
+        "optimistic": 2,
+        "mostLikely": 6,
+        "pessimistic": 12
       },
       "durationUnits": "hours",
-      "execution_logging": {
+      "executionLogging": {
         "format": "JSONL",
-        "required_fields": [
+        "requiredFields": [
           "timestamp",
           "task_id",
           "step",
@@ -122,10 +147,17 @@
           "message"
         ]
       },
-      "feature_id": "F001",
+      "featureID": "F001",
       "id": "T003",
       "resources": {},
-      "source_evidence": null,
+      "sourceEvidence": [
+        {
+          "type": "docs",
+          "url": "README.md",
+          "excerpt": "API handlers described in CLI demo and architecture docs",
+          "confidence": 0.8
+        }
+      ],
       "title": "API Handlers"
     }
   ]

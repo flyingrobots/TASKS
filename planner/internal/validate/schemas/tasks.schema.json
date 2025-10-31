@@ -6,16 +6,16 @@
   "properties": {
     "meta": {
       "type": "object",
-      "required": ["version", "min_confidence", "artifact_hash"],
+      "required": ["version", "minConfidence", "artifactHash"],
       "properties": {
         "version": {"type": "string"},
-        "min_confidence": {"type": "number"},
-        "artifact_hash": {"type": "string"},
-        "validator_reports": {
+        "minConfidence": {"type": "number"},
+        "artifactHash": {"type": "string"},
+        "validatorReports": {
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["name", "status", "input_hash"],
+            "required": ["name", "status", "inputHash"],
             "properties": {
               "name": {"type": "string"},
               "status": {
@@ -23,7 +23,7 @@
                 "enum": ["pass", "fail", "error", "skip", "ok"]
               },
               "command": {"type": "string"},
-              "input_hash": {
+              "inputHash": {
                 "type": "string",
                 "pattern": "^[a-f0-9]{64}$"
               },
@@ -32,7 +32,7 @@
                 "default": false
               },
               "detail": {"type": "string"},
-              "raw_output": {
+              "rawOutput": {
                 "type": ["object", "string", "null"]
               }
             },
@@ -46,10 +46,10 @@
       "minItems": 1,
       "items": {
         "type": "object",
-        "required": ["id", "feature_id", "title", "duration", "durationUnits", "acceptance_checks"],
+        "required": ["id", "featureID", "title", "duration", "durationUnits", "acceptanceChecks"],
         "properties": {
           "id": {"type": "string"},
-          "feature_id": {"type": "string"},
+          "featureID": {"type": "string"},
           "title": {"type": "string"},
           "duration": {
             "type": "object",
@@ -61,7 +61,7 @@
             }
           },
           "durationUnits": {"type": "string"},
-          "acceptance_checks": {
+          "acceptanceChecks": {
             "type": "array",
             "minItems": 1,
             "items": {
