@@ -16,13 +16,13 @@
     }
   ],
   "meta": {
-    "artifactHash": "c3466cc5abca99412199f78142fafe59e04edaa7c27f718d999a6dc2a528dce8",
+    "artifactHash": "f5fd9a5b0446d053b9f09284608a308cf2afbe8abd0fbbebbdf77eca9a61fa96",
     "autonormalization": {
       "merged": [],
       "split": []
     },
     "codebaseAnalysis": {
-      "files": 2136,
+      "files": 2162,
       "go_files": 53
     },
     "minConfidence": 0.7,
@@ -32,8 +32,8 @@
     {
       "acceptanceChecks": [
         {
-          "cmd": "echo ok",
-          "timeoutSeconds": 5,
+          "cmd": "sh -c 'psql \"$DB_DSN\" -c \\\"\\conninfo\\\" >/dev/null 2>&1'",
+          "timeoutSeconds": 10,
           "type": "command"
         }
       ],
@@ -53,7 +53,8 @@
           "task_id",
           "step",
           "status",
-          "message"
+          "message",
+          "db_response_time"
         ]
       },
       "featureID": "F001",
@@ -65,8 +66,8 @@
     {
       "acceptanceChecks": [
         {
-          "cmd": "echo ok",
-          "timeoutSeconds": 5,
+          "cmd": "sh -c 'db/migrate status | grep -q Applied'",
+          "timeoutSeconds": 15,
           "type": "command"
         }
       ],
@@ -86,7 +87,8 @@
           "task_id",
           "step",
           "status",
-          "message"
+          "message",
+          "migration_version"
         ]
       },
       "featureID": "F001",
@@ -98,8 +100,8 @@
     {
       "acceptanceChecks": [
         {
-          "cmd": "echo ok",
-          "timeoutSeconds": 5,
+          "cmd": "sh -c 'curl -fsS ${API_BASE:-http://localhost:8080}/healthz >/dev/null'",
+          "timeoutSeconds": 10,
           "type": "command"
         }
       ],
@@ -113,13 +115,14 @@
       },
       "durationUnits": "hours",
       "executionLogging": {
-        "format": "JSONL",
+        "format": "JSON",
         "requiredFields": [
           "timestamp",
           "task_id",
           "step",
           "status",
-          "message"
+          "message",
+          "service_version"
         ]
       },
       "featureID": "F001",

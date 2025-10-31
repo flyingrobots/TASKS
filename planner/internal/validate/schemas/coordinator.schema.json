@@ -2,9 +2,18 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "coordinator.json",
   "type": "object",
-  "required": ["version", "graph", "config"],
+  "required": ["version", "graph", "config", "meta"],
   "properties": {
     "version": {"type": "string", "minLength": 1},
+    "meta": {
+      "type": "object",
+      "required": ["version", "artifactHash"],
+      "properties": {
+        "version": {"type": "string", "minLength": 1},
+        "artifactHash": {"type": "string", "minLength": 64, "maxLength": 64, "pattern": "^[A-Fa-f0-9]{64}$"}
+      },
+      "additionalProperties": false
+    },
     "graph": {
       "type": "object",
       "required": ["nodes", "edges"],

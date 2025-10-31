@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Dependency checks
-for cmd in gh jq; do
+for cmd in gh jq sed awk dot; do
   if ! command -v "$cmd" >/dev/null 2>&1; then
     echo "ERROR: required command '$cmd' not found in PATH" >&2
     exit 127
@@ -49,36 +49,35 @@ if ! gh issue list --repo "$REPO" --state open -L 300 --json number,title,labels
   exit 1
 fi
 
-# Get epic checklist bodies (we use these to infer epic→child edges)
-epics=$(jq -r '.[] | select(.title|test("^Epic:")) | .number' "$tmpdir/issues.json")
->"$tmpdir/edges.txt"
+# Initialize edges file (truncate)
+: >"$tmpdir/edges.txt"
 
-for n in $epics; do
-  body=$(gh issue view --repo "$REPO" "$n" --json body --jq .body 2>/dev/null || echo "")
-  # Parse "- [ ] #<num> ..." lines
-  while IFS= read -r line; do
-    if [[ "$line" =~ ^-\ \[.\]\ \#([0-9]+) ]]; then
-      child="${BASH_REMATCH[1]}"
-      echo "epic $n -> $child" >> "$tmpdir/edges.txt"
-    fi
-  done < <(printf '%s
-' "$body" | sed -n '1,400p')
-done
+# Batch fetch open issue bodies via GraphQL to avoid N+1 API calls
+owner="${REPO%%/*}"; name="${REPO##*/}"
+body_json=$(gh api graphql -f owner="$owner" -f name="$name" -F n=300 -f query='query($owner:String!,$name:String!,$n:Int!){ repository(owner:$owner,name:$name){ issues(first:$n, states:OPEN, orderBy:{field:CREATED_AT, direction:DESC}){ nodes { number title body } } } }')
+if [[ -z "$body_json" ]]; then
+  echo "ERROR: failed to fetch issue bodies via GraphQL" >&2
+  exit 1
+fi
 
-# Parse "Blocked by" lines in bodies (best-effort)
-all_nums=$(jq -r '.[].number' "$tmpdir/issues.json")
-for n in $all_nums; do
-  body=$(gh issue view --repo "$REPO" "$n" --json body --jq .body 2>/dev/null || echo "")
-  mapfile -t lines < <(printf '%s
-' "$body" | grep -i "Blocked by" || true)
-  for l in "${lines[@]}"; do
-    # Extract all #<num> tokens on that line
+# Derive edges from titles and bodies
+jq -r '.data.repository.issues.nodes[] | @base64' <<<"$body_json" | while read -r row; do
+  _jq(){ echo "$row" | base64 --decode | jq -r "$1"; }
+  num=$(_jq '.number')
+  title=$(_jq '.title // ""')
+  body=$(_jq '.body // ""')
+  # Epic children from checklist lines
+  if [[ "$title" =~ ^Epic: ]]; then
+    printf '%s\n' "$body" | sed -n '1,800p' | awk '/^- \[[ x]\] #[0-9]+/ { for(i=1;i<=NF;i++) if ($i ~ /^#[0-9]+$/){ gsub("#","",$i); printf("epic %s -> %s\n", num, $i) }}' num="$num" >> "$tmpdir/edges.txt"
+  fi
+  # Blocked-by entries: lines that mention "Blocked by" and issue refs
+  while read -r l; do
     while [[ "$l" =~ \#([0-9]+) ]]; do
       blk="${BASH_REMATCH[1]}"
-      echo "block $n <- $blk" >> "$tmpdir/edges.txt"
-      l="${l#*#${blk}}" # advance
+      echo "block $num <- $blk" >> "$tmpdir/edges.txt"
+      l="${l#*#$blk}" # advance using $blk (no extra braces)
     done
-  done
+  done < <(printf '%s\n' "$body" | grep -i "Blocked by" || true)
 done
 
 # Build DOT
@@ -90,8 +89,7 @@ done
   # Nodes with labels
   jq -r '.[] | [.number, (.title|gsub("\""; "\\\""))] | @tsv' "$tmpdir/issues.json" |
   while IFS=$'\t' read -r num title; do
-    printf '  I%s [label="#%s: %s"];
-' "$num" "$num" "$title"
+    printf '  I%s [label="#%s: %s"];\n' "$num" "$num" "$title"
   done
 
   # Edges
@@ -100,13 +98,11 @@ done
     if [[ "$kind" == "epic" ]]; then
       # epic parent -> child
       parent=${rest%% *}; child=${rest##* }
-      printf '  I%s -> I%s [color="gray50", style=dashed, label="parent"];
-' "$parent" "$child"
+      printf '  I%s -> I%s [color="gray50", style=dashed, label="parent"];\n' "$parent" "$child"
     elif [[ "$kind" == "block" ]]; then
       # block N <- B means edge B -> N
       target=${rest%% *}; blocker=${rest##* }
-      printf '  I%s -> I%s [color="red", label="blocks"];
-' "$blocker" "$target"
+      printf '  I%s -> I%s [color="red", label="blocks"];\n' "$blocker" "$target"
     fi
   done < "$tmpdir/edges.txt"
 
@@ -121,3 +117,4 @@ if command -v dot >/dev/null 2>&1; then
 else
   echo "Graphviz 'dot' not found; skipped SVG generation" >&2
 fi
+

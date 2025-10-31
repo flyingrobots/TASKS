@@ -31,8 +31,43 @@ if [[ -z "$depth_id" || "$depth_id" == null ]]; then
   exit 1
 fi
 
-add_or_get_item(){ local num="$1"; local cid=$(gh issue view --repo "$owner/$repo" "$num" --json id --jq .id); gh api graphql -f query='mutation($proj:ID!,$content:ID!){ addProjectV2ItemById(input:{projectId:$proj, contentId:$content}){ item { id } } }' -F proj="$proj_id" -F content="$cid" --jq '.data.addProjectV2ItemById.item.id' 2>/dev/null || true; }
-set_depth(){ local num="$1" depth="$2"; local item=$(add_or_get_item "$num"); if [[ -z "$item" || "$item" == null ]]; then echo "Skip #$num"; return; fi; gh api graphql -f query='mutation($proj:ID!,$item:ID!,$field:ID!,$num:Float!){ updateProjectV2ItemFieldValue(input:{projectId:$proj, itemId:$item, fieldId:$field, value:{number:$num}}){ projectV2Item{ id } } }' -F proj="$proj_id" -F item="$item" -F field="$depth_id" -F num="$depth" >/dev/null && echo "Depth $depth set for #$num" || echo "Failed #$num"; }
+add_or_get_item() {
+  local num="$1"
+  local cid
+  if ! cid=$(gh issue view --repo "$owner/$repo" "$num" --json id --jq .id 2>&1); then
+    echo "ERROR: failed to resolve issue id for #$num: $cid" >&2
+    return 1
+  fi
+  local gid
+  if ! gid=$(gh api graphql \
+      -f query='mutation($proj:ID!,$content:ID!){ addProjectV2ItemById(input:{projectId:$proj, contentId:$content}){ item { id } } }' \
+      -F proj="$proj_id" -F content="$cid" --jq '.data.addProjectV2ItemById.item.id' 2>&1); then
+    echo "ERROR: failed to add/get project item for #$num: $gid" >&2
+    return 1
+  fi
+  printf '%s' "$gid"
+}
+
+set_depth() {
+  local num="$1" depth="$2"
+  local item
+  if ! item=$(add_or_get_item "$num"); then
+    echo "Skip #$num (cannot obtain project item)" >&2
+    return 1
+  fi
+  if [[ -z "$item" || "$item" == null ]]; then
+    echo "Skip #$num (empty item id)" >&2
+    return 1
+  fi
+  if gh api graphql \
+      -f query='mutation($proj:ID!,$item:ID!,$field:ID!,$num:Float!){ updateProjectV2ItemFieldValue(input:{projectId:$proj, itemId:$item, fieldId:$field, value:{number:$num}}){ projectV2Item{ id } } }' \
+      -F proj="$proj_id" -F item="$item" -F field="$depth_id" -F num="$depth" >/dev/null; then
+    echo "Depth $depth set for #$num"
+  else
+    echo "Failed to set depth for #$num" >&2
+    return 1
+  fi
+}
 
 # Known depths (rough), adjust over time
 pairs=(

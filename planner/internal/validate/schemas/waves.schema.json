@@ -12,10 +12,10 @@
         "version": {"type": "string", "minLength": 1},
         "planID": {"type": "string", "minLength": 1},
         "artifactHash": {
-          "type": "string",
-          "minLength": 64,
-          "maxLength": 64,
-          "pattern": "^[A-Fa-f0-9]{64}$"
+          "oneOf": [
+            {"type": "string", "const": ""},
+            {"type": "string", "minLength": 64, "maxLength": 64, "pattern": "^[A-Fa-f0-9]{64}$"}
+          ]
         }
       }
     },

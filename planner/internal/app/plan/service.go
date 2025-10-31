@@ -268,14 +268,15 @@ func makeFeaturesArtifact(features []FeatureSummary) *m.FeaturesArtifact {
 }
 
 func makeCoordinator(tasks []m.Task, deps []m.Edge) m.Coordinator {
-	coord := m.Coordinator{}
-	coord.Version = schemaVersion
-	coord.Graph.Nodes = tasks
-	coord.Graph.Edges = deps
-	coord.Config.Resources.Catalog = map[string]m.ResourceSpec{}
-	coord.Config.Resources.Profiles = map[string]map[string]int{"default": {}}
-	coord.Config.Policies.LockOrdering = []string{}
-	return coord
+    coord := m.Coordinator{}
+    coord.Version = schemaVersion
+    coord.Meta.Version = schemaVersion
+    coord.Graph.Nodes = tasks
+    coord.Graph.Edges = deps
+    coord.Config.Resources.Catalog = map[string]m.ResourceSpec{}
+    coord.Config.Resources.Profiles = map[string]map[string]int{"default": {}}
+    coord.Config.Policies.LockOrdering = []string{}
+    return coord
 }
 
 func convertValidatorReports(src []validators.Report) []m.ValidatorReport {

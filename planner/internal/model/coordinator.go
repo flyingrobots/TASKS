@@ -9,11 +9,12 @@ type ResourceSpec struct {
 
 // Coordinator represents the coordinator.json contract passed from the planner to the executor.
 type Coordinator struct {
-	Version string `json:"version"`
-	Graph   struct {
-		Nodes []Task `json:"nodes"`
-		Edges []Edge `json:"edges"`
-	} `json:"graph"`
+    Version string `json:"version"`
+    Meta    ArtifactMeta `json:"meta"`
+    Graph   struct {
+        Nodes []Task `json:"nodes"`
+        Edges []Edge `json:"edges"`
+    } `json:"graph"`
 	Config struct {
 		Resources struct {
 			Catalog  map[string]ResourceSpec   `json:"catalog"`

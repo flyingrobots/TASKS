@@ -53,7 +53,7 @@ func (FileArtifactWriter) Write(ctx context.Context, out string, bundle Artifact
 		})
 	}
 
-	writeWithHash("coordinator.json", bundle.Coordinator, func(string) {})
+    writeWithHash("coordinator.json", bundle.Coordinator, func(h string) { bundle.Coordinator.Meta.ArtifactHash = h })
 
 	if err := writePlanSummary(out, hashes, bundle.ValidatorReports); err != nil {
 		errs = append(errs, err)

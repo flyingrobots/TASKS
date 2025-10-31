@@ -11,12 +11,13 @@ type CoordinatorBuilder interface {
 type DefaultCoordinatorBuilder struct{}
 
 func (DefaultCoordinatorBuilder) Build(tasks []m.Task, deps []m.Edge) m.Coordinator {
-	coord := m.Coordinator{}
-	coord.Version = schemaVersion
-	coord.Graph.Nodes = tasks
-	coord.Graph.Edges = deps
-	coord.Config.Resources.Catalog = map[string]m.ResourceSpec{}
-	coord.Config.Resources.Profiles = map[string]map[string]int{"default": {}}
-	coord.Config.Policies.LockOrdering = []string{}
-	return coord
+    coord := m.Coordinator{}
+    coord.Version = schemaVersion
+    coord.Meta.Version = schemaVersion
+    coord.Graph.Nodes = tasks
+    coord.Graph.Edges = deps
+    coord.Config.Resources.Catalog = map[string]m.ResourceSpec{}
+    coord.Config.Resources.Profiles = map[string]map[string]int{"default": {}}
+    coord.Config.Policies.LockOrdering = []string{}
+    return coord
 }
