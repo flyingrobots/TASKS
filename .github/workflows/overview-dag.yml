@@ -34,6 +34,15 @@ jobs:
         run: |
           test -f docs/overview-dag.dot || { echo "docs/overview-dag.dot missing" >&2; exit 1; }
           test -f docs/overview-dag.svg || { echo "docs/overview-dag.svg missing" >&2; exit 1; }
+      - name: Summarize DAG artifacts
+        run: |
+          set -e
+          echo "Graphviz:" $(dot -V 2>&1 | head -n1)
+          echo "Sizes:"; ls -lh docs/overview-dag.*
+          # Quick node/edge counts (best-effort)
+          NODES=$(grep -Eo '^\s*[A-Za-z0-9_]+\s*\[' docs/overview-dag.dot | wc -l | tr -d ' ')
+          EDGES=$(grep -Eo '->' docs/overview-dag.dot | wc -l | tr -d ' ')
+          echo "Nodes: ${NODES}  Edges: ${EDGES}"
       - name: Commit DAG image to PR branch (same-repo PRs only)
         if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
         env:
@@ -62,10 +71,14 @@ jobs:
           TMPFILE: ${{ runner.temp }}/dag-comment.md
         run: |
           RAW_URL="https://raw.githubusercontent.com/${REPO}/${BRANCH}/docs/overview-dag.svg"
+          NODES=$(grep -Eo '^\s*[A-Za-z0-9_]+\s*\[' docs/overview-dag.dot | wc -l | tr -d ' ')
+          EDGES=$(grep -Eo '->' docs/overview-dag.dot | wc -l | tr -d ' ')
           {
             echo "### Overview DAG"
             echo
             echo "Workflow run: ${RUN_URL}"
+            echo
+            echo "Summary: ${NODES} nodes, ${EDGES} edges"
             echo
             echo "If the image fails to render, download the artifact from the workflow run."
             echo
