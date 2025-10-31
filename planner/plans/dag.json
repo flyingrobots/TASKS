@@ -2,7 +2,7 @@
   "analysis": {
     "errors": null,
     "ok": true,
-    "soft_deps": null,
+    "softDeps": null,
     "warnings": null
   },
   "edges": [
@@ -20,49 +20,49 @@
     }
   ],
   "meta": {
-    "artifact_hash": "b8a3c7ba43ee97758880b94bf756f0a972840cfc59a5d571dfa9c972c71fd65e",
-    "tasks_hash": "119ac3b45ca13927eeebd7b7738cbb48d241983e0f7543a9f7e36c9e4dcb56ba",
+    "artifactHash": "4bce638c8d4a19d057bad19fa6dc1c1f434f1d2d5bca659148f1e867a4815627",
+    "tasksHash": "c3466cc5abca99412199f78142fafe59e04edaa7c27f718d999a6dc2a528dce8",
     "version": "v8"
   },
   "metrics": {
-    "critical_path": [
+    "criticalPath": [
       "T001",
       "T002",
       "T003"
     ],
-    "dropped_by_type": {},
-    "edge_density": 0,
+    "droppedByType": {},
+    "edgeDensity": 0,
     "edges": 2,
-    "evidence_coverage": 0,
-    "isolated_tasks": 0,
-    "kept_by_type": {
+    "evidenceCoverage": 0,
+    "isolatedTasks": 0,
+    "keptByType": {
       "sequential": 1,
       "technical": 1
     },
-    "longest_path_length": 3,
-    "min_confidence_applied": 0.7,
+    "longestPathLength": 3,
+    "minConfidenceApplied": 0.7,
     "nodes": 3,
-    "verb_first_pct": 0,
-    "width_approx": 1
+    "verbFirstPct": 0,
+    "widthApprox": 1
   },
   "nodes": [
     {
-      "critical_path": true,
+      "criticalPath": true,
       "depth": 0,
       "id": "T001",
-      "parallel_opportunity": 1
+      "parallelOpportunity": 1
     },
     {
-      "critical_path": true,
+      "criticalPath": true,
       "depth": 1,
       "id": "T002",
-      "parallel_opportunity": 1
+      "parallelOpportunity": 1
     },
     {
-      "critical_path": true,
+      "criticalPath": true,
       "depth": 2,
       "id": "T003",
-      "parallel_opportunity": 1
+      "parallelOpportunity": 1
     }
   ]
 }

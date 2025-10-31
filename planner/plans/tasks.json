@@ -16,14 +16,14 @@
     }
   ],
   "meta": {
-    "artifactHash": "f0ead2eb2df2d813f2cf11383ab2d1a46c9e577a783b521c0b78dc0f6e4c8435",
+    "artifactHash": "c3466cc5abca99412199f78142fafe59e04edaa7c27f718d999a6dc2a528dce8",
     "autonormalization": {
       "merged": [],
       "split": []
     },
     "codebaseAnalysis": {
-      "files": 1984,
-      "goFiles": 54
+      "files": 2136,
+      "go_files": 53
     },
     "minConfidence": 0.7,
     "version": "v8"
@@ -38,15 +38,12 @@
         }
       ],
       "compensation": {
-        "idempotent": true,
-        "strategy": "check_before_create",
-        "rationale": "Creates database only if it does not already exist",
-        "rollback_cmd": "echo 'manual cleanup: drop DB if partially created'"
+        "idempotent": true
       },
       "duration": {
-        "optimistic": 1,
         "mostLikely": 2,
-        "pessimistic": 4
+        "optimistic": 1,
+        "pessimistic": 3
       },
       "durationUnits": "hours",
       "executionLogging": {
@@ -62,16 +59,7 @@
       "featureID": "F001",
       "id": "T001",
       "resources": {},
-      "sourceEvidence": [
-        {
-          "type": "code_analysis",
-          "files": [
-            "planner/internal/model/task.go:1"
-          ],
-          "excerpt": "Task struct and execution logging fields defined; DB setup aligns with resource catalog patterns",
-          "confidence": 0.9
-        }
-      ],
+      "sourceEvidence": null,
       "title": "Setup DB"
     },
     {
@@ -83,15 +71,12 @@
         }
       ],
       "compensation": {
-        "idempotent": true,
-        "strategy": "versioned_migrations",
-        "rationale": "Migrations are idempotent when versioned and checked before apply",
-        "rollback_cmd": "db/migrate down --to previous"
+        "idempotent": true
       },
       "duration": {
+        "mostLikely": 2,
         "optimistic": 1,
-        "mostLikely": 4,
-        "pessimistic": 8
+        "pessimistic": 3
       },
       "durationUnits": "hours",
       "executionLogging": {
@@ -107,14 +92,7 @@
       "featureID": "F001",
       "id": "T002",
       "resources": {},
-      "sourceEvidence": [
-        {
-          "type": "github_issue",
-          "url": "https://github.com/flyingrobots/TASKS/issues/24",
-          "excerpt": "B3 — Exclusive lock manager informs migration serialization",
-          "confidence": 0.85
-        }
-      ],
+      "sourceEvidence": null,
       "title": "Migrate Schema"
     },
     {
@@ -126,15 +104,12 @@
         }
       ],
       "compensation": {
-        "idempotent": true,
-        "strategy": "blue_green_deploy",
-        "rationale": "Handlers deployed behind a switch; safe rollback",
-        "rollback_cmd": "deploy rollback --service api"
+        "idempotent": true
       },
       "duration": {
-        "optimistic": 2,
-        "mostLikely": 6,
-        "pessimistic": 12
+        "mostLikely": 2,
+        "optimistic": 1,
+        "pessimistic": 3
       },
       "durationUnits": "hours",
       "executionLogging": {
@@ -150,14 +125,7 @@
       "featureID": "F001",
       "id": "T003",
       "resources": {},
-      "sourceEvidence": [
-        {
-          "type": "docs",
-          "url": "README.md",
-          "excerpt": "API handlers described in CLI demo and architecture docs",
-          "confidence": 0.8
-        }
-      ],
+      "sourceEvidence": null,
       "title": "API Handlers"
     }
   ]

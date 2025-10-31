@@ -74,7 +74,7 @@ func ValidateRaw(schemaKey string, raw []byte) error {
     return nil
 }
 
-// CheckArtifactHash recomputes the artifact hash over canonical JSON with meta.artifact_hash blank.
+// CheckArtifactHash recomputes the artifact hash over canonical JSON with meta.artifactHash blank.
 // Returns (computedHash, storedHash, ok, error)
 func CheckArtifactHash(raw []byte) (string, string, bool, error) {
     var v any
@@ -83,8 +83,15 @@ func CheckArtifactHash(raw []byte) (string, string, bool, error) {
     if !ok { return "", "", false, fmt.Errorf("root not object") }
     meta, ok := mobj["meta"].(map[string]any)
     if !ok { return "", "", true, nil } // no meta; nothing to check
-    stored, _ := meta["artifact_hash"].(string)
-    meta["artifact_hash"] = ""
+    // Support both new camelCase (artifactHash) and legacy snake_case (artifact_hash)
+    stored := ""
+    if v, ok := meta["artifactHash"].(string); ok {
+        stored = v
+        meta["artifactHash"] = ""
+    } else if v, ok := meta["artifact_hash"].(string); ok {
+        stored = v
+        meta["artifact_hash"] = ""
+    }
     raw2, err := json.Marshal(mobj)
     if err != nil { return "", stored, false, err }
     can, err := canonjson.ToCanonicalJSON(raw2)

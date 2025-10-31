@@ -63,37 +63,42 @@ func TestServiceRunPropagatesErrors(t *testing.T) {
 }
 
 func TestServiceRunPropagatesInitError(t *testing.T) {
-	svc := execapp.Service{
-		LoadCoordinator: func(path string) (m.Coordinator, error) {
-			return m.Coordinator{Version: "v8"}, nil
-		},
-		InitRuntime: func(ctx context.Context, coord m.Coordinator) error {
-			return errors.New("init failed")
-		},
-		RunLoop: func(ctx context.Context) error {
-			return nil
-		},
-	}
-	if err := svc.Run(context.Background(), "coord.json"); err == nil {
-		t.Fatalf("expected init error")
-	}
+    initErr := errors.New("init failed")
+    svc := execapp.Service{
+        LoadCoordinator: func(path string) (m.Coordinator, error) {
+            return m.Coordinator{Version: "v8"}, nil
+        },
+        InitRuntime: func(ctx context.Context, coord m.Coordinator) error {
+            return initErr
+        },
+        RunLoop: func(ctx context.Context) error {
+            return nil
+        },
+    }
+    if err := svc.Run(context.Background(), "coord.json"); err == nil {
+        t.Fatalf("expected init error")
+    } else if !errors.Is(err, initErr) {
+        t.Fatalf("expected 'init failed', got: %v", err)
+    }
 }
 
 func TestServiceRunPropagatesLoopError(t *testing.T) {
-	svc := execapp.Service{
-		LoadCoordinator: func(path string) (m.Coordinator, error) {
-			return m.Coordinator{Version: "v8"}, nil
-		},
-		InitRuntime: func(ctx context.Context, coord m.Coordinator) error {
-			return nil
-		},
-		RunLoop: func(ctx context.Context) error {
-			return errors.New("loop failed")
-		},
-	}
-	if err := svc.Run(context.Background(), "coord.json"); err == nil {
-		t.Fatalf("expected loop error")
-	}
+    svc := execapp.Service{
+        LoadCoordinator: func(path string) (m.Coordinator, error) {
+            return m.Coordinator{Version: "v8"}, nil
+        },
+        InitRuntime: func(ctx context.Context, coord m.Coordinator) error {
+            return nil
+        },
+        RunLoop: func(ctx context.Context) error {
+            return errors.New("loop failed")
+        },
+    }
+    if err := svc.Run(context.Background(), "coord.json"); err == nil {
+        t.Fatalf("expected loop error")
+    } else if err.Error() != "loop failed" {
+        t.Fatalf("expected 'loop failed', got: %v", err)
+    }
 }
 
 func TestServiceRunFailsOnZeroValueCoordinatorAndSkipsInit(t *testing.T) {

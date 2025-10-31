@@ -39,15 +39,12 @@
           }
         ],
         "compensation": {
-          "idempotent": true,
-          "strategy": "check_before_create",
-          "rationale": "Creates database only if not present",
-          "rollback_cmd": "echo 'manual cleanup: drop DB'"
+          "idempotent": true
         },
         "duration": {
-          "optimistic": 1,
           "mostLikely": 2,
-          "pessimistic": 4
+          "optimistic": 1,
+          "pessimistic": 3
         },
         "durationUnits": "hours",
         "executionLogging": {
@@ -63,9 +60,7 @@
         "featureID": "F001",
         "id": "T001",
         "resources": {},
-        "sourceEvidence": [
-          {"type":"code_analysis","files":["planner/internal/model/task.go:1"],"excerpt":"Task model and logging fields","confidence":0.9}
-        ],
+        "sourceEvidence": null,
         "title": "Setup DB"
       },
       {
@@ -77,14 +72,12 @@
           }
         ],
         "compensation": {
-          "idempotent": true,
-          "strategy": "versioned_migrations",
-          "rollback_cmd": "db/migrate down --to previous"
+          "idempotent": true
         },
         "duration": {
+          "mostLikely": 2,
           "optimistic": 1,
-          "mostLikely": 4,
-          "pessimistic": 8
+          "pessimistic": 3
         },
         "durationUnits": "hours",
         "executionLogging": {
@@ -100,9 +93,7 @@
         "featureID": "F001",
         "id": "T002",
         "resources": {},
-        "sourceEvidence": [
-          {"type":"github_issue","url":"https://github.com/flyingrobots/TASKS/issues/24","excerpt":"Locks for migrations","confidence":0.85}
-        ],
+        "sourceEvidence": null,
         "title": "Migrate Schema"
       },
       {
@@ -114,14 +105,12 @@
           }
         ],
         "compensation": {
-          "idempotent": true,
-          "strategy": "blue_green_deploy",
-          "rollback_cmd": "deploy rollback --service api"
+          "idempotent": true
         },
         "duration": {
-          "optimistic": 2,
-          "mostLikely": 6,
-          "pessimistic": 12
+          "mostLikely": 2,
+          "optimistic": 1,
+          "pessimistic": 3
         },
         "durationUnits": "hours",
         "executionLogging": {
@@ -137,9 +126,7 @@
         "featureID": "F001",
         "id": "T003",
         "resources": {},
-        "sourceEvidence": [
-          {"type":"docs","url":"README.md","excerpt":"API handlers described","confidence":0.8}
-        ],
+        "sourceEvidence": null,
         "title": "API Handlers"
       }
     ]
