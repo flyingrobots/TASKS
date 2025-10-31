@@ -1,0 +1,12 @@
+digraph G {
+  rankdir=LR;
+  splines=true;
+  node [shape=box, style="rounded,filled", fillcolor=white, fontname=Helvetica];
+
+  T001 [label="T001: Setup DB"];
+  T002 [label="T002: Migrate Schema"];
+  T003 [label="T003: API Handlers"];
+
+  T001 -> T002 [label="sequential"];
+  T002 -> T003 [label="technical"];
+}

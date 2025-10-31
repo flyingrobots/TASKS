@@ -253,12 +253,13 @@ func runPlan() {
 	)
 	_ = fs.Parse(os.Args[2:])
 
-	if err := os.MkdirAll(*out, 0o755); err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to create output dir %s: %v\n", *out, err)
-		os.Exit(1)
-	}
 	if *minConfidenceFlag < 0 || *minConfidenceFlag > 1 {
 		fmt.Fprintf(os.Stderr, "Invalid --min-confidence %.3f (expected range 0.0-1.0)\n", *minConfidenceFlag)
+		os.Exit(1)
+	}
+
+	if err := os.MkdirAll(*out, 0o755); err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to create output dir %s: %v\n", *out, err)
 		os.Exit(1)
 	}
 

@@ -1,0 +1,30 @@
+name: Overview DAG
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  build-overview-dag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y graphviz jq
+      - name: Generate overview DAG
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          bash scripts/gh/overview-dag.sh docs/overview-dag.dot docs/overview-dag.svg
+      - name: Upload DAG artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: overview-dag
+          path: |
+            docs/overview-dag.dot
+            docs/overview-dag.svg

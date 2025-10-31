@@ -1,0 +1,132 @@
+{
+  "dependencies": [
+    {
+      "confidence": 1,
+      "from": "T001",
+      "isHard": true,
+      "to": "T002",
+      "type": "sequential"
+    },
+    {
+      "confidence": 1,
+      "from": "T002",
+      "isHard": true,
+      "to": "T003",
+      "type": "technical"
+    }
+  ],
+  "meta": {
+    "artifact_hash": "119ac3b45ca13927eeebd7b7738cbb48d241983e0f7543a9f7e36c9e4dcb56ba",
+    "autonormalization": {
+      "merged": [],
+      "split": []
+    },
+    "codebase_analysis": {
+      "files": 1984,
+      "go_files": 54
+    },
+    "min_confidence": 0.7,
+    "version": "v8"
+  },
+  "tasks": [
+    {
+      "acceptance_checks": [
+        {
+          "cmd": "echo ok",
+          "timeoutSeconds": 5,
+          "type": "command"
+        }
+      ],
+      "compensation": {
+        "idempotent": true
+      },
+      "duration": {
+        "mostLikely": 2,
+        "optimistic": 1,
+        "pessimistic": 3
+      },
+      "durationUnits": "hours",
+      "execution_logging": {
+        "format": "JSONL",
+        "required_fields": [
+          "timestamp",
+          "task_id",
+          "step",
+          "status",
+          "message"
+        ]
+      },
+      "feature_id": "F001",
+      "id": "T001",
+      "resources": {},
+      "source_evidence": null,
+      "title": "Setup DB"
+    },
+    {
+      "acceptance_checks": [
+        {
+          "cmd": "echo ok",
+          "timeoutSeconds": 5,
+          "type": "command"
+        }
+      ],
+      "compensation": {
+        "idempotent": true
+      },
+      "duration": {
+        "mostLikely": 2,
+        "optimistic": 1,
+        "pessimistic": 3
+      },
+      "durationUnits": "hours",
+      "execution_logging": {
+        "format": "JSONL",
+        "required_fields": [
+          "timestamp",
+          "task_id",
+          "step",
+          "status",
+          "message"
+        ]
+      },
+      "feature_id": "F001",
+      "id": "T002",
+      "resources": {},
+      "source_evidence": null,
+      "title": "Migrate Schema"
+    },
+    {
+      "acceptance_checks": [
+        {
+          "cmd": "echo ok",
+          "timeoutSeconds": 5,
+          "type": "command"
+        }
+      ],
+      "compensation": {
+        "idempotent": true
+      },
+      "duration": {
+        "mostLikely": 2,
+        "optimistic": 1,
+        "pessimistic": 3
+      },
+      "durationUnits": "hours",
+      "execution_logging": {
+        "format": "JSONL",
+        "required_fields": [
+          "timestamp",
+          "task_id",
+          "step",
+          "status",
+          "message"
+        ]
+      },
+      "feature_id": "F001",
+      "id": "T003",
+      "resources": {},
+      "source_evidence": null,
+      "title": "API Handlers"
+    }
+  ]
+}

@@ -1,0 +1,68 @@
+{
+  "analysis": {
+    "errors": null,
+    "ok": true,
+    "soft_deps": null,
+    "warnings": null
+  },
+  "edges": [
+    {
+      "from": "T001",
+      "to": "T002",
+      "transitive": false,
+      "type": "sequential"
+    },
+    {
+      "from": "T002",
+      "to": "T003",
+      "transitive": false,
+      "type": "technical"
+    }
+  ],
+  "meta": {
+    "artifact_hash": "b8a3c7ba43ee97758880b94bf756f0a972840cfc59a5d571dfa9c972c71fd65e",
+    "tasks_hash": "119ac3b45ca13927eeebd7b7738cbb48d241983e0f7543a9f7e36c9e4dcb56ba",
+    "version": "v8"
+  },
+  "metrics": {
+    "critical_path": [
+      "T001",
+      "T002",
+      "T003"
+    ],
+    "dropped_by_type": {},
+    "edge_density": 0,
+    "edges": 2,
+    "evidence_coverage": 0,
+    "isolated_tasks": 0,
+    "kept_by_type": {
+      "sequential": 1,
+      "technical": 1
+    },
+    "longest_path_length": 3,
+    "min_confidence_applied": 0.7,
+    "nodes": 3,
+    "verb_first_pct": 0,
+    "width_approx": 1
+  },
+  "nodes": [
+    {
+      "critical_path": true,
+      "depth": 0,
+      "id": "T001",
+      "parallel_opportunity": 1
+    },
+    {
+      "critical_path": true,
+      "depth": 1,
+      "id": "T002",
+      "parallel_opportunity": 1
+    },
+    {
+      "critical_path": true,
+      "depth": 2,
+      "id": "T003",
+      "parallel_opportunity": 1
+    }
+  ]
+}

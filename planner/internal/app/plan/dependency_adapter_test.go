@@ -16,8 +16,8 @@ func TestDefaultDependencyResolverSequentialFallback(t *testing.T) {
 	if len(deps) != 2 {
 		t.Fatalf("expected 2 fallback edges, got %d", len(deps))
 	}
-	if _, ok := conflicts["db"]; ok {
-		t.Fatalf("unexpected resource conflict: %+v", conflicts)
+	if len(conflicts) != 0 {
+		t.Fatalf("expected no resource conflicts, got %+v", conflicts)
 	}
 }
 

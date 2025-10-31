@@ -28,6 +28,9 @@ func (DefaultDependencyResolver) Resolve(tasks []m.Task, baseEdges []m.Edge) ([]
 
 	resToTasks := map[string][]string{}
 	for _, task := range tasks {
+		if task.ID == "" {
+			continue
+		}
 		seen := make(map[string]struct{}, len(task.Resources.Exclusive))
 		for _, r := range task.Resources.Exclusive {
 			if r == "" {

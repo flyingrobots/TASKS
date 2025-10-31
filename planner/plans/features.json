@@ -1,0 +1,12 @@
+{
+  "features": [
+    {
+      "id": "F001",
+      "title": "Core DB + API"
+    }
+  ],
+  "meta": {
+    "artifact_hash": "08b7b1c09eef7ef0828f2ab20ecf230b236eb6408bffc1f89cf1667e590ab84c",
+    "version": "v8"
+  }
+}

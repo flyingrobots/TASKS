@@ -1,0 +1,9 @@
+# Plan (stub)
+
+## Hashes
+
+- coordinator.json: 97204ea49fe7bf5a27b19402b2f2008ed37d41357d5938da1b7bb253157d4cf3
+- dag.json: b8a3c7ba43ee97758880b94bf756f0a972840cfc59a5d571dfa9c972c71fd65e
+- features.json: 08b7b1c09eef7ef0828f2ab20ecf230b236eb6408bffc1f89cf1667e590ab84c
+- tasks.json: 119ac3b45ca13927eeebd7b7738cbb48d241983e0f7543a9f7e36c9e4dcb56ba
+- waves.json: 8d819ff8e81d78ebc8eacad7017e20123dcf73b1543996f6abf20a360b736482
