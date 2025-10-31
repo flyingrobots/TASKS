@@ -2,7 +2,7 @@ name: Overview DAG
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
 
 jobs:
@@ -18,12 +18,22 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y graphviz jq
+      - name: Preflight checks
+        run: |
+          set -e
+          test -f scripts/gh/overview-dag.sh || { echo "missing scripts/gh/overview-dag.sh" >&2; exit 1; }
+          command -v dot >/dev/null 2>&1 || { echo "graphviz 'dot' not installed" >&2; exit 1; }
       - name: Generate overview DAG
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
         run: |
+          set -e
           bash scripts/gh/overview-dag.sh docs/overview-dag.dot docs/overview-dag.svg
+      - name: Verify DAG outputs
+        run: |
+          test -f docs/overview-dag.dot || { echo "docs/overview-dag.dot missing" >&2; exit 1; }
+          test -f docs/overview-dag.svg || { echo "docs/overview-dag.svg missing" >&2; exit 1; }
       - name: Commit DAG image to PR branch (same-repo PRs only)
         if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
         env:
@@ -31,7 +41,8 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git checkout "$BRANCH"
+          git fetch origin "refs/heads/${BRANCH}:refs/heads/${BRANCH}" --depth=1 || true
+          git checkout "$BRANCH" || git switch -C "$BRANCH"
           mkdir -p docs
           cp -f docs/overview-dag.svg docs/overview-dag.svg
           git add docs/overview-dag.svg
@@ -61,6 +72,7 @@ jobs:
             echo "</details>"
           } > .github/workflows/.dag-comment.md
       - name: Upload DAG artifacts
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: overview-dag

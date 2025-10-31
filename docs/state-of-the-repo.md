@@ -39,6 +39,7 @@ Status (high level):
   - Schemas: `planner/internal/validate/schemas/*.schema.json`
   - Validation helpers: `planner/internal/validate/validate.go:1` (invoked by `tasksd validate`).
 
+ 
 Assessment: ✅ Meets v8 requirements. Minimal-number normalization is implemented and exercised. Preimage hashing is documented and coded. Validation CLI is present.
 
 ### DAG Purity + Build (spec: DAG purity, acyclic + reduced, structural edges only)
@@ -49,6 +50,7 @@ Assessment: ✅ Meets v8 requirements. Minimal-number normalization is implement
 - Resource metadata kept adjacent to tasks (exclusive + limited):
   - Types: `planner/internal/model/task.go:1`, `planner/internal/model/resource_need.go:1`.
 
+ 
 Assessment: ✅ DAG purity enforced; topo and reduction implemented and tested (`planner/internal/planner/dag/dag_test.go:1`).
 
 ### Waves Preview (spec: preview only; no feedback into DAG)
@@ -56,6 +58,7 @@ Assessment: ✅ DAG purity enforced; topo and reduction implemented and tested (
   - Implementation: `planner/internal/planner/wavesim/wavesim.go:1`.
 - Exposed via `plan.Service` and written to `waves.json`; DOT export produces `runtime.dot` alongside `dag.dot`.
 
+ 
 Assessment: ✅ Preview semantics match spec; kept out of DAG and used as non‑authoritative preview.
 
 ### Validators Integration (spec: acceptance/evidence/interface; gating)
@@ -65,12 +68,14 @@ Assessment: ✅ Preview semantics match spec; kept out of DAG and used as non‑
   - Flags wired in `planner/cmd/tasksd/main.go:220`.
 - Reports are recorded under `tasks.json.meta.validator_reports` and included in the plan result.
 
+ 
 Assessment: ✅ Integration present with cache + strict mode. ⚠️ Spec’s quality gates (e.g., “≥95% tasks/edges carry validated evidence”) are not hard‑enforced beyond strict mode; they’re policy rather than schema.
 
 ### Codebase Census (spec: repo analysis present in tasks metadata)
 - Analyzer exists with typed counters and tests; results are embedded under `tasks.json.meta.codebase_analysis`.
   - Code: `planner/internal/analysis/census.go:1`.
 
+ 
 Assessment: ✅ Implemented.
 
 ### Hexagonal Architecture Migration (spec: docs/hex-architecture-plan.md)
@@ -84,6 +89,7 @@ Assessment: ✅ Implemented.
   - Validators runner + artifact writer wired via factory.
 - CLI `tasksd` delegates orchestration to the service for `plan`, as intended.
 
+ 
 Assessment: ✅ Hex migration largely in place on planner side. ⚠️ Ports are expressed as function fields on `Service` rather than explicit interfaces/types under a `ports/` package; still effective but differs from doc’s “ports module” recommendation.
 
 ### Executor (S.L.A.P.S.)
@@ -92,6 +98,7 @@ Assessment: ✅ Hex migration largely in place on planner side. ⚠️ Ports are
   - Service: `planner/internal/app/exec/service.go:1`, `service_factory.go:1`
 - No rolling‑frontier runtime loop, resource arbitration, circuit breakers, or provenance ledger yet.
 
+ 
 Assessment: ❌ Not implemented beyond scaffold.
 
 ### CLI Surface vs docs/cli-demo.md
@@ -99,31 +106,32 @@ Assessment: ❌ Not implemented beyond scaffold.
   - Source: `planner/cmd/tasksd/main.go:1`
 - `docs/cli-demo.md` is currently a placeholder and should be backfilled with examples that reflect the current CLI.
 
+ 
 Assessment: ⚠️ Functionality exists; documentation needs completion.
 
 ---
 
 ## Gaps and Deviations
 
-1) Executor runtime (rolling frontier)
+1. Executor runtime (rolling frontier)
 - Missing: task readiness frontier, global lock/queue ordering, quota/time‑window resources, retries/backoff, circuit breakers, hot‑patching, provenance ledger and JSONL execution logs.
 - Impact: planner outputs are usable for visualization and audit; execution must be completed to realize end‑to‑end.
 
-2) Evidence redaction pipeline
+1. Evidence redaction pipeline
 - Spec calls for redacting secrets in evidence excerpts before hashing. No redaction helpers found.
 - Search: no `redact`/`redaction` implementation under `planner/`.
 
-3) Schema hardening consistency
+1. Schema hardening consistency
 - Some schemas are tight (e.g., `dag.schema.json` nodes/edges with `additionalProperties: false`). Others (e.g., `tasks.schema.json`) allow additional properties at object levels to ease iteration.
 - Action: adopt a unified policy per docs and progressively lock down.
 
-4) Ports formalization
+1. Ports formalization
 - Docs suggest an explicit `internal/ports` package. Current design uses function fields on `plan.Service`, which is pragmatic but less explicit for consumers.
 
-5) CLI documentation
+1. CLI documentation
 - `docs/cli-demo.md` is a placeholder; the implemented CLI offers multiple workflows not yet captured in docs.
 
-6) Quality gates as enforceable policy
+1. Quality gates as enforceable policy
 - Spec’s target gates (acyclic and transitive‑reduced DAG; ≥95% tasks/edges with validated evidence; ≥80% verb‑first titles; isolated nodes eliminated or justified) are not enforced as hard errors (beyond DAG validity and strict validator mode). A “lint/validate” pass could compute and gate these metrics.
 
 ---
@@ -174,4 +182,3 @@ Longer term
 - go-architecture.md: The planner is organized by internal packages with a service layer; CLI delegates to services; DOT export helpers exist. Executor scaffold exists; runtime behaviors remain to be implemented.
 - hex-architecture-plan.md: Planner’s hexagonal service and adapters exist; an explicit ports package could close the last gap. Executor hex scaffold created with `ErrLoopNotImplemented` sentinel.
 - cli-demo.md: Needs content; the implemented CLI provides the examples this doc intends to show.
-
