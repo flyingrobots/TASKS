@@ -8,6 +8,9 @@ on:
 jobs:
   build-overview-dag:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -21,6 +24,42 @@ jobs:
           REPO: ${{ github.repository }}
         run: |
           bash scripts/gh/overview-dag.sh docs/overview-dag.dot docs/overview-dag.svg
+      - name: Commit DAG image to PR branch (same-repo PRs only)
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          BRANCH: ${{ github.head_ref }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout "$BRANCH"
+          mkdir -p docs
+          cp -f docs/overview-dag.svg docs/overview-dag.svg
+          git add docs/overview-dag.svg
+          if ! git diff --cached --quiet; then
+            git commit -m "docs: update overview DAG (CI)"
+            git push origin "$BRANCH"
+          fi
+      - name: Prepare PR comment content
+        if: github.event_name == 'pull_request'
+        env:
+          REPO: ${{ github.repository }}
+          BRANCH: ${{ github.head_ref }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          RAW_URL="https://raw.githubusercontent.com/${REPO}/${BRANCH}/docs/overview-dag.svg"
+          {
+            echo "### Overview DAG"
+            echo
+            echo "Workflow run: ${RUN_URL}"
+            echo
+            echo "If the image fails to render, download the artifact from the workflow run."
+            echo
+            echo "<details><summary>SVG Preview</summary>"
+            echo
+            echo "<img src=\"${RAW_URL}\" alt=\"Overview DAG\"/>"
+            echo
+            echo "</details>"
+          } > .github/workflows/.dag-comment.md
       - name: Upload DAG artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -28,3 +67,9 @@ jobs:
           path: |
             docs/overview-dag.dot
             docs/overview-dag.svg
+      - name: Comment DAG on PR
+        if: github.event_name == 'pull_request'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          recreate: true
+          path: .github/workflows/.dag-comment.md
