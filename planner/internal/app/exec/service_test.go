@@ -95,3 +95,50 @@ func TestServiceRunPropagatesLoopError(t *testing.T) {
 		t.Fatalf("expected loop error")
 	}
 }
+
+func TestServiceRun_ContextCanceledBefore(t *testing.T) {
+    ctx, cancel := context.WithCancel(context.Background())
+    cancel()
+    svc := execapp.Service{
+        LoadCoordinator: func(path string) (m.Coordinator, error) { return m.Coordinator{Version: "v8"}, nil },
+        InitRuntime: func(ctx context.Context, coord m.Coordinator) error {
+            // honor context
+            return ctx.Err()
+        },
+        RunLoop: func(ctx context.Context) error { return nil },
+    }
+    if err := svc.Run(ctx, "coord.json"); !errors.Is(err, context.Canceled) {
+        t.Fatalf("expected context.Canceled, got %v", err)
+    }
+}
+
+func TestServiceRun_ContextCanceledDuringInitAndLoop(t *testing.T) {
+    // During InitRuntime
+    ctx1, cancel1 := context.WithCancel(context.Background())
+    svc1 := execapp.Service{
+        LoadCoordinator: func(string) (m.Coordinator, error) { return m.Coordinator{Version: "v8"}, nil },
+        InitRuntime: func(ctx context.Context, coord m.Coordinator) error {
+            cancel1() // cancel while initializing
+            return ctx.Err()
+        },
+        RunLoop: func(context.Context) error { return nil },
+    }
+    if err := svc1.Run(ctx1, "coord.json"); !errors.Is(err, context.Canceled) {
+        t.Fatalf("expected canceled from init, got %v", err)
+    }
+
+    // During RunLoop
+    ctx2, cancel2 := context.WithCancel(context.Background())
+    svc2 := execapp.Service{
+        LoadCoordinator: func(string) (m.Coordinator, error) { return m.Coordinator{Version: "v8"}, nil },
+        InitRuntime: func(context.Context, m.Coordinator) error { return nil },
+        RunLoop: func(ctx context.Context) error {
+            cancel2()
+            <-ctx.Done()
+            return ctx.Err()
+        },
+    }
+    if err := svc2.Run(ctx2, "coord.json"); !errors.Is(err, context.Canceled) {
+        t.Fatalf("expected canceled from loop, got %v", err)
+    }
+}

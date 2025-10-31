@@ -44,7 +44,6 @@ jobs:
           git fetch origin "refs/heads/${BRANCH}:refs/heads/${BRANCH}" --depth=1 || true
           git checkout "$BRANCH" || git switch -C "$BRANCH"
           mkdir -p docs
-          cp -f docs/overview-dag.svg docs/overview-dag.svg
           git add docs/overview-dag.svg
           if ! git diff --cached --quiet; then
             git commit -m "docs: update overview DAG (CI)"
