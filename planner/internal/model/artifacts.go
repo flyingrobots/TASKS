@@ -3,7 +3,7 @@ package model
 // ArtifactMeta captures shared metadata fields for planner artifacts.
 type ArtifactMeta struct {
 	Version      string `json:"version"`
-	ArtifactHash string `json:"artifact_hash"`
+	ArtifactHash string `json:"artifactHash"`
 }
 
 // FeaturesArtifact is the serialized features.json contract.
@@ -27,8 +27,8 @@ type WavesArtifact struct {
 // WavesMeta extends artifact metadata with the plan identifier reference.
 type WavesMeta struct {
 	Version      string `json:"version"`
-	PlanID       string `json:"planId"`
-	ArtifactHash string `json:"artifact_hash"`
+	PlanID       string `json:"planID"`
+	ArtifactHash string `json:"artifactHash"`
 }
 
 // TitlesArtifact carries canonical task titles for DOT rendering.
