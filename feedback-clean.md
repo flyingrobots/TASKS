@@ -9,12 +9,12 @@
 ## .github/workflows/overview-dag.yml around lines 22-23
 - [x] [Major] the workflow calls bash scripts/gh/overview-dag.sh without any validation or error handling; update the step to export required env (GITHUB_TOKEN, REPO), add "set -e" to fail fast, verify the script exists (if [ ! -f scripts/gh/overview-dag.sh ] exit with an error message), verify required tools like "dot" exist (command -v dot || exit with an error message), then run the script and ensure you check its exit status so failures produce clear logs and cause the job to fail.
   - Implemented: added a “Preflight checks” step (verifies script + dot), and guarded the generation step with set -e.
-  - [ ] (follow-up): add a step to echo Graphviz version and file sizes of generated artifacts for easier debugging.
+  - [x] (follow-up): add a step to echo Graphviz version and file sizes of generated artifacts for easier debugging.
 
 ## .github/workflows/overview-dag.yml around lines 24 to 30
 - [x] [Major] the workflow uploads DAG artifacts even when generation may have failed, leading to missing or partial files being stored; update the upload step to run only on overall job success by adding an if: success() condition to the upload step, and add a preceding verification step that checks the two files exist (use shell test -f docs/overview-dag.dot and test -f docs/overview-dag.svg and exit non‑zero with a clear message if either is missing) so the job fails before upload when artifacts are absent.
   - Implemented: added a “Verify DAG outputs” step, and `if: success()` to artifact upload.
-  - [ ] (follow-up): add a small summary step printing the node/edge counts parsed from the dot file.
+  - [x] (follow-up): add a small summary step printing the node/edge counts parsed from the dot file.
 
 ## docs/state-of-the-repo.md
 - [x] [Trivial] add a single blank line before each heading like "Assessment:" so the heading is separated from the prior paragraph; then in the "Gaps and Deviations" block normalize the ordered list to use consistent "1." prefixes for every item (or alternatively update the markdownlint config to allow sequential numbering) so the list complies with the linter; run markdownlint to verify and commit the cleaned file.
