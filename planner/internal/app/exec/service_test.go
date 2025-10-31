@@ -96,6 +96,38 @@ func TestServiceRunPropagatesLoopError(t *testing.T) {
 	}
 }
 
+func TestServiceRunFailsOnZeroValueCoordinatorAndSkipsInit(t *testing.T) {
+    called := struct{ init, loop bool }{}
+    svc := execapp.Service{
+        LoadCoordinator: func(string) (m.Coordinator, error) { return m.Coordinator{}, nil },
+        InitRuntime: func(ctx context.Context, coord m.Coordinator) error { called.init = true; return nil },
+        RunLoop: func(ctx context.Context) error { called.loop = true; return nil },
+    }
+    err := svc.Run(context.Background(), "coord.json")
+    if err == nil || err.Error() != "invalid coordinator: missing version" {
+        t.Fatalf("expected invalid coordinator error, got %v", err)
+    }
+    if called.init || called.loop {
+        t.Fatalf("expected InitRuntime/RunLoop not called on validation failure: %+v", called)
+    }
+}
+
+func TestServiceRunInitErrorPrecedenceOverLoop(t *testing.T) {
+    called := struct{ loop bool }{}
+    svc := execapp.Service{
+        LoadCoordinator: func(string) (m.Coordinator, error) { return m.Coordinator{Version: "v8"}, nil },
+        InitRuntime: func(context.Context, m.Coordinator) error { return errors.New("init failed") },
+        RunLoop: func(context.Context) error { called.loop = true; return errors.New("loop failed") },
+    }
+    err := svc.Run(context.Background(), "coord.json")
+    if err == nil || err.Error() != "init failed" {
+        t.Fatalf("expected init error precedence, got %v", err)
+    }
+    if called.loop {
+        t.Fatalf("expected RunLoop not to run when init fails")
+    }
+}
+
 func TestServiceRun_ContextCanceledBefore(t *testing.T) {
     ctx, cancel := context.WithCancel(context.Background())
     cancel()
