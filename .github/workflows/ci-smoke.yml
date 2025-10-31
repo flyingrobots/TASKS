@@ -1,0 +1,32 @@
+name: CI Smoke (Planner)
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25.x'
+          cache: true
+      - name: Go test
+        working-directory: planner
+        run: go test ./...
+      - name: Plan + Validate + DOT
+        working-directory: planner
+        run: |
+          go run ./cmd/tasksd plan --out ./plans --repo ..
+          go run ./cmd/tasksd validate --dir ./plans
+          go run ./cmd/tasksd export-dot --dir ./plans
+      - name: Upload plan artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: planner-plan
+          path: |
+            planner/plans/*.json
+            planner/plans/*.dot

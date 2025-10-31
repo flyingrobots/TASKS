@@ -231,3 +231,30 @@ It's written by 10 imperfect ones, working in beautiful chaos."*
 **- The SLAPS Experiment**
 **September 14, 2025**
 **The day AI swarms became real**
+
+## Project Boards
+
+- TASKS + SLAPS OVERVIEW (Project v2)
+  - Create a "DAG" view (Board): show Title, Status, Parent issue, Sub-issues progress.
+  - Group by Parent issue (epics) or a custom Stream field; sort by Depth (if added).
+  - The Overview DAG (SVG) is built by CI and attached as a workflow artifact.
+
+## Overview DAG (CI)
+
+- Script: `scripts/gh/overview-dag.sh`
+- Produces: `docs/overview-dag.dot` and `docs/overview-dag.svg` from
+  - Epic → child edges parsed from epic checklists
+  - "Blocked by" links parsed from issue body lines
+- Run locally:
+  - `REPO=owner/name GITHUB_TOKEN=… bash scripts/gh/overview-dag.sh`
+  - `dot -Tpng docs/overview-dag.dot -o docs/overview-dag.png`
+
+## SLAPS Executor Development (Core)
+
+- Parse coordinator → indegree/topology (X1)
+- Ready queue (B2)
+- Dispatcher + Worker interface (X3)
+- Task state machine (X4)
+- Completion propagation (X5)
+- Minimal loop + JSONL logs (B4)
+
