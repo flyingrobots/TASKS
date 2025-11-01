@@ -33,7 +33,7 @@
       {
         "acceptanceChecks": [
           {
-            "cmd": "sh -c 'psql \"$DB_DSN\" -c \\\"\\conninfo\\\" >/dev/null 2>&1'",
+            "cmd": "psql \"$DB_DSN\" -c \"\\\\conninfo\" >/dev/null 2>&1",
             "timeoutSeconds": 10,
             "type": "command"
           }
@@ -67,7 +67,7 @@
       {
         "acceptanceChecks": [
           {
-            "cmd": "sh -c 'db/migrate status | grep -q Applied'",
+            "cmd": "db/migrate status | grep -q Applied",
             "timeoutSeconds": 15,
             "type": "command"
           }
@@ -101,7 +101,7 @@
       {
         "acceptanceChecks": [
           {
-            "cmd": "sh -c 'curl -fsS ${API_BASE:-http://localhost:8080}/healthz >/dev/null'",
+            "cmd": "curl -fsS ${API_BASE:-http://localhost:8080}/healthz >/dev/null",
             "timeoutSeconds": 10,
             "type": "command"
           }
@@ -116,7 +116,7 @@
         },
         "durationUnits": "hours",
         "executionLogging": {
-          "format": "JSON",
+          "format": "JSONL",
           "requiredFields": [
             "timestamp",
             "task_id",
@@ -135,13 +135,13 @@
     ]
   },
   "meta": {
-    "artifactHash": "142d9461676336907e33f706ce2ef7a59ed78593fccacad6844061f6d6617de7",
+    "artifactHash": "876314a2f7ffc3abeba9b0b89332eb0f6d85093b267b1c7b16d7c807aa30cd9e",
     "version": "v8"
   },
   "metrics": {
     "estimates": {
       "longestPathLength": 3,
-      "p50TotalHours": 12,
+      "p50TotalHours": 6.006129670521303,
       "widthApprox": 1
     }
   },
