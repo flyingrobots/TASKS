@@ -25,6 +25,10 @@ jobs:
         run: |
           set -e
           bash scripts/gh/overview-dag.sh docs/overview-dag.dot docs/overview-dag.svg
+      - name: Generate planner DAGs (T.A.S.K.S.)
+        run: |
+          set -e
+          bash scripts/gh/plan-dag.sh planner/plans docs
       - name: Stage DAG for commit
         if: github.event_name == 'pull_request'
         run: |
@@ -84,7 +88,7 @@ jobs:
           NODES=$(grep -Eo '^\s*[A-Za-z0-9_]+\s*\[' docs/overview-dag.dot | wc -l | tr -d ' ')
           EDGES=$(grep -Eo '->' docs/overview-dag.dot | wc -l | tr -d ' ')
           {
-            echo "### Overview DAG"
+            echo "### Your GitHub Issues as a DAG"
             echo
             echo "Workflow run: ${RUN_URL}"
             echo
@@ -95,6 +99,21 @@ jobs:
             echo "<img src=\"data:image/svg+xml;base64,${INLINE}\" alt=\"Overview DAG\"/>"
             echo
             echo "</details>"
+            echo
+            if test -f docs/plan-dag.svg; then
+              echo "\n### T.A.S.K.S. DAG"
+              echo
+              INLINE_PLAN=$(base64 -w0 docs/plan-dag.svg || base64 docs/plan-dag.svg)
+              echo "<details open><summary>Plan DAG</summary>"
+              echo "<img src=\"data:image/svg+xml;base64,${INLINE_PLAN}\" alt=\"Plan DAG\"/>"
+              echo "</details>"
+            fi
+            if test -f docs/runtime.svg; then
+              INLINE_RT=$(base64 -w0 docs/runtime.svg || base64 docs/runtime.svg)
+              echo "<details><summary>Runtime (Coordinator) Graph</summary>"
+              echo "<img src=\"data:image/svg+xml;base64,${INLINE_RT}\" alt=\"Runtime DAG\"/>"
+              echo "</details>"
+            fi
           } > "$TMPFILE"
       - name: Upload DAG artifacts
         if: success()
@@ -104,6 +123,8 @@ jobs:
           path: |
             docs/overview-dag.dot
             docs/overview-dag.svg
+            docs/plan-dag.svg
+            docs/runtime.svg
       - name: Comment DAG on PR
         if: github.event_name == 'pull_request'
         uses: marocchino/sticky-pull-request-comment@v2
@@ -112,3 +133,8 @@ jobs:
           hide_and_recreate: true
           header: Overview DAG
           path: ${{ runner.temp }}/dag-comment.md
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.25.x
+          cache: true

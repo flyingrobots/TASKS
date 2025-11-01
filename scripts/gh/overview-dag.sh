@@ -86,14 +86,17 @@ jq -r '.[] | @base64' "$tmpdir/all_nodes.json" | while read -r row; do
   if [[ "$title" =~ ^Epic: ]]; then
     printf '%s\n' "$body" | sed -n '1,800p' | awk '/^- \[[ x]\] #[0-9]+/ { for(i=1;i<=NF;i++) if ($i ~ /^#[0-9]+$/){ gsub("#","",$i); printf("epic %s -> %s\n", num, $i) }}' num="$num" >> "$tmpdir/edges.txt"
   fi
-  # Blocked-by entries: lines that mention "Blocked by" and issue refs
+  # Dependency entries: lines that mention common dependency phrases and issue refs
   while read -r l; do
+    if ! echo "$l" | grep -Eiq "blocked[- ]?by|blocks|depends on|requires|after:"; then
+      continue
+    fi
     while [[ "$l" =~ \#([0-9]+) ]]; do
       blk="${BASH_REMATCH[1]}"
       echo "block $num <- $blk" >> "$tmpdir/edges.txt"
       l="${l#*#$blk}" # advance using $blk (no extra braces)
     done
-  done < <(printf '%s\n' "$body" | grep -i "Blocked by" || true)
+  done < <(printf '%s\n' "$body" | grep -Ei "blocked[- ]?by|blocks|depends on|requires|after:" || true)
 done
 
 # Build DOT
