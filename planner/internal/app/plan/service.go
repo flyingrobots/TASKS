@@ -305,8 +305,7 @@ func makeFeaturesArtifact(features []FeatureSummary) *m.FeaturesArtifact {
 
 func makeCoordinator(tasks []m.Task, deps []m.Edge) m.Coordinator {
     coord := m.Coordinator{}
-    coord.Version = schemaVersion
-    coord.Meta.Version = schemaVersion
+    setCoordinatorVersion(&coord, schemaVersion)
     coord.Graph.Nodes = tasks
     coord.Graph.Edges = deps
     coord.Config.Resources.Catalog = map[string]m.ResourceSpec{}

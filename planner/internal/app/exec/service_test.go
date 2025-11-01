@@ -110,7 +110,9 @@ func TestServiceRunFailsOnZeroValueCoordinatorAndSkipsInit(t *testing.T) {
         RunLoop: func(ctx context.Context) error { called.loop = true; return nil },
     }
     err := svc.Run(context.Background(), "coord.json")
-    if err == nil || err.Error() != "invalid coordinator: missing version" {
+    if err == nil {
+        t.Fatalf("expected invalid coordinator error")
+    } else if !errors.Is(err, execapp.ErrInvalidCoordinator) {
         t.Fatalf("expected invalid coordinator error, got %v", err)
     }
     if called.init || called.loop {

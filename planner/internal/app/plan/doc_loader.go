@@ -184,9 +184,7 @@ func applyTaskDefaults(task *m.Task) {
         task.DurationUnit = "hours"
     }
     // Execution logging defaults + light variation to improve coverage realism
-    if task.ExecutionLogging.Format == "" {
-        task.ExecutionLogging.Format = "JSONL"
-    }
+    wasEmpty := task.ExecutionLogging.Format == ""
     baseFields := []string{"timestamp", "task_id", "step", "status", "message"}
     switch strings.ToLower(task.Title) {
     case "setup db":
@@ -194,7 +192,7 @@ func applyTaskDefaults(task *m.Task) {
     case "migrate schema":
         task.ExecutionLogging.RequiredFields = append(baseFields, "migration_version")
     case "api handlers":
-        if task.ExecutionLogging.Format == "" {
+        if wasEmpty {
             task.ExecutionLogging.Format = "JSON"
         } else {
             // leave user-provided non-empty format untouched
@@ -204,6 +202,9 @@ func applyTaskDefaults(task *m.Task) {
         if len(task.ExecutionLogging.RequiredFields) == 0 {
             task.ExecutionLogging.RequiredFields = baseFields
         }
+    }
+    if wasEmpty && task.ExecutionLogging.Format == "" {
+        task.ExecutionLogging.Format = "JSONL"
     }
     task.Compensation.Idempotent = true
 }

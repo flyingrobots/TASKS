@@ -43,8 +43,9 @@ svg_out=${2:-docs/overview-dag.svg}
 tmpdir=$(mktemp -d)
 trap 'rm -rf "$tmpdir"' EXIT
 
-echo "Fetching issues from $REPO ..." >&2
-if ! gh issue list --repo "$REPO" --state open -L 300 --json number,title,labels,url > "$tmpdir/issues.json"; then
+LIMIT=${GH_LIST_LIMIT:-300}
+echo "Fetching issues from $REPO (limit $LIMIT via GH_LIST_LIMIT) ..." >&2
+if ! gh issue list --repo "$REPO" --state open -L "$LIMIT" --json number,title,labels,url > "$tmpdir/issues.json"; then
   echo "ERROR: failed to list issues for $REPO" >&2
   exit 1
 fi

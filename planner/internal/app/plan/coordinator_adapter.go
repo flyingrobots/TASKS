@@ -10,14 +10,16 @@ type CoordinatorBuilder interface {
 // DefaultCoordinatorBuilder constructs the stub coordinator artifact.
 type DefaultCoordinatorBuilder struct{}
 
+func setCoordinatorVersion(c *m.Coordinator, ver string) {
+    // NOTE: Keep in sync with makeCoordinator in service.go (set both top-level
+    // Version and Meta.Version) to satisfy schema and downstream consumers.
+    c.Version = ver
+    c.Meta.Version = ver
+}
+
 func (DefaultCoordinatorBuilder) Build(tasks []m.Task, deps []m.Edge) m.Coordinator {
     coord := m.Coordinator{}
-    // We intentionally set both top-level version and meta.version for
-    // backward-compatibility with existing consumers and schema validation.
-    // Downstream executor validation checks the top-level field; meta.version
-    // is kept as part of the artifact meta lineage.
-    coord.Version = schemaVersion
-    coord.Meta.Version = schemaVersion
+    setCoordinatorVersion(&coord, schemaVersion)
     coord.Graph.Nodes = tasks
     coord.Graph.Edges = deps
     coord.Config.Resources.Catalog = map[string]m.ResourceSpec{}

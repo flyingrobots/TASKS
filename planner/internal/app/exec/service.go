@@ -1,11 +1,16 @@
 package exec
 
 import (
-	"context"
-	"errors"
+    "context"
+    "errors"
 
-	m "github.com/james/tasks-planner/internal/model"
+    m "github.com/james/tasks-planner/internal/model"
 )
+
+// ErrInvalidCoordinator indicates the loaded coordinator contract is invalid
+// (e.g., missing required fields like version). Use errors.Is with this
+// sentinel in tests and callers.
+var ErrInvalidCoordinator = errors.New("invalid coordinator: missing version")
 
 // Service orchestrates executor initialization and runtime.
 type Service struct {
@@ -25,7 +30,7 @@ func (s Service) Run(ctx context.Context, coordPath string) error {
     }
     // Minimal validation: require a non-empty version to guard zero-value coordinators.
     if coord.Version == "" {
-        return errors.New("invalid coordinator: missing version")
+        return ErrInvalidCoordinator
     }
     if err := s.InitRuntime(ctx, coord); err != nil {
         return err
