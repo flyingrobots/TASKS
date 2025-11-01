@@ -131,5 +131,13 @@ if command -v dot >/dev/null 2>&1; then
   dot -Tsvg "$dot_out" -o "$svg_out"
   echo "Wrote $svg_out"
 else
-  echo "Graphviz 'dot' not found; skipped SVG generation" >&2
+  if command -v npx >/dev/null 2>&1; then
+    if npx -y @aduh95/viz.js@3.2.4 -Tsvg -o "$svg_out" "$dot_out"; then
+      echo "Wrote $svg_out (via viz.js)"
+    else
+      echo "viz.js fallback failed; SVG not generated" >&2
+    fi
+  else
+    echo "Neither 'dot' nor 'npx' available; skipped SVG generation" >&2
+  fi
 fi
