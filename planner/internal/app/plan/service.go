@@ -1,15 +1,21 @@
 package plan
 
 import (
-	"context"
-	"errors"
-	"fmt"
-	"sort"
-	"strings"
+    "context"
+    "encoding/hex"
+    "encoding/json"
+    "errors"
+    "fmt"
+    "math"
+    "math/rand"
+    "sort"
+    "strings"
 
-	analysis "github.com/james/tasks-planner/internal/analysis"
-	m "github.com/james/tasks-planner/internal/model"
-	"github.com/james/tasks-planner/internal/validators"
+    analysis "github.com/james/tasks-planner/internal/analysis"
+    "github.com/james/tasks-planner/internal/canonjson"
+    "github.com/james/tasks-planner/internal/hash"
+    m "github.com/james/tasks-planner/internal/model"
+    "github.com/james/tasks-planner/internal/validators"
 )
 
 const (
@@ -165,6 +171,36 @@ func (s Service) Plan(ctx context.Context, req Request) (Result, error) {
 		coord = makeCoordinator(tf.Tasks, tf.Dependencies)
 	}
 
+    // Populate coordinator metrics from the DAG metrics, with Monte Carlo p50 for total hours.
+    if dagFile != nil {
+        coord.Metrics.Estimates.LongestPathLength = dagFile.Metrics.LongestPathLength
+        coord.Metrics.Estimates.WidthApprox = dagFile.Metrics.WidthApprox
+
+        // Deterministic seed derived from the canonical tasks preimage (empty artifactHash)
+        // Ensure we don't mutate tf while hashing
+        preimage, _ := json.Marshal(tf)
+        can, _ := canonjson.ToCanonicalJSON(preimage)
+        h := hash.HashCanonicalBytes(can) // hex string
+        // Use first 8 bytes for a 64-bit seed
+        var seed int64
+        if b, err := hex.DecodeString(h[:16]); err == nil && len(b) == 8 {
+            for i := 0; i < 8; i++ { seed = (seed << 8) | int64(b[i]) }
+        } else {
+            // Fallback deterministic seed
+            seed = 42
+        }
+
+        // Compute Monte Carlo median for plan makespan (hours)
+        // Samples scaled modestly by DAG size but capped for CI friendliness
+        n := len(tf.Tasks)
+        samples := 2000
+        if n > 100 { samples = 1000 } // basic cap for very large DAGs
+        p50 := mcP50MakespanHours(tf.Tasks, edgesFromDag(dagFile.Edges), samples, seed)
+        if !math.IsNaN(p50) && !math.IsInf(p50, 0) {
+            coord.Metrics.Estimates.P50TotalHours = p50
+        }
+    }
+
 	var validatorReports []m.ValidatorReport
 	var warnings []string
 	if s.NewValidatorRunner != nil && validatorConfigured(req.ValidatorConfig) {
@@ -297,4 +333,96 @@ func convertValidatorReports(src []validators.Report) []m.ValidatorReport {
 		})
 	}
 	return out
+}
+
+// mcP50MakespanHours computes a Monte Carlo estimate of the plan makespan (median in hours)
+// respecting precedence edges only. It samples each task's duration from a triangular
+// distribution parameterized by (Optimistic, MostLikely, Pessimistic). The result is
+// deterministic for a given seed and input graph.
+func mcP50MakespanHours(tasks []m.Task, edges []m.Edge, samples int, seed int64) float64 {
+    if samples <= 0 || len(tasks) == 0 {
+        return 0
+    }
+    // Map task IDs to indices for arrays
+    idx := make(map[string]int, len(tasks))
+    for i, t := range tasks { idx[t.ID] = i }
+    // Build predecessors and topological order (Kahn)
+    pred := make([][]int, len(tasks))
+    indeg := make([]int, len(tasks))
+    for _, e := range edges {
+        u, okU := idx[e.From]
+        v, okV := idx[e.To]
+        if !okU || !okV { continue }
+        pred[v] = append(pred[v], u)
+        indeg[v]++
+    }
+    order := make([]int, 0, len(tasks))
+    q := make([]int, 0, len(tasks))
+    // init q with zero indegree nodes
+    for i := range tasks { if indeg[i] == 0 { q = append(q, i) } }
+    for len(q) > 0 {
+        v := q[0]; q = q[1:]
+        order = append(order, v)
+        // decrease indegree of successors
+        for w := range tasks {
+            // scan pred list of w for v (cheap for small DAGs; OK here)
+            for _, p := range pred[w] { if p == v { indeg[w]--; if indeg[w] == 0 { q = append(q, w) } ; break } }
+        }
+    }
+    if len(order) != len(tasks) {
+        // cycle or missing edges mapping; fall back to simple sum of ML on critical path-like guess
+        var sum float64
+        for _, t := range tasks { sum += t.Duration.MostLikely }
+        return sum
+    }
+
+    rng := rand.New(rand.NewSource(seed))
+    draws := make([]float64, samples)
+    dur := make([]float64, len(tasks))
+    ef := make([]float64, len(tasks))
+    for s := 0; s < samples; s++ {
+        // sample durations
+        for i, t := range tasks {
+            a := t.Duration.Optimistic
+            m := t.Duration.MostLikely
+            b := t.Duration.Pessimistic
+            if b < a { a, b = b, a }
+            if m < a { m = a } else if m > b { m = b }
+            dur[i] = triangular(a, m, b, rng)
+        }
+        // forward pass for earliest finish
+        for _, v := range order {
+            maxPred := 0.0
+            for _, p := range pred[v] { if ef[p] > maxPred { maxPred = ef[p] } }
+            ef[v] = maxPred + dur[v]
+        }
+        // makespan is max ef
+        maxEF := 0.0
+        for _, v := range order { if ef[v] > maxEF { maxEF = ef[v] } }
+        draws[s] = maxEF
+    }
+    sort.Float64s(draws)
+    mid := samples / 2
+    if samples%2 == 1 { return draws[mid] }
+    return 0.5 * (draws[mid-1] + draws[mid])
+}
+
+func triangular(a, m, b float64, rng *rand.Rand) float64 {
+    if a == b { return a }
+    u := rng.Float64()
+    c := 0.0
+    if b > a { c = (m - a) / (b - a) }
+    if u < c {
+        return a + math.Sqrt(u*(b-a)*(m-a))
+    }
+    return b - math.Sqrt((1-u)*(b-a)*(b-m))
+}
+
+func edgesFromDag(in []m.DagEdge) []m.Edge {
+    if len(in) == 0 { return nil }
+    out := make([]m.Edge, 0, len(in))
+    for _, e := range in {
+        out = append(out, m.Edge{From: e.From, To: e.To, Type: e.Type, IsHard: true, Confidence: 1})
+    }
+    return out
 }

@@ -135,14 +135,14 @@
     ]
   },
   "meta": {
-    "artifactHash": "7ccf88cd045313dc5523367698097a53f7aef210caa54787e989e0cd4baa46cf",
+    "artifactHash": "142d9461676336907e33f706ce2ef7a59ed78593fccacad6844061f6d6617de7",
     "version": "v8"
   },
   "metrics": {
     "estimates": {
-      "longestPathLength": 0,
-      "p50TotalHours": 0,
-      "widthApprox": 0
+      "longestPathLength": 3,
+      "p50TotalHours": 6.017406073127897,
+      "widthApprox": 1
     }
   },
   "version": "v8"
