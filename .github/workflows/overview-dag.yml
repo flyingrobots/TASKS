@@ -75,15 +75,15 @@ jobs:
             echo "pushed=false" >> "$GITHUB_OUTPUT"
           fi
       - name: Prepare PR comment content
-        if: github.event_name == 'pull_request' && steps.commit_dag.outputs.pushed == 'true'
+        if: github.event_name == 'pull_request'
         env:
           REPO: ${{ github.repository }}
           BRANCH: ${{ github.head_ref }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           TMPFILE: ${{ runner.temp }}/dag-comment.md
-          RAW_OK: ${{ steps.commit_dag.outputs.pushed }}
         run: |
-          RAW_URL="https://raw.githubusercontent.com/${REPO}/${BRANCH}/docs/overview-dag.svg"
+          # Base64-inline the SVG to avoid 404s and make preview independent of branch commits
+          INLINE=$(base64 -w0 docs/overview-dag.svg || base64 docs/overview-dag.svg)
           NODES=$(grep -Eo '^\s*[A-Za-z0-9_]+\s*\[' docs/overview-dag.dot | wc -l | tr -d ' ')
           EDGES=$(grep -Eo '->' docs/overview-dag.dot | wc -l | tr -d ' ')
           {
@@ -93,17 +93,11 @@ jobs:
             echo
             echo "Summary: ${NODES} nodes, ${EDGES} edges"
             echo
-            if [ "${RAW_OK}" = "true" ]; then
-              echo "<details><summary>SVG Preview</summary>"
-              echo
-              echo "<img src=\"${RAW_URL}\" alt=\"Overview DAG\"/>"
-              echo
-              echo "</details>"
-              echo
-              echo "Raw SVG: ${RAW_URL}"
-            else
-              echo "(Image not embedded for this run — no branch commit). Download the artifact from the workflow run."
-            fi
+            echo "<details><summary>SVG Preview</summary>"
+            echo
+            echo "<img src=\"data:image/svg+xml;base64,${INLINE}\" alt=\"Overview DAG\"/>"
+            echo
+            echo "</details>"
           } > "$TMPFILE"
       - name: Upload DAG artifacts
         if: success()
@@ -114,7 +108,7 @@ jobs:
             docs/overview-dag.dot
             docs/overview-dag.svg
       - name: Comment DAG on PR
-        if: github.event_name == 'pull_request' && steps.commit_dag.outputs.pushed == 'true'
+        if: github.event_name == 'pull_request'
         uses: marocchino/sticky-pull-request-comment@v2
         with:
           recreate: true
