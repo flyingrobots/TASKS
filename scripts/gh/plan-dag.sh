@@ -32,7 +32,13 @@ render(){
   if command -v dot >/dev/null 2>&1; then
     dot -Tsvg "$dotfile" -o "$svgfile"
   elif command -v npx >/dev/null 2>&1; then
-    npx -y graphviz-cli -T svg -o "$svgfile" "$dotfile"
+    if npx -y graphviz-cli dot -Tsvg "$dotfile" -o "$svgfile" \
+       || npx -y graphviz-cli dot -T svg "$dotfile" -o "$svgfile" \
+       || npx -y graphviz-cli -Tsvg -o "$svgfile" "$dotfile"; then
+      :
+    else
+      echo "graphviz-cli fallback failed; skipping $dotfile" >&2
+    fi
   else
     echo "WARN: no 'dot' or 'npx'; skipping render for $dotfile" >&2
     return 0
