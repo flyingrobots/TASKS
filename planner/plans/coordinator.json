@@ -141,7 +141,7 @@
   "metrics": {
     "estimates": {
       "longestPathLength": 3,
-      "p50TotalHours": 6.017406073127897,
+      "p50TotalHours": 12,
       "widthApprox": 1
     }
   },
