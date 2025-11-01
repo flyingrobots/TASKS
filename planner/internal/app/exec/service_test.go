@@ -83,6 +83,7 @@ func TestServiceRunPropagatesInitError(t *testing.T) {
 }
 
 func TestServiceRunPropagatesLoopError(t *testing.T) {
+    errLoop := errors.New("loop failed")
     svc := execapp.Service{
         LoadCoordinator: func(path string) (m.Coordinator, error) {
             return m.Coordinator{Version: "v8"}, nil
@@ -91,13 +92,13 @@ func TestServiceRunPropagatesLoopError(t *testing.T) {
             return nil
         },
         RunLoop: func(ctx context.Context) error {
-            return errors.New("loop failed")
+            return errLoop
         },
     }
     if err := svc.Run(context.Background(), "coord.json"); err == nil {
         t.Fatalf("expected loop error")
-    } else if err.Error() != "loop failed" {
-        t.Fatalf("expected 'loop failed', got: %v", err)
+    } else if !errors.Is(err, errLoop) {
+        t.Fatalf("expected loop error sentinel, got: %v", err)
     }
 }
 
