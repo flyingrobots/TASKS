@@ -54,14 +54,30 @@ fi
 
 # Batch fetch open issue bodies via GraphQL to avoid N+1 API calls
 owner="${REPO%%/*}"; name="${REPO##*/}"
-body_json=$(gh api graphql -f owner="$owner" -f name="$name" -F n=300 -f query='query($owner:String!,$name:String!,$n:Int!){ repository(owner:$owner,name:$name){ issues(first:$n, states:OPEN, orderBy:{field:CREATED_AT, direction:DESC}){ nodes { number title body } } } }')
-if [[ -z "$body_json" ]]; then
-  echo "ERROR: failed to fetch issue bodies via GraphQL" >&2
-  exit 1
-fi
+# Paginate through open issues (max 100 per page)
+echo "[]" > "$tmpdir/all_nodes.json"
+after=""
+while :; do
+  if [[ -z "$after" ]]; then
+    query='query($owner:String!,$name:String!){ repository(owner:$owner,name:$name){ issues(first:100, states:OPEN, orderBy:{field:CREATED_AT, direction:DESC}){ pageInfo{ hasNextPage endCursor } nodes { number title body } } } }'
+    res=$(gh api graphql -f owner="$owner" -f name="$name" -f query="$query")
+  else
+    query='query($owner:String!,$name:String!,$after:String!){ repository(owner:$owner,name:$name){ issues(first:100, states:OPEN, orderBy:{field:CREATED_AT, direction:DESC}, after:$after){ pageInfo{ hasNextPage endCursor } nodes { number title body } } } }'
+    res=$(gh api graphql -f owner="$owner" -f name="$name" -f after="$after" -f query="$query")
+  fi
+  if [[ -z "$res" ]]; then
+    echo "ERROR: failed to fetch issue page via GraphQL" >&2
+    exit 1
+  fi
+  jq '.data.repository.issues.nodes' <<<"$res" > "$tmpdir/nodes.json"
+  jq -s 'add' "$tmpdir/all_nodes.json" "$tmpdir/nodes.json" > "$tmpdir/all_nodes.tmp" && mv "$tmpdir/all_nodes.tmp" "$tmpdir/all_nodes.json"
+  hasNext=$(jq -r '.data.repository.issues.pageInfo.hasNextPage' <<<"$res")
+  after=$(jq -r '.data.repository.issues.pageInfo.endCursor' <<<"$res")
+  [[ "$hasNext" == "true" && -n "$after" ]] || break
+done
 
 # Derive edges from titles and bodies
-jq -r '.data.repository.issues.nodes[] | @base64' <<<"$body_json" | while read -r row; do
+jq -r '.[] | @base64' "$tmpdir/all_nodes.json" | while read -r row; do
   _jq(){ echo "$row" | base64 --decode | jq -r "$1"; }
   num=$(_jq '.number')
   title=$(_jq '.title // ""')
@@ -117,4 +133,3 @@ if command -v dot >/dev/null 2>&1; then
 else
   echo "Graphviz 'dot' not found; skipped SVG generation" >&2
 fi
-

@@ -30,6 +30,11 @@ jobs:
         run: |
           set -e
           bash scripts/gh/overview-dag.sh docs/overview-dag.dot docs/overview-dag.svg
+      - name: Stage DAG for commit
+        if: github.event_name == 'pull_request'
+        run: |
+          cp -f docs/overview-dag.svg "$RUNNER_TEMP/overview-dag.svg"
+          cp -f docs/overview-dag.dot "$RUNNER_TEMP/overview-dag.dot"
       - name: Verify DAG outputs
         run: |
           test -f docs/overview-dag.dot || { echo "docs/overview-dag.dot missing" >&2; exit 1; }
@@ -58,7 +63,10 @@ jobs:
             git checkout -B "$BRANCH"
           fi
           mkdir -p docs
-          git add docs/overview-dag.svg
+          # restore generated files from previous step
+          cp -f "$RUNNER_TEMP/overview-dag.svg" docs/overview-dag.svg || true
+          cp -f "$RUNNER_TEMP/overview-dag.dot" docs/overview-dag.dot || true
+          git add docs/overview-dag.svg docs/overview-dag.dot
           if ! git diff --cached --quiet; then
             git commit -m "docs: update overview DAG (CI)"
             git push origin "$BRANCH"
