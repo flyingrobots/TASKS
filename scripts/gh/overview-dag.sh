@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Dependency checks
-for cmd in gh jq sed awk dot; do
+# Dependency checks (dot is optional and handled later)
+for cmd in gh jq sed awk; do
   if ! command -v "$cmd" >/dev/null 2>&1; then
     echo "ERROR: required command '$cmd' not found in PATH" >&2
     exit 127
