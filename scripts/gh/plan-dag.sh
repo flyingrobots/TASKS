@@ -32,7 +32,7 @@ render(){
   if command -v dot >/dev/null 2>&1; then
     dot -Tsvg "$dotfile" -o "$svgfile"
   elif command -v npx >/dev/null 2>&1; then
-    npx -y @aduh95/viz.js@3.2.4 -Tsvg -o "$svgfile" "$dotfile"
+    npx -y graphviz-cli -T svg -o "$svgfile" "$dotfile"
   else
     echo "WARN: no 'dot' or 'npx'; skipping render for $dotfile" >&2
     return 0
@@ -48,4 +48,3 @@ render "$plan_dot" "$plan_svg"
 render "$runtime_dot" "$runtime_svg"
 
 echo "Wrote $plan_svg and $runtime_svg"
-
