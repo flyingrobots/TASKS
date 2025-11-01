@@ -116,7 +116,7 @@
         },
         "durationUnits": "hours",
         "executionLogging": {
-          "format": "JSONL",
+          "format": "JSON",
           "requiredFields": [
             "timestamp",
             "task_id",
@@ -135,13 +135,13 @@
     ]
   },
   "meta": {
-    "artifactHash": "876314a2f7ffc3abeba9b0b89332eb0f6d85093b267b1c7b16d7c807aa30cd9e",
+    "artifactHash": "05e750b4fe4506c97a922ab4fee26442c4e58ad64df8218c3a05eda837429771",
     "version": "v8"
   },
   "metrics": {
     "estimates": {
       "longestPathLength": 3,
-      "p50TotalHours": 6.006129670521303,
+      "p50TotalHours": 5.970533148286514,
       "widthApprox": 1
     }
   },

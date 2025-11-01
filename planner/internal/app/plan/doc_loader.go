@@ -188,16 +188,25 @@ func applyTaskDefaults(task *m.Task) {
     baseFields := []string{"timestamp", "task_id", "step", "status", "message"}
     switch strings.ToLower(task.Title) {
     case "setup db":
-        task.ExecutionLogging.RequiredFields = append(baseFields, "db_response_time")
+        if len(task.ExecutionLogging.RequiredFields) == 0 {
+            task.ExecutionLogging.RequiredFields = append([]string{}, baseFields...)
+        }
+        task.ExecutionLogging.RequiredFields = append(task.ExecutionLogging.RequiredFields, "db_response_time")
     case "migrate schema":
-        task.ExecutionLogging.RequiredFields = append(baseFields, "migration_version")
+        if len(task.ExecutionLogging.RequiredFields) == 0 {
+            task.ExecutionLogging.RequiredFields = append([]string{}, baseFields...)
+        }
+        task.ExecutionLogging.RequiredFields = append(task.ExecutionLogging.RequiredFields, "migration_version")
     case "api handlers":
         if wasEmpty {
             task.ExecutionLogging.Format = "JSON"
         } else {
             // leave user-provided non-empty format untouched
         }
-        task.ExecutionLogging.RequiredFields = append(baseFields, "service_version")
+        if len(task.ExecutionLogging.RequiredFields) == 0 {
+            task.ExecutionLogging.RequiredFields = append([]string{}, baseFields...)
+        }
+        task.ExecutionLogging.RequiredFields = append(task.ExecutionLogging.RequiredFields, "service_version")
     default:
         if len(task.ExecutionLogging.RequiredFields) == 0 {
             task.ExecutionLogging.RequiredFields = baseFields

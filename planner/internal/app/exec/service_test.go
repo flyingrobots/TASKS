@@ -46,17 +46,17 @@ func TestServiceRunHappyPath(t *testing.T) {
 }
 
 func TestServiceRunPropagatesErrors(t *testing.T) {
-	svc := execapp.Service{
-		LoadCoordinator: func(path string) (m.Coordinator, error) {
-			return m.Coordinator{}, errors.New("boom")
-		},
-		InitRuntime: func(ctx context.Context, coord m.Coordinator) error {
-			return nil
-		},
-		RunLoop: func(ctx context.Context) error {
-			return nil
-		},
-	}
+    svc := execapp.Service{
+        LoadCoordinator: func(path string) (m.Coordinator, error) {
+            return m.Coordinator{}, errors.New("boom")
+        },
+        InitRuntime: func(ctx context.Context, coord m.Coordinator) error {
+            return nil
+        },
+        RunLoop: func(ctx context.Context) error {
+            return nil
+        },
+    }
 	if err := svc.Run(context.Background(), "coord.json"); err == nil {
 		t.Fatalf("expected error")
 	}
@@ -105,9 +105,17 @@ func TestServiceRunPropagatesLoopError(t *testing.T) {
 func TestServiceRunFailsOnZeroValueCoordinatorAndSkipsInit(t *testing.T) {
     called := struct{ init, loop bool }{}
     svc := execapp.Service{
-        LoadCoordinator: func(string) (m.Coordinator, error) { return m.Coordinator{}, nil },
-        InitRuntime: func(ctx context.Context, coord m.Coordinator) error { called.init = true; return nil },
-        RunLoop: func(ctx context.Context) error { called.loop = true; return nil },
+        LoadCoordinator: func(string) (m.Coordinator, error) {
+            return m.Coordinator{}, nil
+        },
+        InitRuntime: func(ctx context.Context, coord m.Coordinator) error {
+            called.init = true
+            return nil
+        },
+        RunLoop: func(ctx context.Context) error {
+            called.loop = true
+            return nil
+        },
     }
     err := svc.Run(context.Background(), "coord.json")
     if err == nil {
@@ -122,13 +130,21 @@ func TestServiceRunFailsOnZeroValueCoordinatorAndSkipsInit(t *testing.T) {
 
 func TestServiceRunInitErrorPrecedenceOverLoop(t *testing.T) {
     called := struct{ loop bool }{}
+    initErr := errors.New("init failed")
     svc := execapp.Service{
-        LoadCoordinator: func(string) (m.Coordinator, error) { return m.Coordinator{Version: "v8"}, nil },
-        InitRuntime: func(context.Context, m.Coordinator) error { return errors.New("init failed") },
-        RunLoop: func(context.Context) error { called.loop = true; return errors.New("loop failed") },
+        LoadCoordinator: func(string) (m.Coordinator, error) {
+            return m.Coordinator{Version: "v8"}, nil
+        },
+        InitRuntime: func(context.Context, m.Coordinator) error {
+            return initErr
+        },
+        RunLoop: func(context.Context) error {
+            called.loop = true
+            return errors.New("loop failed")
+        },
     }
     err := svc.Run(context.Background(), "coord.json")
-    if err == nil || err.Error() != "init failed" {
+    if err == nil || !errors.Is(err, initErr) {
         t.Fatalf("expected init error precedence, got %v", err)
     }
     if called.loop {
@@ -136,7 +152,7 @@ func TestServiceRunInitErrorPrecedenceOverLoop(t *testing.T) {
     }
 }
 
-func TestServiceRun_ContextCanceledBefore(t *testing.T) {
+func TestServiceRunContextCanceledBefore(t *testing.T) {
     ctx, cancel := context.WithCancel(context.Background())
     cancel()
     svc := execapp.Service{
@@ -170,15 +186,52 @@ func TestServiceRun_ContextCanceledDuringInitAndLoop(t *testing.T) {
     // During RunLoop
     ctx2, cancel2 := context.WithCancel(context.Background())
     svc2 := execapp.Service{
-        LoadCoordinator: func(string) (m.Coordinator, error) { return m.Coordinator{Version: "v8"}, nil },
+        LoadCoordinator: func(string) (m.Coordinator, error) {
+            return m.Coordinator{Version: "v8"}, nil
+        },
         InitRuntime: func(context.Context, m.Coordinator) error { return nil },
         RunLoop: func(ctx context.Context) error {
             cancel2()
-            <-ctx.Done()
             return ctx.Err()
         },
     }
     if err := svc2.Run(ctx2, "coord.json"); !errors.Is(err, context.Canceled) {
         t.Fatalf("expected canceled from loop, got %v", err)
+    }
+}
+
+func TestServiceRunFailsWithMissingAdapters(t *testing.T) {
+    tests := []struct{
+        name string
+        svc  execapp.Service
+    }{
+        {
+            name: "no LoadCoordinator",
+            svc: execapp.Service{
+                InitRuntime: func(context.Context, m.Coordinator) error { return nil },
+                RunLoop:     func(context.Context) error { return nil },
+            },
+        },
+        {
+            name: "no InitRuntime",
+            svc: execapp.Service{
+                LoadCoordinator: func(string) (m.Coordinator, error) { return m.Coordinator{}, nil },
+                RunLoop:         func(context.Context) error { return nil },
+            },
+        },
+        {
+            name: "no RunLoop",
+            svc: execapp.Service{
+                LoadCoordinator: func(string) (m.Coordinator, error) { return m.Coordinator{}, nil },
+                InitRuntime:     func(context.Context, m.Coordinator) error { return nil },
+            },
+        },
+    }
+    for _, tt := range tests {
+        t.Run(tt.name, func(t *testing.T) {
+            if err := tt.svc.Run(context.Background(), "coord.json"); err == nil {
+                t.Fatal("expected missing adapters error")
+            }
+        })
     }
 }
