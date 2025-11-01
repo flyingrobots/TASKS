@@ -169,20 +169,24 @@ func applyTaskDefaults(task *m.Task) {
     if len(task.AcceptanceChecks) == 0 {
         switch strings.ToLower(task.Title) {
         case "setup db":
-            task.AcceptanceChecks = []m.AcceptanceCheck{{Type: "command", Cmd: "sh -c 'psql \"$DB_DSN\" -c \\\"\\conninfo\\\" >/dev/null 2>&1'", Timeout: 10}}
+            task.AcceptanceChecks = []m.AcceptanceCheck{{Type: "command", Cmd: `psql "$DB_DSN" -c "\\conninfo" >/dev/null 2>&1`, Timeout: 10}}
         case "migrate schema":
-            task.AcceptanceChecks = []m.AcceptanceCheck{{Type: "command", Cmd: "sh -c 'db/migrate status | grep -q Applied'", Timeout: 15}}
+            task.AcceptanceChecks = []m.AcceptanceCheck{{Type: "command", Cmd: `db/migrate status | grep -q Applied`, Timeout: 15}}
         case "api handlers":
-            task.AcceptanceChecks = []m.AcceptanceCheck{{Type: "command", Cmd: "sh -c 'curl -fsS ${API_BASE:-http://localhost:8080}/healthz >/dev/null'", Timeout: 10}}
+            task.AcceptanceChecks = []m.AcceptanceCheck{{Type: "command", Cmd: `curl -fsS ${API_BASE:-http://localhost:8080}/healthz >/dev/null`, Timeout: 10}}
         default:
-            task.AcceptanceChecks = []m.AcceptanceCheck{{Type: "command", Cmd: "echo ok", Timeout: 5}}
+            // No safe generic check — force authors to provide a real acceptance
+            // by using a failing placeholder so pipelines catch missing checks.
+            task.AcceptanceChecks = []m.AcceptanceCheck{{Type: "command", Cmd: `sh -c 'echo "missing acceptance checks" >&2; exit 1'`, Timeout: 5}}
         }
     }
     if task.DurationUnit == "" {
         task.DurationUnit = "hours"
     }
     // Execution logging defaults + light variation to improve coverage realism
-    task.ExecutionLogging.Format = "JSONL"
+    if task.ExecutionLogging.Format == "" {
+        task.ExecutionLogging.Format = "JSONL"
+    }
     baseFields := []string{"timestamp", "task_id", "step", "status", "message"}
     switch strings.ToLower(task.Title) {
     case "setup db":
@@ -190,7 +194,11 @@ func applyTaskDefaults(task *m.Task) {
     case "migrate schema":
         task.ExecutionLogging.RequiredFields = append(baseFields, "migration_version")
     case "api handlers":
-        task.ExecutionLogging.Format = "JSON"
+        if task.ExecutionLogging.Format == "" {
+            task.ExecutionLogging.Format = "JSON"
+        } else {
+            // leave user-provided non-empty format untouched
+        }
         task.ExecutionLogging.RequiredFields = append(baseFields, "service_version")
     default:
         if len(task.ExecutionLogging.RequiredFields) == 0 {
