@@ -43,7 +43,7 @@
       "duration": {
         "mostLikely": 2,
         "optimistic": 1,
-        "pessimistic": 3
+        "pessimistic": 4
       },
       "durationUnits": "hours",
       "executionLogging": {
@@ -60,7 +60,17 @@
       "featureID": "F001",
       "id": "T001",
       "resources": {},
-      "sourceEvidence": null,
+      "sourceEvidence": [
+        {
+          "type": "code_analysis",
+          "files": [
+            "planner/internal/app/plan/doc_loader.go:1",
+            "planner/internal/model/task.go:1"
+          ],
+          "excerpt": "DB setup task modeled; connection check acceptance aligns with execution logging fields",
+          "confidence": 0.9
+        }
+      ],
       "title": "Setup DB"
     },
     {
@@ -75,9 +85,9 @@
         "idempotent": true
       },
       "duration": {
-        "mostLikely": 2,
+        "mostLikely": 4,
         "optimistic": 1,
-        "pessimistic": 3
+        "pessimistic": 8
       },
       "durationUnits": "hours",
       "executionLogging": {
@@ -94,7 +104,14 @@
       "featureID": "F001",
       "id": "T002",
       "resources": {},
-      "sourceEvidence": null,
+      "sourceEvidence": [
+        {
+          "type": "github_issue",
+          "url": "https://github.com/flyingrobots/TASKS/issues/24",
+          "excerpt": "Migration serialization requires exclusive DB locks; validates task and edge structure",
+          "confidence": 0.85
+        }
+      ],
       "title": "Migrate Schema"
     },
     {
@@ -109,9 +126,9 @@
         "idempotent": true
       },
       "duration": {
-        "mostLikely": 2,
-        "optimistic": 1,
-        "pessimistic": 3
+        "mostLikely": 6,
+        "optimistic": 2,
+        "pessimistic": 12
       },
       "durationUnits": "hours",
       "executionLogging": {
@@ -128,7 +145,14 @@
       "featureID": "F001",
       "id": "T003",
       "resources": {},
-      "sourceEvidence": null,
+      "sourceEvidence": [
+        {
+          "type": "docs",
+          "url": "README.md",
+          "excerpt": "API endpoints and CLI demo reference; health check acceptance modeled",
+          "confidence": 0.8
+        }
+      ],
       "title": "API Handlers"
     }
   ]
