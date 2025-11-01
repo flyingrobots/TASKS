@@ -32,7 +32,14 @@
     "config": {
       "type": "object",
       "properties": {
-        "resources": {"type": "object"},
+        "resources": {
+          "type": "object",
+          "properties": {
+            "catalog": {"type": "object"},
+            "profiles": {"type": "object"}
+          },
+          "additionalProperties": false
+        },
         "policies": {
           "type": "object",
           "properties": {
@@ -40,10 +47,10 @@
             "concurrencyMax": {"type": "integer"},
             "lockOrdering": {"type": "array", "items": {"type": "string"}}
           },
-          "additionalProperties": true
+          "additionalProperties": false
         }
       },
-      "additionalProperties": true
+      "additionalProperties": false
     }
   },
   "additionalProperties": true
