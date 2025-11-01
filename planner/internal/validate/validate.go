@@ -84,6 +84,12 @@ func CheckArtifactHash(raw []byte) (string, string, bool, error) {
     meta, ok := mobj["meta"].(map[string]any)
     if !ok { return "", "", true, nil } // no meta; nothing to check
     // Support both new camelCase (artifactHash) and legacy snake_case (artifact_hash)
+    // Reject conflicting hash fields if both are present
+    if _, hasCamel := meta["artifactHash"]; hasCamel {
+        if _, hasSnake := meta["artifact_hash"]; hasSnake {
+            return "", "", false, fmt.Errorf("conflicting artifact hash fields: both artifactHash and artifact_hash present")
+        }
+    }
     stored := ""
     if v, ok := meta["artifactHash"].(string); ok {
         stored = v
