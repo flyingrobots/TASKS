@@ -33,7 +33,7 @@
     "droppedByType": {},
     "edgeDensity": 0,
     "edges": 2,
-    "evidenceCoverage": 0,
+    "evidenceCoverage": 1,
     "isolatedTasks": 0,
     "keptByType": {
       "sequential": 1,
@@ -42,7 +42,7 @@
     "longestPathLength": 3,
     "minConfidenceApplied": 0.7,
     "nodes": 3,
-    "verbFirstPct": 0,
+    "verbFirstPct": 0.67,
     "widthApprox": 1
   },
   "nodes": [
