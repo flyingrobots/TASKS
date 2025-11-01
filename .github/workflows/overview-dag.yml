@@ -75,7 +75,7 @@ jobs:
             echo "pushed=false" >> "$GITHUB_OUTPUT"
           fi
       - name: Prepare PR comment content
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && steps.commit_dag.outputs.pushed == 'true'
         env:
           REPO: ${{ github.repository }}
           BRANCH: ${{ github.head_ref }}
@@ -114,7 +114,7 @@ jobs:
             docs/overview-dag.dot
             docs/overview-dag.svg
       - name: Comment DAG on PR
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && steps.commit_dag.outputs.pushed == 'true'
         uses: marocchino/sticky-pull-request-comment@v2
         with:
           recreate: true
