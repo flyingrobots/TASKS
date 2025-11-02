@@ -20,7 +20,6 @@ import (
 
 const (
     defaultMinConfidence = 0.7
-    schemaVersion        = "v9" // breaking contract changes: camelCase tags across artifacts
 )
 
 // FeatureSummary represents a lightweight feature descriptor produced by the spec loader.
@@ -101,8 +100,8 @@ func (s Service) Plan(ctx context.Context, req Request) (Result, error) {
 		return Result{}, fmt.Errorf("load tasks: %w", err)
 	}
 
-	tf := &m.TasksFile{}
-	tf.Meta.Version = schemaVersion
+    tf := &m.TasksFile{}
+    tf.Meta.Version = m.SchemaVersion
 	switch {
 	case req.MinConfidence == nil:
 		tf.Meta.MinConfidence = defaultMinConfidence
@@ -256,7 +255,7 @@ func (s Service) Plan(ctx context.Context, req Request) (Result, error) {
 		}
 	}
 
-	artifactBundle := ArtifactBundle{
+    artifactBundle := ArtifactBundle{
 		TasksFile:        tf,
 		DagFile:          dagFile,
 		Coordinator:      &coord,
@@ -305,15 +304,15 @@ func makeFeaturesArtifact(features []FeatureSummary) *m.FeaturesArtifact {
 	for _, f := range features {
 		entries = append(entries, m.FeatureEntry{ID: f.ID, Title: f.Title})
 	}
-	return &m.FeaturesArtifact{
-		Meta:     m.ArtifactMeta{Version: schemaVersion, ArtifactHash: ""},
-		Features: entries,
-	}
+    return &m.FeaturesArtifact{
+        Meta:     m.ArtifactMeta{Version: m.SchemaVersion, ArtifactHash: ""},
+        Features: entries,
+    }
 }
 
 func makeCoordinator(tasks []m.Task, deps []m.Edge) m.Coordinator {
     coord := m.Coordinator{}
-    setCoordinatorVersion(&coord, schemaVersion)
+    setCoordinatorVersion(&coord, m.SchemaVersion)
     coord.Graph.Nodes = tasks
     coord.Graph.Edges = deps
     coord.Config.Resources.Catalog = map[string]m.ResourceSpec{}

@@ -12,16 +12,17 @@ import (
 
 func TestNewDefaultServiceLoadsCoordinator(t *testing.T) {
 	dir := t.TempDir()
-	coordPath := filepath.Join(dir, "coord.json")
-	if err := os.WriteFile(coordPath, []byte(`{"version":"v8"}`), 0o644); err != nil {
-		t.Fatalf("write coord: %v", err)
-	}
+    coordPath := filepath.Join(dir, "coord.json")
+    minimal := `{"version":"v9","meta":{"version":"v9","artifactHash":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},"graph":{"nodes":[],"edges":[]},"config":{}}`
+    if err := os.WriteFile(coordPath, []byte(minimal), 0o644); err != nil {
+        t.Fatalf("write coord: %v", err)
+    }
 
 	svc := execapp.NewDefaultService()
-	err := svc.Run(context.Background(), coordPath)
-	if !errors.Is(err, execapp.ErrLoopNotImplemented) {
-		t.Fatalf("expected ErrLoopNotImplemented, got %v", err)
-	}
+    err := svc.Run(context.Background(), coordPath)
+    if !errors.Is(err, execapp.ErrLoopNotImplemented) {
+        t.Fatalf("expected ErrLoopNotImplemented, got %v", err)
+    }
 }
 
 func TestNewDefaultServiceMissingFile(t *testing.T) {

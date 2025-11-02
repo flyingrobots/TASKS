@@ -20,8 +20,8 @@ func (DefaultWaveBuilder) Build(ctx context.Context, df *m.DagFile, tasks []m.Ta
 	if err != nil {
 		return nil, err
 	}
-	return &m.WavesArtifact{
-		Meta:  m.WavesMeta{Version: schemaVersion, PlanID: "", ArtifactHash: ""},
-		Waves: ids,
-	}, nil
+    return &m.WavesArtifact{
+        Meta:  m.WavesMeta{Version: m.SchemaVersion, PlanID: "", ArtifactHash: ""},
+        Waves: ids,
+    }, nil
 }

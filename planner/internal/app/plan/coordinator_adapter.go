@@ -19,7 +19,7 @@ func setCoordinatorVersion(c *m.Coordinator, ver string) {
 
 func (DefaultCoordinatorBuilder) Build(tasks []m.Task, deps []m.Edge) m.Coordinator {
     coord := m.Coordinator{}
-    setCoordinatorVersion(&coord, schemaVersion)
+    setCoordinatorVersion(&coord, m.SchemaVersion)
     coord.Graph.Nodes = tasks
     coord.Graph.Edges = deps
     coord.Config.Resources.Catalog = map[string]m.ResourceSpec{}

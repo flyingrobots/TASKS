@@ -10,7 +10,8 @@ import (
 func TestFilesystemCoordinatorLoaderReadOverride(t *testing.T) {
     // Provide a realistic coordinator.json payload to exercise decoding
     payload := []byte(`{
-      "version": "v8",
+      "version": "v9",
+      "meta": {"version":"v9", "artifactHash":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},
       "graph": {
         "nodes": [
           {
@@ -49,8 +50,8 @@ func TestFilesystemCoordinatorLoaderReadOverride(t *testing.T) {
     if err != nil {
         t.Fatalf("load: %v", err)
     }
-    if coord.Version != "v8" {
-        t.Fatalf("unexpected version: %s", coord.Version)
+    if coord.Version != "v9" {
+        t.Fatalf("expected version v9, got %q", coord.Version)
     }
     if len(coord.Graph.Nodes) != 1 || coord.Graph.Nodes[0].ID != "T001" {
         t.Fatalf("unexpected nodes: %+v", coord.Graph.Nodes)
@@ -84,8 +85,9 @@ func TestFilesystemCoordinatorLoaderReadOverrideError(t *testing.T) {
 func TestFilesystemCoordinatorLoaderReadFallback(t *testing.T) {
     dir := t.TempDir()
     path := filepath.Join(dir, "coord.json")
-    // Write a complete-ish coordinator payload
-    if err := os.WriteFile(path, []byte(`{"version":"v8","graph":{"nodes":[],"edges":[]}}`), 0o644); err != nil {
+    // Write a minimal valid coordinator payload
+    mini := `{"version":"v9","meta":{"version":"v9","artifactHash":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},"graph":{"nodes":[],"edges":[]},"config":{"resources":{"catalog":{},"profiles":{"default":{}}},"policies":{"circuitBreakerThresholds":null,"concurrencyMax":0,"lockOrdering":[]}}}`
+    if err := os.WriteFile(path, []byte(mini), 0o644); err != nil {
         t.Fatalf("write coord: %v", err)
     }
     loader := FilesystemCoordinatorLoader{}
@@ -93,8 +95,8 @@ func TestFilesystemCoordinatorLoaderReadFallback(t *testing.T) {
     if err != nil {
         t.Fatalf("load fallback: %v", err)
     }
-    if coord.Version != "v8" {
-        t.Fatalf("unexpected coordinator: %+v", coord)
+    if coord.Version == "" {
+        t.Fatalf("unexpected empty version in coordinator: %+v", coord)
     }
 }
 
@@ -105,14 +107,10 @@ func TestFilesystemCoordinatorLoaderNegativeCases(t *testing.T) {
         t.Fatalf("expected decode error for invalid JSON")
     }
 
-    // (2) structurally valid but missing fields (no version) — current behavior: no error, zero values
+    // (2) structurally valid but missing required fields -> schema error now
     loader = FilesystemCoordinatorLoader{ReadFile: func(string) ([]byte, error) { return []byte(`{"graph":{"nodes":[],"edges":[]}}`), nil }}
-    c, err := loader.Load("y.json")
-    if err != nil {
-        t.Fatalf("unexpected error for missing fields: %v", err)
-    }
-    if c.Version != "" {
-        t.Fatalf("expected empty version for missing field, got %q", c.Version)
+    if _, err := loader.Load("y.json"); err == nil {
+        t.Fatalf("expected schema error for missing version")
     }
 
     // (3) wrong types — number for version -> decode error
