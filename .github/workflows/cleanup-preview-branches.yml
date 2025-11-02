@@ -1,0 +1,35 @@
+name: Cleanup Preview Branches
+
+on:
+  schedule:
+    - cron: '0 7 * * *'
+  workflow_dispatch: {}
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Delete ci-preview/* branches older than 7 days
+        env:
+          REPO: ${{ github.repository }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          now=$(date -u +%s)
+          cutoff=$(( now - 7*24*60*60 ))
+          # List branches with prefix via GraphQL and their commit dates
+          q='query($owner:String!,$name:String!){ repository(owner:$owner,name:$name){ refs(refPrefix:"refs/heads/ci-preview-", first:100){ nodes{ name target{ ... on Commit { committedDate pushedDate oid } } } } } }'
+          owner=${REPO%%/*}; name=${REPO##*/}
+          json=$(gh api graphql -f owner="$owner" -f name="$name" -f query="$q")
+          echo "$json" | jq -r '.data.repository.refs.nodes[] | [.name, (.target.pushedDate // .target.committedDate)] | @tsv' |
+          while IFS=$'\t' read -r br dt; do
+            [ -z "$dt" ] && continue
+            ts=$(date -u -d "$dt" +%s 2>/dev/null || true)
+            [ -z "$ts" ] && continue
+            if [ "$ts" -lt "$cutoff" ]; then
+              echo "Deleting $br (last activity $dt)"
+              gh api -X DELETE "repos/$REPO/git/refs/heads/$br" || true
+            fi
+          done
