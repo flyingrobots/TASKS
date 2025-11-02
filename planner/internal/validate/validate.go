@@ -97,6 +97,8 @@ func CheckArtifactHash(raw []byte) (string, string, bool, error) {
     } else if v, ok := meta["artifact_hash"].(string); ok {
         stored = v
         meta["artifact_hash"] = ""
+        // Soft deprecation path: artifact_hash is tolerated for migration but discouraged.
+        // (Deliberately not logging to stdout; keep validation pure.)
     }
     raw2, err := json.Marshal(mobj)
     if err != nil { return "", stored, false, err }

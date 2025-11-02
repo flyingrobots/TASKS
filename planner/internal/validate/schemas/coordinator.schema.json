@@ -14,6 +14,21 @@
       },
       "additionalProperties": false
     },
+    "metrics": {
+      "type": "object",
+      "properties": {
+        "estimates": {
+          "type": "object",
+          "properties": {
+            "longestPathLength": {"type": "integer"},
+            "p50TotalHours": {"type": "number"},
+            "widthApprox": {"type": "integer"}
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
     "graph": {
       "type": "object",
       "required": ["nodes", "edges"],
@@ -53,5 +68,5 @@
       "additionalProperties": false
     }
   },
-  "additionalProperties": true
+  "additionalProperties": false
 }
