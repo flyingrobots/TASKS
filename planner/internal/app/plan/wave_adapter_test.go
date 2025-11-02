@@ -19,9 +19,9 @@ func TestDefaultWaveBuilderBuildsWaves(t *testing.T) {
 	if err != nil {
 		t.Fatalf("build waves: %v", err)
 	}
-	if waves.Meta.Version != schemaVersion {
-		t.Fatalf("expected meta version %s, got %+v", schemaVersion, waves.Meta)
-	}
+    if waves.Meta.Version != m.SchemaVersion {
+        t.Fatalf("expected meta version %s, got %+v", m.SchemaVersion, waves.Meta)
+    }
 	if len(waves.Waves) != 1 {
 		t.Fatalf("expected waves array, got %+v", waves.Waves)
 	}
