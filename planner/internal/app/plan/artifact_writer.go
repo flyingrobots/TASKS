@@ -141,8 +141,8 @@ func taskTitles(tasks []m.Task) *m.TitlesArtifact {
 	for _, t := range tasks {
 		titles[t.ID] = t.Title
 	}
-	return &m.TitlesArtifact{
-		Meta:   m.ArtifactMeta{Version: schemaVersion, ArtifactHash: ""},
-		Titles: titles,
-	}
+    return &m.TitlesArtifact{
+        Meta:   m.ArtifactMeta{Version: m.SchemaVersion, ArtifactHash: ""},
+        Titles: titles,
+    }
 }

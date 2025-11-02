@@ -1,13 +1,20 @@
 package plan
 
 import (
-	"context"
-	"fmt"
-	"os"
-	"strings"
+    "context"
+    "fmt"
+    "os"
+    "strings"
 
-	m "github.com/james/tasks-planner/internal/model"
-	docp "github.com/james/tasks-planner/internal/planner/docparse"
+    m "github.com/james/tasks-planner/internal/model"
+    docp "github.com/james/tasks-planner/internal/planner/docparse"
+)
+
+// Canonical task titles used by stub plans and defaults. Keep verb-first.
+const (
+    TaskTitleSetupDB              = "Setup DB"
+    TaskTitleMigrateSchema        = "Migrate Schema"
+    TaskTitleImplementAPIHandlers = "Implement API Handlers"
 )
 
 // DocLoader loads tasks/features from a specification document.
@@ -147,19 +154,19 @@ func stubPlan() ([]m.Task, []FeatureSummary) {
         featureID string
         title     string
     }{
-        {"T001", "F001", "Setup DB"},
-        {"T002", "F001", "Migrate Schema"},
-        {"T003", "F001", "Implement API Handlers"},
+        {"T001", "F001", TaskTitleSetupDB},
+        {"T002", "F001", TaskTitleMigrateSchema},
+        {"T003", "F001", TaskTitleImplementAPIHandlers},
     }
 	tasks := make([]m.Task, 0, len(base))
     for _, spec := range base {
         task := m.Task{ID: spec.id, FeatureID: spec.featureID, Title: spec.title}
         switch strings.ToLower(spec.title) {
-        case "setup db":
+        case strings.ToLower(TaskTitleSetupDB):
             task.Duration = m.DurationPERT{Optimistic: 1, MostLikely: 2.5, Pessimistic: 4}
-        case "migrate schema":
+        case strings.ToLower(TaskTitleMigrateSchema):
             task.Duration = m.DurationPERT{Optimistic: 1, MostLikely: 3.5, Pessimistic: 8}
-        case "implement api handlers":
+        case strings.ToLower(TaskTitleImplementAPIHandlers):
             task.Duration = m.DurationPERT{Optimistic: 2, MostLikely: 6, Pessimistic: 12}
         default:
             task.Duration = m.DurationPERT{Optimistic: 1, MostLikely: 2, Pessimistic: 3}
@@ -167,45 +174,46 @@ func stubPlan() ([]m.Task, []FeatureSummary) {
         applyTaskDefaults(&task)
         tasks = append(tasks, task)
     }
-	return tasks, []FeatureSummary{{ID: "F001", Title: "Core DB + API"}}
+    return tasks, []FeatureSummary{{ID: "F001", Title: "Core DB + API"}}
 }
 
 func applyTaskDefaults(task *m.Task) {
-    if len(task.AcceptanceChecks) == 0 {
-        lower := strings.ToLower(task.Title)
-        switch {
-        case strings.Contains(lower, "setup db"):
-            task.AcceptanceChecks = []m.AcceptanceCheck{{
-                Type: "command",
-                // Portable guard: ensure DB_DSN present before trying psql
-                Cmd:  `sh -c 'test -n "$DB_DSN" && psql "$DB_DSN" -c "\\conninfo" >/dev/null 2>&1'`,
-                Timeout: 10,
-            }}
-        case strings.Contains(lower, "migrate schema"):
-            task.AcceptanceChecks = []m.AcceptanceCheck{{
-                Type: "command",
-                // Guard for command presence, then check status
-                Cmd:  `sh -c 'command -v db/migrate >/dev/null 2>&1 && db/migrate status | grep -q Applied'`,
-                Timeout: 15,
-            }}
-        case strings.Contains(lower, "api handler"):
-            task.AcceptanceChecks = []m.AcceptanceCheck{{
-                Type: "command",
-                // POSIX fallback expansion for API_BASE default
-                Cmd:  `sh -c 'curl -fsS "${API_BASE-http://localhost:8080}/healthz" >/dev/null'`,
-                Timeout: 10,
-            }}
-        default:
-            // No safe generic check — force authors to provide a real acceptance by failing fast.
-            task.AcceptanceChecks = []m.AcceptanceCheck{{Type: "command", Cmd: `sh -c 'echo "missing acceptance checks" >&2; exit 1'`, Timeout: 5}}
-        }
+    applyAcceptanceDefaults(task)
+    if task.DurationUnit == "" { task.DurationUnit = "hours" }
+    applyLoggingDefaults(task)
+    seedEvidenceDefaults(task)
+}
+
+func applyAcceptanceDefaults(task *m.Task) {
+    if len(task.AcceptanceChecks) != 0 { return }
+    lower := strings.ToLower(task.Title)
+    switch {
+    case strings.Contains(lower, "setup db"):
+        task.AcceptanceChecks = []m.AcceptanceCheck{{
+            Type:    "command",
+            Cmd:     `sh -c 'test -n "$DB_DSN" && psql "$DB_DSN" -c "\\conninfo" >/dev/null 2>&1'`,
+            Timeout: 10,
+        }}
+    case strings.Contains(lower, "migrate schema"):
+        task.AcceptanceChecks = []m.AcceptanceCheck{{
+            Type:    "command",
+            Cmd:     `sh -c 'command -v db/migrate >/dev/null 2>&1 && db/migrate status | grep -q Applied'`,
+            Timeout: 15,
+        }}
+    case strings.Contains(lower, "api handler"):
+        task.AcceptanceChecks = []m.AcceptanceCheck{{
+            Type:    "command",
+            Cmd:     `sh -c 'curl -fsS "${API_BASE-http://localhost:8080}/healthz" >/dev/null'`,
+            Timeout: 10,
+        }}
+    default:
+        // Force authors to provide an acceptance by failing fast.
+        task.AcceptanceChecks = []m.AcceptanceCheck{{Type: "command", Cmd: `sh -c 'echo "missing acceptance checks" >&2; exit 1'`, Timeout: 5}}
     }
-    if task.DurationUnit == "" {
-        task.DurationUnit = "hours"
-    }
-    // Execution logging defaults + light variation to improve coverage realism
+}
+
+func applyLoggingDefaults(task *m.Task) {
     wasEmpty := task.ExecutionLogging.Format == ""
-    // Seed required fields once; make it idempotent and include error fields for JSONL schema.
     baseFields := []string{"timestamp", "task_id", "step", "status", "message", "error", "error_type", "error_details"}
     if len(task.ExecutionLogging.RequiredFields) == 0 {
         task.ExecutionLogging.RequiredFields = append([]string{}, baseFields...)
@@ -221,57 +229,50 @@ func applyTaskDefaults(task *m.Task) {
     case strings.Contains(lower, "migrate schema"):
         ensureField("migration_version")
     case strings.Contains(lower, "api handler"):
-        if wasEmpty {
-            task.ExecutionLogging.Format = "JSON"
-        } else {
-            // leave user-provided non-empty format untouched
-        }
+        if wasEmpty { task.ExecutionLogging.Format = "JSON" }
         ensureField("service_version")
-    default:
-        // already seeded above
     }
     if wasEmpty && task.ExecutionLogging.Format == "" {
         task.ExecutionLogging.Format = "JSONL"
     }
-    // Do not clobber explicit idempotency; authors must set it in spec/doc.
+}
 
-    // Seed a minimal evidence entry if none provided to satisfy coverage in stub
-    // plans; reference nearby docs/code so reviewers can trace it.
-    if len(task.Evidence) == 0 {
-        switch {
-        case strings.Contains(lower, "setup db"):
-            task.Evidence = append(task.Evidence, m.Evidence{
-                Type:       "code_analysis",
-                Source:     "planner/internal/app/plan/doc_loader.go#applyTaskDefaults",
-                Excerpt:    "DB setup defaults: acceptance check via psql; logging requires db_response_time",
-                Confidence: 0.9,
-                Rationale:  "stub default grounded in code defaults",
-            })
-        case strings.Contains(lower, "migrate schema"):
-            task.Evidence = append(task.Evidence, m.Evidence{
-                Type:       "docs",
-                Source:     "docs/go-architecture.md",
-                Excerpt:    "Migrations modeled as technical edges with ordering",
-                Confidence: 0.85,
-                Rationale:  "ordering requirement documented in architecture",
-            })
-        case strings.Contains(lower, "api handler"):
-            task.Evidence = append(task.Evidence, m.Evidence{
-                Type:       "docs",
-                Source:     "README.md",
-                Excerpt:    "CLI/demo health endpoint used for acceptance (/healthz)",
-                Confidence: 0.8,
-                Rationale:  "acceptance derived from documented demo",
-            })
-        default:
-            task.Evidence = append(task.Evidence, m.Evidence{
-                Type:       "docs",
-                Source:     "docs/v8/v8.md",
-                Excerpt:    "Tasks require machine-verifiable acceptance and traceable evidence",
-                Confidence: 0.75,
-                Rationale:  "fallback evidence for stub plans",
-            })
-        }
+func seedEvidenceDefaults(task *m.Task) {
+    if len(task.Evidence) != 0 { return }
+    lower := strings.ToLower(task.Title)
+    switch {
+    case strings.Contains(lower, "setup db"):
+        task.Evidence = append(task.Evidence, m.Evidence{
+            Type:       "code_analysis",
+            Source:     "planner/internal/app/plan/doc_loader.go#applyTaskDefaults",
+            Excerpt:    "DB setup defaults: acceptance check via psql; logging requires db_response_time",
+            Confidence: 0.9,
+            Rationale:  "stub default grounded in code defaults",
+        })
+    case strings.Contains(lower, "migrate schema"):
+        task.Evidence = append(task.Evidence, m.Evidence{
+            Type:       "docs",
+            Source:     "docs/go-architecture.md",
+            Excerpt:    "Migrations modeled as technical edges with ordering",
+            Confidence: 0.85,
+            Rationale:  "ordering requirement documented in architecture",
+        })
+    case strings.Contains(lower, "api handler"):
+        task.Evidence = append(task.Evidence, m.Evidence{
+            Type:       "docs",
+            Source:     "README.md",
+            Excerpt:    "CLI/demo health endpoint used for acceptance (/healthz)",
+            Confidence: 0.8,
+            Rationale:  "acceptance derived from documented demo",
+        })
+    default:
+        task.Evidence = append(task.Evidence, m.Evidence{
+            Type:       "docs",
+            Source:     "docs/v8/v8.md",
+            Excerpt:    "Tasks require machine-verifiable acceptance and traceable evidence",
+            Confidence: 0.75,
+            Rationale:  "fallback evidence for stub plans",
+        })
     }
 }
 
