@@ -56,6 +56,7 @@ digraph G {
   I32 -> I35 [color="gray50", style=dashed, label="parent"];
   I32 -> I34 [color="gray50", style=dashed, label="parent"];
   I32 -> I33 [color="gray50", style=dashed, label="parent"];
+  I35 -> I32 [color="red", label="blocks"];
   I17 -> I31 [color="gray50", style=dashed, label="parent"];
   I17 -> I30 [color="gray50", style=dashed, label="parent"];
   I17 -> I29 [color="gray50", style=dashed, label="parent"];
