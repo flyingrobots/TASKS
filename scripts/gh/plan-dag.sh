@@ -14,15 +14,18 @@ done
 OUT_DIR=${1:-planner/plans}
 DOCS_DIR=${2:-docs}
 
+# Resolve OUT_DIR to an absolute path before cd'ing into planner to avoid
+# accidentally creating planner/planner/plans when OUT_DIR starts with 'planner/'.
 mkdir -p "$OUT_DIR" "$DOCS_DIR"
+OUT_ABS=$(cd "$(dirname "$OUT_DIR")" && pwd)/$(basename "$OUT_DIR")
 
-(cd planner && go run ./cmd/tasksd plan --out "${OUT_DIR}" --repo ..)
-(cd planner && go run ./cmd/tasksd validate --dir "${OUT_DIR}")
-(cd planner && go run ./cmd/tasksd export-dot --dir "${OUT_DIR}")
+(cd planner && go run ./cmd/tasksd plan --out "${OUT_ABS}" --repo ..)
+(cd planner && go run ./cmd/tasksd validate --dir "${OUT_ABS}")
+(cd planner && go run ./cmd/tasksd export-dot --dir "${OUT_ABS}")
 
 # Render DOT → SVG
-plan_dot="${OUT_DIR}/dag.dot"
-runtime_dot="${OUT_DIR}/runtime.dot"
+plan_dot="${OUT_ABS}/dag.dot"
+runtime_dot="${OUT_ABS}/runtime.dot"
 plan_svg="${DOCS_DIR}/plan-dag.svg"
 runtime_svg="${DOCS_DIR}/runtime.svg"
 
