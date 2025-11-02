@@ -197,6 +197,8 @@ func (s Service) Plan(ctx context.Context, req Request) (Result, error) {
         if n > 100 { samples = 1000 } // basic cap for very large DAGs
         p50 := mcP50MakespanHours(tf.Tasks, edgesFromDag(dagFile.Edges), samples, seed)
         if !math.IsNaN(p50) && !math.IsInf(p50, 0) {
+            // Round to 6 decimal places to avoid excessive float noise in artifacts
+            p50 = math.Round(p50*1e6) / 1e6
             coord.Metrics.Estimates.P50TotalHours = p50
         }
     }
