@@ -13,6 +13,7 @@ jobs:
     outputs:
       svg_b64: ${{ steps.encode.outputs.svg_b64 }}
       run_url: ${{ steps.meta.outputs.run_url }}
+      artifact_url: ${{ steps.art.outputs.artifact_url }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -49,7 +50,7 @@ jobs:
           echo "Sizes:"; ls -lh -- docs/overview-dag.dot docs/overview-dag.svg
           # Quick node/edge counts (approximate; regex-based, not a DOT parser)
           NODES=$(grep -Eo '^\s*[A-Za-z0-9_]+\s*\[' docs/overview-dag.dot | wc -l | tr -d ' ')
-          EDGES=$(grep -Eo '->' docs/overview-dag.dot | wc -l | tr -d ' ')
+          EDGES=$(grep -Eo -- '->' docs/overview-dag.dot | wc -l | tr -d ' ')
           echo "Nodes (approx): ${NODES}  Edges (approx): ${EDGES}"
       - name: Encode SVG (fallback for fork PRs)
         id: encode
@@ -68,6 +69,17 @@ jobs:
             docs/overview-dag.svg
             docs/plan-dag.svg
             docs/runtime.svg
+      - name: Find artifact URL
+        id: art
+        env:
+          REPO: ${{ github.repository }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          url=$(gh api \
+            repos/${REPO}/actions/runs/${{ github.run_id }}/artifacts \
+            --jq '.artifacts[] | select(.name=="overview-dag") | .archive_download_url' || true)
+          echo "artifact_url=$url" >> $GITHUB_OUTPUT
       - name: Meta
         id: meta
         run: echo "run_url=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" >> $GITHUB_OUTPUT
@@ -126,17 +138,17 @@ jobs:
         run: |
           RAW="${{ needs.publish-preview.outputs.raw_url }}"
           RUN_URL="${{ needs.build-preview.outputs.run_url }}"
-          SVG_B64="${{ needs.build-preview.outputs.svg_b64 }}"
+          ART_URL="${{ needs.build-preview.outputs.artifact_url }}"
           FILE="$RUNNER_TEMP/cmt.md"
           if [ -n "$RAW" ]; then
             printf '### Your GitHub Issues as a DAG\n\n' > "$FILE"
             printf 'Preview (same-repo PR):\n' >> "$FILE"
             printf '<img src="%s" alt="Overview DAG"/>\n' "$RAW" >> "$FILE"
-          elif [ -n "$SVG_B64" ]; then
+          elif [ -n "$ART_URL" ]; then
             printf '### Your GitHub Issues as a DAG\n\n' > "$FILE"
             printf 'Preview (fork PR):\n' >> "$FILE"
-            printf '<img src="data:image/svg+xml;base64,%s" alt="Overview DAG"/>\n' "$SVG_B64" >> "$FILE"
-            printf '(If image doesn’t render, see run artifacts: %s)\n' "$RUN_URL" >> "$FILE"
+            printf '[Download overview-dag.zip](%s) — contains overview-dag.svg and .dot.\n' "$ART_URL" >> "$FILE"
+            printf '(Workflow run: %s)\n' "$RUN_URL" >> "$FILE"
           else
             printf '### Your GitHub Issues as a DAG\n\n' > "$FILE"
             printf 'Preview (fork PR):\n' >> "$FILE"
