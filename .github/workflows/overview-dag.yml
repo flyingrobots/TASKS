@@ -37,18 +37,27 @@ jobs:
           PREVIEW_BRANCH: ci-preview-${{ github.run_id }}
         run: |
           set -e
+          # Stash generated assets before switching to the orphan branch
+          PREVIEW_SRC="$RUNNER_TEMP/previews-src"
+          mkdir -p "$PREVIEW_SRC"
+          cp -f docs/overview-dag.svg "$PREVIEW_SRC/overview-dag.svg"
+          cp -f docs/overview-dag.dot "$PREVIEW_SRC/overview-dag.dot"
+          cp -f docs/plan-dag.svg "$PREVIEW_SRC/plan-dag.svg" 2>/dev/null || true
+          cp -f docs/runtime.svg "$PREVIEW_SRC/runtime.svg" 2>/dev/null || true
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git fetch origin --depth=1
           # Create an orphan branch that only contains preview assets for this run
           git checkout --orphan "$PREVIEW_BRANCH"
           git reset --hard
-          git rm -rf . || true
+          # Ensure empty tree
+          find . -mindepth 1 -maxdepth 1 -not -path './.git' -exec rm -rf {} +
           mkdir -p previews
-          cp -f docs/overview-dag.svg previews/ || { echo "Required file missing: overview-dag.svg" >&2; exit 1; }
-          cp -f docs/overview-dag.dot previews/ || { echo "Required file missing: overview-dag.dot" >&2; exit 1; }
-          cp -f docs/plan-dag.svg previews/plan-dag.svg || true  # optional
-          cp -f docs/runtime.svg previews/runtime.svg || true    # optional
+          cp -f "$PREVIEW_SRC/overview-dag.svg" previews/ || { echo "Required file missing: overview-dag.svg" >&2; exit 1; }
+          cp -f "$PREVIEW_SRC/overview-dag.dot" previews/ || { echo "Required file missing: overview-dag.dot" >&2; exit 1; }
+          cp -f "$PREVIEW_SRC/plan-dag.svg" previews/plan-dag.svg 2>/dev/null || true  # optional
+          cp -f "$PREVIEW_SRC/runtime.svg" previews/runtime.svg 2>/dev/null || true    # optional
           git add previews
           if git diff --cached --quiet; then
             echo "Nothing to publish for previews" >&2
