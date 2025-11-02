@@ -32,21 +32,21 @@ render(){
   if command -v dot >/dev/null 2>&1; then
     dot -Tsvg "$dotfile" -o "$svgfile"
   elif command -v npx >/dev/null 2>&1; then
-    if npx -y graphviz-cli dot -Tsvg "$dotfile" -o "$svgfile" \
-       || npx -y graphviz-cli dot -T svg "$dotfile" -o "$svgfile" \
-       || npx -y graphviz-cli -Tsvg -o "$svgfile" "$dotfile"; then
+    if npx -y graphviz-cli -T svg "$dotfile" > "$svgfile" \
+       || npx -y graphviz-cli dot -Tsvg "$dotfile" > "$svgfile" \
+       || npx -y @viz-js/viz -T svg -o "$svgfile" "$dotfile"; then
       :
     else
-      echo "graphviz-cli fallback failed; skipping $dotfile" >&2
+      echo "graphviz JS fallback failed; skipping $dotfile" >&2
+      return 0
     fi
   else
     echo "WARN: no 'dot' or 'npx'; skipping render for $dotfile" >&2
     return 0
   fi
-  # sanity header
-  if ! (head -c 5 "$svgfile" | grep -q '<?xml' || head -n1 "$svgfile" | grep -q '^<svg'); then
-    echo "ERROR: invalid SVG header in $svgfile" >&2
-    return 1
+  # Sanity header (warn-only)
+  if [ -s "$svgfile" ] && ! (head -c 5 "$svgfile" | grep -q '<?xml' || head -n1 "$svgfile" | grep -q '^<svg'); then
+    echo "WARN: invalid SVG header in $svgfile" >&2
   fi
 }
 

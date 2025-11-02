@@ -135,13 +135,13 @@ if command -v dot >/dev/null 2>&1; then
   dot -Tsvg "$dot_out" -o "$svg_out"
   echo "Wrote $svg_out"
 elif command -v npx >/dev/null 2>&1; then
-  # Pure-JS fallback that bundles Graphviz (WASM). Try multiple invocation styles.
-  if npx -y graphviz-cli dot -Tsvg "$dot_out" -o "$svg_out" \
-     || npx -y graphviz-cli dot -T svg "$dot_out" -o "$svg_out" \
-     || npx -y graphviz-cli -Tsvg -o "$svg_out" "$dot_out"; then
-    echo "Wrote $svg_out (via graphviz-cli)"
+  # JS Graphviz fallback. Prefer stdout redirection form.
+  if npx -y graphviz-cli -T svg "$dot_out" > "$svg_out" \
+     || npx -y graphviz-cli dot -Tsvg "$dot_out" > "$svg_out" \
+     || npx -y @viz-js/viz -T svg -o "$svg_out" "$dot_out"; then
+    echo "Wrote $svg_out (via JS Graphviz)"
   else
-    echo "graphviz-cli fallback failed; SVG not generated" >&2
+    echo "graphviz JS fallback failed; SVG not generated" >&2
   fi
 else
   echo "Neither 'dot' nor 'npx' available; skipped SVG generation" >&2
