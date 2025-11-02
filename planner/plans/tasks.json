@@ -60,7 +60,9 @@
       "featureID": "F001",
       "id": "T001",
       "resources": {},
-      "sourceEvidence": null,
+      "sourceEvidence": [
+        {"type":"code_analysis","files":["planner/internal/app/plan/doc_loader.go:1","planner/internal/model/task.go:1"],"excerpt":"DB setup acceptance and logging fields defined; aligns with resource catalog","confidence":0.9}
+      ],
       "title": "Setup DB"
     },
     {
@@ -94,7 +96,9 @@
       "featureID": "F001",
       "id": "T002",
       "resources": {},
-      "sourceEvidence": null,
+      "sourceEvidence": [
+        {"type":"github_issue","url":"https://github.com/flyingrobots/TASKS/issues/24","excerpt":"Migration serialization requires exclusive DB locks; informs task edge","confidence":0.85}
+      ],
       "title": "Migrate Schema"
     },
     {
@@ -128,8 +132,10 @@
       "featureID": "F001",
       "id": "T003",
       "resources": {},
-      "sourceEvidence": null,
-      "title": "API Handlers"
+      "sourceEvidence": [
+        {"type":"docs","url":"README.md","excerpt":"API endpoints and CLI demo reference; health check acceptance modeled","confidence":0.8}
+      ],
+      "title": "Implement API Handlers"
     }
   ]
 }
