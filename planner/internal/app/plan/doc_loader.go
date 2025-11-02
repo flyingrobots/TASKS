@@ -169,14 +169,28 @@ func applyTaskDefaults(task *m.Task) {
     if len(task.AcceptanceChecks) == 0 {
         switch strings.ToLower(task.Title) {
         case "setup db":
-            task.AcceptanceChecks = []m.AcceptanceCheck{{Type: "command", Cmd: `psql "$DB_DSN" -c "\\conninfo" >/dev/null 2>&1`, Timeout: 10}}
+            task.AcceptanceChecks = []m.AcceptanceCheck{{
+                Type: "command",
+                // Portable guard: ensure DB_DSN present before trying psql
+                Cmd:  `sh -c 'test -n "$DB_DSN" && psql "$DB_DSN" -c "\\conninfo" >/dev/null 2>&1'`,
+                Timeout: 10,
+            }}
         case "migrate schema":
-            task.AcceptanceChecks = []m.AcceptanceCheck{{Type: "command", Cmd: `db/migrate status | grep -q Applied`, Timeout: 15}}
+            task.AcceptanceChecks = []m.AcceptanceCheck{{
+                Type: "command",
+                // Guard for command presence, then check status
+                Cmd:  `sh -c 'command -v db/migrate >/dev/null 2>&1 && db/migrate status | grep -q Applied'`,
+                Timeout: 15,
+            }}
         case "api handlers":
-            task.AcceptanceChecks = []m.AcceptanceCheck{{Type: "command", Cmd: `curl -fsS ${API_BASE:-http://localhost:8080}/healthz >/dev/null`, Timeout: 10}}
+            task.AcceptanceChecks = []m.AcceptanceCheck{{
+                Type: "command",
+                // POSIX fallback expansion for API_BASE default
+                Cmd:  `sh -c 'curl -fsS "${API_BASE-http://localhost:8080}/healthz" >/dev/null'`,
+                Timeout: 10,
+            }}
         default:
-            // No safe generic check — force authors to provide a real acceptance
-            // by using a failing placeholder so pipelines catch missing checks.
+            // No safe generic check — force authors to provide a real acceptance by failing fast.
             task.AcceptanceChecks = []m.AcceptanceCheck{{Type: "command", Cmd: `sh -c 'echo "missing acceptance checks" >&2; exit 1'`, Timeout: 5}}
         }
     }
@@ -185,37 +199,34 @@ func applyTaskDefaults(task *m.Task) {
     }
     // Execution logging defaults + light variation to improve coverage realism
     wasEmpty := task.ExecutionLogging.Format == ""
-    baseFields := []string{"timestamp", "task_id", "step", "status", "message"}
+    // Seed required fields once; make it idempotent and include error fields for JSONL schema.
+    baseFields := []string{"timestamp", "task_id", "step", "status", "message", "error", "error_type", "error_details"}
+    if len(task.ExecutionLogging.RequiredFields) == 0 {
+        task.ExecutionLogging.RequiredFields = append([]string{}, baseFields...)
+    }
+    ensureField := func(field string) {
+        for _, f := range task.ExecutionLogging.RequiredFields { if f == field { return } }
+        task.ExecutionLogging.RequiredFields = append(task.ExecutionLogging.RequiredFields, field)
+    }
     switch strings.ToLower(task.Title) {
     case "setup db":
-        if len(task.ExecutionLogging.RequiredFields) == 0 {
-            task.ExecutionLogging.RequiredFields = append([]string{}, baseFields...)
-        }
-        task.ExecutionLogging.RequiredFields = append(task.ExecutionLogging.RequiredFields, "db_response_time")
+        ensureField("db_response_time")
     case "migrate schema":
-        if len(task.ExecutionLogging.RequiredFields) == 0 {
-            task.ExecutionLogging.RequiredFields = append([]string{}, baseFields...)
-        }
-        task.ExecutionLogging.RequiredFields = append(task.ExecutionLogging.RequiredFields, "migration_version")
+        ensureField("migration_version")
     case "api handlers":
         if wasEmpty {
             task.ExecutionLogging.Format = "JSON"
         } else {
             // leave user-provided non-empty format untouched
         }
-        if len(task.ExecutionLogging.RequiredFields) == 0 {
-            task.ExecutionLogging.RequiredFields = append([]string{}, baseFields...)
-        }
-        task.ExecutionLogging.RequiredFields = append(task.ExecutionLogging.RequiredFields, "service_version")
+        ensureField("service_version")
     default:
-        if len(task.ExecutionLogging.RequiredFields) == 0 {
-            task.ExecutionLogging.RequiredFields = baseFields
-        }
+        // already seeded above
     }
     if wasEmpty && task.ExecutionLogging.Format == "" {
         task.ExecutionLogging.Format = "JSONL"
     }
-    task.Compensation.Idempotent = true
+    // Do not clobber explicit idempotency; authors must set it in spec/doc.
 }
 
 func resolveTaskID(token string, titleToID map[string]string) string {

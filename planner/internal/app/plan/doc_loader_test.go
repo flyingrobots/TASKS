@@ -120,16 +120,17 @@ func TestApplyTaskDefaults(t *testing.T) {
 	if task.DurationUnit != "hours" {
 		t.Fatalf("expected duration unit hours")
 	}
-	if task.ExecutionLogging.Format != "JSONL" {
-		t.Fatalf("expected JSONL logging format")
-	}
-	expectedFields := []string{"timestamp", "task_id", "step", "status", "message"}
-	if !reflect.DeepEqual(task.ExecutionLogging.RequiredFields, expectedFields) {
-		t.Fatalf("unexpected required fields: %+v", task.ExecutionLogging.RequiredFields)
-	}
-	if !task.Compensation.Idempotent {
-		t.Fatalf("expected compensation to be idempotent")
-	}
+    if task.ExecutionLogging.Format != "JSONL" {
+        t.Fatalf("expected JSONL logging format")
+    }
+    expectedFields := []string{"timestamp", "task_id", "step", "status", "message", "error", "error_type", "error_details"}
+    if !reflect.DeepEqual(task.ExecutionLogging.RequiredFields, expectedFields) {
+        t.Fatalf("unexpected required fields: %+v", task.ExecutionLogging.RequiredFields)
+    }
+    // Defaults should not clobber explicit compensation; idempotent remains false unless specified.
+    if task.Compensation.Idempotent {
+        t.Fatalf("did not expect idempotent to be forced true by defaults")
+    }
 	if task.Duration.Optimistic > task.Duration.MostLikely || task.Duration.MostLikely > task.Duration.Pessimistic {
 		t.Fatalf("duration PERT out of order: %+v", task.Duration)
 	}

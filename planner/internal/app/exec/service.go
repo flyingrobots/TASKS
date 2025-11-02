@@ -19,10 +19,14 @@ type Service struct {
 	RunLoop         func(ctx context.Context) error
 }
 
+// ErrMissingAdapters indicates the executor Service is misconfigured (one or
+// more adapter functions are nil). Use errors.Is with this sentinel in tests.
+var ErrMissingAdapters = errors.New("exec service: missing adapters")
+
 // Run loads the coordinator contract, initializes runtime components, then enters the execution loop.
 func (s Service) Run(ctx context.Context, coordPath string) error {
     if s.LoadCoordinator == nil || s.InitRuntime == nil || s.RunLoop == nil {
-        return errors.New("exec service: missing adapters")
+        return ErrMissingAdapters
     }
     coord, err := s.LoadCoordinator(coordPath)
     if err != nil {

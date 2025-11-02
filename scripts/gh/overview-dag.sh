@@ -106,8 +106,8 @@ done
   echo '  rankdir=LR;'
   echo '  node [shape=box, style="rounded,filled", fontname=Helvetica, fontsize=10, fillcolor=white];'
 
-  # Nodes with labels
-  jq -r '.[] | [.number, (.title|gsub("\""; "\\\""))] | @tsv' "$tmpdir/issues.json" |
+  # Nodes with labels (derive from the same GraphQL dataset used for edges)
+  jq -r '.[] | [.number, (.title|gsub("\""; "\\\""))] | @tsv' "$tmpdir/all_nodes.json" |
   while IFS=$'\t' read -r num title; do
     printf '  I%s [label="#%s: %s"];\n' "$num" "$num" "$title"
   done
@@ -135,10 +135,11 @@ if command -v dot >/dev/null 2>&1; then
   dot -Tsvg "$dot_out" -o "$svg_out"
   echo "Wrote $svg_out"
 elif command -v npx >/dev/null 2>&1; then
-  # JS Graphviz fallback. Prefer stdout redirection form and explicit engine.
-  if npx -y graphviz-cli -K dot -T svg "$dot_out" > "$svg_out" \
-     || npx -y @viz-js/viz -K dot -T svg -o "$svg_out" "$dot_out" \
-     || npx -y viz.js-cli -Kdot -Tsvg "$dot_out" -o "$svg_out"; then
+  # JS/WASM fallbacks that do not require system Graphviz.
+  # Prefer @hpcc-js/wasm-graphviz-cli (streams to stdout), then viz.js-cli.
+  if npx -y @hpcc-js/wasm-graphviz-cli -K dot -T svg "$dot_out" > "$svg_out" \
+     || npx -y viz.js-cli -Kdot -Tsvg "$dot_out" -o "$svg_out" \
+     || npx -y graphviz-cli -K dot -T svg "$dot_out" > "$svg_out"; then
     echo "Wrote $svg_out (via JS Graphviz)"
   else
     echo "graphviz JS fallback failed; SVG not generated" >&2

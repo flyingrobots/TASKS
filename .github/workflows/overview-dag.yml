@@ -47,7 +47,7 @@ jobs:
       - name: Summarize DAG artifacts
         run: |
           set -e
-          if command -v dot >/dev/null 2>&1; then echo "Graphviz: $(dot -V 2>&1 | head -n1)"; else echo "Graphviz: dot not installed (using viz.js if available)"; fi
+          if command -v dot >/dev/null 2>&1; then echo "Graphviz: $(dot -V 2>&1 | head -n1 | sed 's/\r$//')"; else echo "Graphviz: dot not installed (using viz.js if available)"; fi
           echo "Sizes:"; ls -lh -- docs/overview-dag.dot docs/overview-dag.svg
           # Quick node/edge counts (best-effort)
           NODES=$(grep -Eo '^\s*[A-Za-z0-9_]+\s*\[' docs/overview-dag.dot | wc -l | tr -d ' ')

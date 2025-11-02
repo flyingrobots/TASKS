@@ -45,7 +45,7 @@ func TestServiceRunHappyPath(t *testing.T) {
 	}
 }
 
-func TestServiceRunPropagatesErrors(t *testing.T) {
+func TestServiceRunPropagatesLoadCoordinatorError(t *testing.T) {
     svc := execapp.Service{
         LoadCoordinator: func(path string) (m.Coordinator, error) {
             return m.Coordinator{}, errors.New("boom")
@@ -102,7 +102,8 @@ func TestServiceRunPropagatesLoopError(t *testing.T) {
     }
 }
 
-func TestServiceRunFailsOnZeroValueCoordinatorAndSkipsInit(t *testing.T) {
+// The failure condition is a missing/empty Version field on the coordinator.
+func TestServiceRunFailsOnMissingVersionAndSkipsInit(t *testing.T) {
     called := struct{ init, loop bool }{}
     svc := execapp.Service{
         LoadCoordinator: func(string) (m.Coordinator, error) {
@@ -168,35 +169,32 @@ func TestServiceRunContextCanceledBefore(t *testing.T) {
     }
 }
 
-func TestServiceRun_ContextCanceledDuringInitAndLoop(t *testing.T) {
-    // During InitRuntime
-    ctx1, cancel1 := context.WithCancel(context.Background())
-    svc1 := execapp.Service{
-        LoadCoordinator: func(string) (m.Coordinator, error) { return m.Coordinator{Version: "v8"}, nil },
-        InitRuntime: func(ctx context.Context, coord m.Coordinator) error {
-            cancel1() // cancel while initializing
-            return ctx.Err()
-        },
-        RunLoop: func(context.Context) error { return nil },
+func TestServiceRunContextCanceledDuringInitAndLoop(t *testing.T) {
+    cases := []struct{
+        name string
+        cancelOn string // "init" or "loop"
+    }{
+        {name:"cancel during init", cancelOn:"init"},
+        {name:"cancel during loop", cancelOn:"loop"},
     }
-    if err := svc1.Run(ctx1, "coord.json"); !errors.Is(err, context.Canceled) {
-        t.Fatalf("expected canceled from init, got %v", err)
-    }
-
-    // During RunLoop
-    ctx2, cancel2 := context.WithCancel(context.Background())
-    svc2 := execapp.Service{
-        LoadCoordinator: func(string) (m.Coordinator, error) {
-            return m.Coordinator{Version: "v8"}, nil
-        },
-        InitRuntime: func(context.Context, m.Coordinator) error { return nil },
-        RunLoop: func(ctx context.Context) error {
-            cancel2()
-            return ctx.Err()
-        },
-    }
-    if err := svc2.Run(ctx2, "coord.json"); !errors.Is(err, context.Canceled) {
-        t.Fatalf("expected canceled from loop, got %v", err)
+    for _, tc := range cases {
+        t.Run(tc.name, func(t *testing.T) {
+            ctx, cancel := context.WithCancel(context.Background())
+            svc := execapp.Service{
+                LoadCoordinator: func(string) (m.Coordinator, error) { return m.Coordinator{Version: "v8"}, nil },
+                InitRuntime: func(c context.Context, _ m.Coordinator) error {
+                    if tc.cancelOn == "init" { cancel(); return c.Err() }
+                    return nil
+                },
+                RunLoop: func(c context.Context) error {
+                    if tc.cancelOn == "loop" { cancel() }
+                    return c.Err()
+                },
+            }
+            if err := svc.Run(ctx, "coord.json"); !errors.Is(err, context.Canceled) {
+                t.Fatalf("expected context.Canceled for %s, got %v", tc.name, err)
+            }
+        })
     }
 }
 
@@ -229,8 +227,8 @@ func TestServiceRunFailsWithMissingAdapters(t *testing.T) {
     }
     for _, tt := range tests {
         t.Run(tt.name, func(t *testing.T) {
-            if err := tt.svc.Run(context.Background(), "coord.json"); err == nil {
-                t.Fatal("expected missing adapters error")
+            if err := tt.svc.Run(context.Background(), "coord.json"); !errors.Is(err, execapp.ErrMissingAdapters) {
+                t.Fatalf("expected missing adapters error, got %v", err)
             }
         })
     }

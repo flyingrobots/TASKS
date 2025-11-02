@@ -16,6 +16,14 @@
   - Implemented: added a “Verify DAG outputs” step, and `if: success()` to artifact upload.
   - [x] (follow-up): add a small summary step printing the node/edge counts parsed from the dot file.
 
+## Follow-ups processed on 2025-11-02
+- [x] overview-dag.sh: derive node declarations from the same paginated GraphQL dataset used for edges; remove GH_LIST_LIMIT mismatch risk and keep `gh issue list` only as a light metadata fetch.
+- [x] Rendering fallbacks: replace brittle `@viz-js/viz` invocation with `@hpcc-js/wasm-graphviz-cli` primary fallback, keep `viz.js-cli` and `graphviz-cli` as secondary fallbacks; use stdout redirection form `-T svg input.dot > output.svg` to avoid "Missing output output format"/ENOENT errors.
+- [x] Workflow temp files: write PR comment markdown to `${{ runner.temp }}/dag-comment.md` and read from that path in the action.
+- [x] Quoting improvement: ensure Graphviz version echo uses a safe pipeline and strips CRs `$(dot -V 2>&1 | head -n1 | sed 's/\r$//')`.
+- [x] Exec service tests: rename ambiguous tests, add sentinel-based assertions and a table test for missing adapters; verify error precedence and context cancellation.
+- [x] doc_loader defaults: make execution logging `requiredFields` additive/idempotent; stop clobbering `Compensation.Idempotent`; harden acceptance commands for portability and guard missing env/commands.
+
 ## docs/state-of-the-repo.md
 - [x] [Trivial] add a single blank line before each heading like "Assessment:" so the heading is separated from the prior paragraph; then in the "Gaps and Deviations" block normalize the ordered list to use consistent "1." prefixes for every item (or alternatively update the markdownlint config to allow sequential numbering) so the list complies with the linter; run markdownlint to verify and commit the cleaned file.
   - Implemented: inserted blank lines and normalized numbering; ran local checks.
