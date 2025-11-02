@@ -13,8 +13,8 @@ import (
 func TestNewDefaultServiceLoadsCoordinator(t *testing.T) {
 	dir := t.TempDir()
     coordPath := filepath.Join(dir, "coord.json")
-    mini := `{"version":"v9","meta":{"version":"v9","artifactHash":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},"graph":{"nodes":[],"edges":[]},"config":{"resources":{"catalog":{},"profiles":{"default":{}}},"policies":{"circuitBreakerThresholds":null,"concurrencyMax":0,"lockOrdering":[]}}}`
-    if err := os.WriteFile(coordPath, []byte(mini), 0o644); err != nil {
+    minimal := `{"version":"v9","meta":{"version":"v9","artifactHash":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},"graph":{"nodes":[],"edges":[]},"config":{}}`
+    if err := os.WriteFile(coordPath, []byte(minimal), 0o644); err != nil {
         t.Fatalf("write coord: %v", err)
     }
 

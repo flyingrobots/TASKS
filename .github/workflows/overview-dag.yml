@@ -79,6 +79,11 @@ jobs:
           url=$(gh api \
             repos/${REPO}/actions/runs/${{ github.run_id }}/artifacts \
             --jq '.artifacts[] | select(.name=="overview-dag") | .archive_download_url' || true)
+          if [ -z "$url" ]; then
+            echo "::warning::Artifact URL not found; fork PR preview will link to the workflow run instead."
+          else
+            echo "::notice::Artifact URL: $url"
+          fi
           echo "artifact_url=$url" >> $GITHUB_OUTPUT
       - name: Meta
         id: meta
@@ -126,34 +131,46 @@ jobs:
           RAW="https://raw.githubusercontent.com/${{ github.repository }}/ci-preview-${{ github.run_id }}/previews/overview-dag.svg"
           echo "raw_url=$RAW" >> $GITHUB_OUTPUT
 
-  comment:
-    needs: [build-preview]
-    if: github.event_name == 'pull_request'
+  comment-same-repo:
+    needs: [publish-preview]
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
     steps:
-      - name: Prepare comment
-        id: prep
+      - name: Prepare comment (same-repo)
         run: |
           RAW="${{ needs.publish-preview.outputs.raw_url }}"
+          FILE="$RUNNER_TEMP/cmt.md"
+          printf '### Your GitHub Issues as a DAG\n\n' > "$FILE"
+          printf 'Preview (same-repo PR):\n' >> "$FILE"
+          printf '<img src="%s" alt="Overview DAG"/>\n' "$RAW" >> "$FILE"
+      - name: Comment DAG on PR
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          recreate: true
+          hide_and_recreate: true
+          header: Overview DAG
+          path: ${{ runner.temp }}/cmt.md
+
+  comment-fork:
+    needs: [build-preview]
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Prepare comment (fork)
+        run: |
           RUN_URL="${{ needs.build-preview.outputs.run_url }}"
           ART_URL="${{ needs.build-preview.outputs.artifact_url }}"
           FILE="$RUNNER_TEMP/cmt.md"
-          if [ -n "$RAW" ]; then
-            printf '### Your GitHub Issues as a DAG\n\n' > "$FILE"
-            printf 'Preview (same-repo PR):\n' >> "$FILE"
-            printf '<img src="%s" alt="Overview DAG"/>\n' "$RAW" >> "$FILE"
-          elif [ -n "$ART_URL" ]; then
-            printf '### Your GitHub Issues as a DAG\n\n' > "$FILE"
-            printf 'Preview (fork PR):\n' >> "$FILE"
+          printf '### Your GitHub Issues as a DAG\n\n' > "$FILE"
+          printf 'Preview (fork PR):\n' >> "$FILE"
+          if [ -n "$ART_URL" ]; then
             printf '[Download overview-dag.zip](%s) — contains overview-dag.svg and .dot.\n' "$ART_URL" >> "$FILE"
-            printf '(Workflow run: %s)\n' "$RUN_URL" >> "$FILE"
-          else
-            printf '### Your GitHub Issues as a DAG\n\n' > "$FILE"
-            printf 'Preview (fork PR):\n' >> "$FILE"
-            printf 'Image not inlined. Download artifacts from the workflow run: %s\n' "$RUN_URL" >> "$FILE"
           fi
+          printf '(Workflow run: %s)\n' "$RUN_URL" >> "$FILE"
       - name: Comment DAG on PR
         uses: marocchino/sticky-pull-request-comment@v2
         with:

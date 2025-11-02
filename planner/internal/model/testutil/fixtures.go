@@ -5,7 +5,7 @@ import m "github.com/james/tasks-planner/internal/model"
 // StubTasksFile returns a minimal TasksFile suitable for tests.
 func StubTasksFile() *m.TasksFile {
 	tf := &m.TasksFile{}
-	tf.Meta.Version = "v8"
+    tf.Meta.Version = m.SchemaVersion
 	tf.Meta.MinConfidence = 0.7
 	tf.Tasks = []m.Task{{
 		ID:        "T001",

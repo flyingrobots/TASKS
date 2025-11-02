@@ -50,8 +50,8 @@ func TestFilesystemCoordinatorLoaderReadOverride(t *testing.T) {
     if err != nil {
         t.Fatalf("load: %v", err)
     }
-    if coord.Version == "" {
-        t.Fatalf("expected non-empty version, got empty")
+    if coord.Version != "v9" {
+        t.Fatalf("expected version v9, got %q", coord.Version)
     }
     if len(coord.Graph.Nodes) != 1 || coord.Graph.Nodes[0].ID != "T001" {
         t.Fatalf("unexpected nodes: %+v", coord.Graph.Nodes)

@@ -1,12 +1,12 @@
 package dag
 
 import (
-	"errors"
-	"fmt"
-	"sort"
-	"strings"
+    "errors"
+    "fmt"
+    "sort"
+    "strings"
 
-	m "github.com/james/tasks-planner/internal/model"
+    m "github.com/james/tasks-planner/internal/model"
 )
 
 // edgeRec is a small record for edge bookkeeping during build.
@@ -15,8 +15,8 @@ type edgeRec struct{ From, To, Type string }
 // Build builds a minimized DAG from tasks and edges, applying confidence and hardness filters,
 // detecting cycles, computing layering depths, longest path (critical path), and removing transitive edges.
 func Build(tasks []m.Task, edges []m.Edge, minConfidence float64) (*m.DagFile, error) {
-	df := &m.DagFile{}
-	df.Meta.Version = "v8"
+    df := &m.DagFile{}
+    df.Meta.Version = m.SchemaVersion
 	if df.Metrics.KeptByType == nil {
 		df.Metrics.KeptByType = map[string]int{}
 	}

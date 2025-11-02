@@ -244,7 +244,7 @@ func seedEvidenceDefaults(task *m.Task) {
     case strings.Contains(lower, "setup db"):
         task.Evidence = append(task.Evidence, m.Evidence{
             Type:       "code_analysis",
-            Source:     "planner/internal/app/plan/doc_loader.go#applyTaskDefaults",
+            Source:     "planner/internal/app/plan/doc_loader.go#seedEvidenceDefaults",
             Excerpt:    "DB setup defaults: acceptance check via psql; logging requires db_response_time",
             Confidence: 0.9,
             Rationale:  "stub default grounded in code defaults",
