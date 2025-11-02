@@ -135,10 +135,10 @@ if command -v dot >/dev/null 2>&1; then
   dot -Tsvg "$dot_out" -o "$svg_out"
   echo "Wrote $svg_out"
 elif command -v npx >/dev/null 2>&1; then
-  # JS Graphviz fallback. Prefer stdout redirection form.
-  if npx -y graphviz-cli -T svg "$dot_out" > "$svg_out" \
-     || npx -y graphviz-cli dot -Tsvg "$dot_out" > "$svg_out" \
-     || npx -y @viz-js/viz -T svg -o "$svg_out" "$dot_out"; then
+  # JS Graphviz fallback. Prefer stdout redirection form and explicit engine.
+  if npx -y graphviz-cli -K dot -T svg "$dot_out" > "$svg_out" \
+     || npx -y @viz-js/viz -K dot -T svg -o "$svg_out" "$dot_out" \
+     || npx -y viz.js-cli -Kdot -Tsvg "$dot_out" -o "$svg_out"; then
     echo "Wrote $svg_out (via JS Graphviz)"
   else
     echo "graphviz JS fallback failed; SVG not generated" >&2

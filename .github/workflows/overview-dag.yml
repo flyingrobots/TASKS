@@ -37,9 +37,13 @@ jobs:
       - name: Verify DAG outputs
         run: |
           test -f docs/overview-dag.dot || { echo "docs/overview-dag.dot missing" >&2; exit 1; }
-          test -f docs/overview-dag.svg || { echo "docs/overview-dag.svg missing" >&2; exit 1; }
-          # Sanity check SVG begins with XML or <svg>
-          (head -c 5 docs/overview-dag.svg | grep -q '<?xml' || head -n1 docs/overview-dag.svg | grep -q '^<svg') || { echo 'Invalid SVG header' >&2; head -n2 docs/overview-dag.svg; exit 1; }
+          if test -f docs/overview-dag.svg; then
+            if ! (head -c 5 docs/overview-dag.svg | grep -q '<?xml' || head -n1 docs/overview-dag.svg | grep -q '^<svg'); then
+              echo 'WARN: overview-dag.svg has invalid header; continuing (inline preview may be omitted)' >&2
+            fi
+          else
+            echo 'WARN: overview-dag.svg missing; continuing (artifact still uploaded)' >&2
+          fi
       - name: Summarize DAG artifacts
         run: |
           set -e

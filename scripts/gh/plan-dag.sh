@@ -32,9 +32,9 @@ render(){
   if command -v dot >/dev/null 2>&1; then
     dot -Tsvg "$dotfile" -o "$svgfile"
   elif command -v npx >/dev/null 2>&1; then
-    if npx -y graphviz-cli -T svg "$dotfile" > "$svgfile" \
-       || npx -y graphviz-cli dot -Tsvg "$dotfile" > "$svgfile" \
-       || npx -y @viz-js/viz -T svg -o "$svgfile" "$dotfile"; then
+    if npx -y graphviz-cli -K dot -T svg "$dotfile" > "$svgfile" \
+       || npx -y @viz-js/viz -K dot -T svg -o "$svgfile" "$dotfile" \
+       || npx -y viz.js-cli -Kdot -Tsvg "$dotfile" -o "$svgfile"; then
       :
     else
       echo "graphviz JS fallback failed; skipping $dotfile" >&2
