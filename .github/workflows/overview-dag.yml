@@ -6,11 +6,13 @@ on:
   pull_request:
 
 jobs:
-  build-overview-dag:
+  build-preview:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
-      pull-requests: write
+      contents: read
+    outputs:
+      svg_b64: ${{ steps.encode.outputs.svg_b64 }}
+      run_url: ${{ steps.meta.outputs.run_url }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -30,47 +32,6 @@ jobs:
         run: |
           set -e
           bash scripts/gh/plan-dag.sh planner/plans docs
-      - name: Publish CI preview branch (no commits on PR branch)
-        if: github.event_name == 'pull_request'
-        id: publish
-        env:
-          PREVIEW_BRANCH: ci-preview-${{ github.run_id }}
-          ORIG_SHA: ${{ github.sha }}
-        run: |
-          set -e
-          # Stash generated assets before switching to the orphan branch
-          PREVIEW_SRC="$RUNNER_TEMP/previews-src"
-          mkdir -p "$PREVIEW_SRC"
-          cp -f docs/overview-dag.svg "$PREVIEW_SRC/overview-dag.svg"
-          cp -f docs/overview-dag.dot "$PREVIEW_SRC/overview-dag.dot"
-          cp -f docs/plan-dag.svg "$PREVIEW_SRC/plan-dag.svg" 2>/dev/null || true
-          cp -f docs/runtime.svg "$PREVIEW_SRC/runtime.svg" 2>/dev/null || true
-
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git fetch origin --depth=1
-          # Create an orphan branch that only contains preview assets for this run
-          git checkout --orphan "$PREVIEW_BRANCH"
-          git reset --hard
-          # Ensure empty tree
-          find . -mindepth 1 -maxdepth 1 -not -path './.git' -exec rm -rf {} +
-          mkdir -p previews
-          cp -f "$PREVIEW_SRC/overview-dag.svg" previews/ || { echo "Required file missing: overview-dag.svg" >&2; exit 1; }
-          cp -f "$PREVIEW_SRC/overview-dag.dot" previews/ || { echo "Required file missing: overview-dag.dot" >&2; exit 1; }
-          cp -f "$PREVIEW_SRC/plan-dag.svg" previews/plan-dag.svg 2>/dev/null || true  # optional
-          cp -f "$PREVIEW_SRC/runtime.svg" previews/runtime.svg 2>/dev/null || true    # optional
-          git add previews
-          if git diff --cached --quiet; then
-            echo "Nothing to publish for previews" >&2
-            echo "published=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          git commit -m "ci: preview assets for run ${{ github.run_id }}"
-          git push -f origin "$PREVIEW_BRANCH"
-          echo "published=true" >> "$GITHUB_OUTPUT"
-          echo "branch=$PREVIEW_BRANCH" >> "$GITHUB_OUTPUT"
-          # Restore workspace to original commit so later steps can access docs/* again
-          git checkout -f "$ORIG_SHA" || true
       - name: Verify DAG outputs
         run: |
           test -f docs/overview-dag.dot || { echo "docs/overview-dag.dot missing" >&2; exit 1; }
@@ -90,55 +51,15 @@ jobs:
           NODES=$(grep -Eo '^\s*[A-Za-z0-9_]+\s*\[' docs/overview-dag.dot | wc -l | tr -d ' ')
           EDGES=$(grep -Eo '->' docs/overview-dag.dot | wc -l | tr -d ' ')
           echo "Nodes (approx): ${NODES}  Edges (approx): ${EDGES}"
-      - name: Prepare PR comment content
-        if: github.event_name == 'pull_request'
-        env:
-          REPO: ${{ github.repository }}
-          BRANCH: ${{ github.head_ref }}
-          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          TMPFILE: ${{ runner.temp }}/dag-comment.md
-          PREVIEW_BRANCH: ${{ steps.publish.outputs.branch || format('ci-preview-{0}', github.run_id) }}
+      - name: Encode SVG (fallback for fork PRs)
+        id: encode
         run: |
-          RAW_BASE="https://raw.githubusercontent.com/${REPO}/${PREVIEW_BRANCH}/previews"
-          NODES=$(grep -Eo '^\s*[A-Za-z0-9_]+\s*\[' docs/overview-dag.dot | wc -l | tr -d ' ')
-          EDGES=$(grep -Eo '->' docs/overview-dag.dot | wc -l | tr -d ' ')
-          HFILE="docs/overview-dag.highlights.txt"
-          if test -s "$HFILE"; then
-            HIGHLIGHTS=$(tr '\n' ' ' < "$HFILE" | sed 's/ *$//')
-            HL_MSG="PR references: #${HIGHLIGHTS// /, #}"
+          if [ -f docs/overview-dag.svg ]; then
+            echo "svg_b64=$(base64 -w0 docs/overview-dag.svg || base64 docs/overview-dag.svg)" >> $GITHUB_OUTPUT
           else
-            HL_MSG="PR is not associated with an issue yet"
+            echo "svg_b64=" >> $GITHUB_OUTPUT
           fi
-          {
-            echo "### Your GitHub Issues as a DAG"
-            echo
-            echo "Workflow run: ${RUN_URL}"
-            echo
-            echo "Summary: ${NODES} nodes, ${EDGES} edges"
-            echo
-            echo "Note: ${HL_MSG}"
-            echo
-            echo "<details><summary>SVG Preview</summary>"
-            echo
-            echo "<img src=\"${RAW_BASE}/overview-dag.svg\" alt=\"Overview DAG\"/>"
-            echo
-            echo "</details>"
-            echo
-            if test -f docs/plan-dag.svg; then
-              printf '\n### T.A.S.K.S. DAG\n'
-              echo
-              echo "<details open><summary>Plan DAG</summary>"
-              echo "<img src=\"${RAW_BASE}/plan-dag.svg\" alt=\"Plan DAG\"/>"
-              echo "</details>"
-            fi
-            if test -f docs/runtime.svg; then
-              echo "<details><summary>Runtime (Coordinator) Graph</summary>"
-              echo "<img src=\"${RAW_BASE}/runtime.svg\" alt=\"Runtime DAG\"/>"
-              echo "</details>"
-            fi
-          } > "$TMPFILE"
       - name: Upload DAG artifacts
-        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: overview-dag
@@ -147,11 +68,92 @@ jobs:
             docs/overview-dag.svg
             docs/plan-dag.svg
             docs/runtime.svg
+      - name: Meta
+        id: meta
+        run: echo "run_url=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" >> $GITHUB_OUTPUT
+
+  publish-preview:
+    needs: build-preview
+    if: >
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      raw_url: ${{ steps.out.outputs.raw_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: overview-dag
+          path: ${{ runner.temp }}/artifacts
+      - name: Publish ci-preview branch
+        env:
+          PREVIEW_BRANCH: ci-preview-${{ github.run_id }}
+        run: |
+          set -e
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan "$PREVIEW_BRANCH"
+          git reset --hard
+          find . -mindepth 1 -maxdepth 1 -not -path './.git' -exec rm -rf {} +
+          mkdir -p previews
+          cp -f "$RUNNER_TEMP/artifacts/overview-dag.svg" previews/ || { echo "Required file missing: overview-dag.svg" >&2; exit 1; }
+          cp -f "$RUNNER_TEMP/artifacts/overview-dag.dot" previews/ || { echo "Required file missing: overview-dag.dot" >&2; exit 1; }
+          cp -f "$RUNNER_TEMP/artifacts/plan-dag.svg" previews/plan-dag.svg 2>/dev/null || true
+          cp -f "$RUNNER_TEMP/artifacts/runtime.svg" previews/runtime.svg 2>/dev/null || true
+          git add previews
+          git commit -m "ci: preview assets for run ${{ github.run_id }}"
+          git push -f origin "$PREVIEW_BRANCH"
+      - name: Output raw URL
+        id: out
+        run: |
+          RAW="https://raw.githubusercontent.com/${{ github.repository }}/ci-preview-${{ github.run_id }}/previews/overview-dag.svg"
+          echo "raw_url=$RAW" >> $GITHUB_OUTPUT
+
+  comment:
+    needs: [build-preview, publish-preview]
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Prepare comment
+        id: prep
+        run: |
+          RAW="${{ needs.publish-preview.outputs.raw_url }}"
+          RUN_URL="${{ needs.build-preview.outputs.run_url }}"
+          SVG_B64="${{ needs.build-preview.outputs.svg_b64 }}"
+          if [ -n "$RAW" ]; then
+            cat <<EOF > $RUNNER_TEMP/cmt.md
+### Your GitHub Issues as a DAG
+
+Preview (same-repo PR):
+<img src="$RAW" alt="Overview DAG"/>
+EOF
+          elif [ -n "$SVG_B64" ]; then
+            cat <<EOF > $RUNNER_TEMP/cmt.md
+### Your GitHub Issues as a DAG
+
+Preview (fork PR):
+<img src="data:image/svg+xml;base64,$SVG_B64" alt="Overview DAG"/>
+(If image doesn’t render, see run artifacts: $RUN_URL)
+EOF
+          else
+            cat <<EOF > $RUNNER_TEMP/cmt.md
+### Your GitHub Issues as a DAG
+
+Preview (fork PR):
+Image not inlined. Download artifacts from the workflow run: $RUN_URL
+EOF
+          fi
       - name: Comment DAG on PR
-        if: github.event_name == 'pull_request'
         uses: marocchino/sticky-pull-request-comment@v2
         with:
           recreate: true
           hide_and_recreate: true
           header: Overview DAG
-          path: ${{ runner.temp }}/dag-comment.md
+          path: ${{ runner.temp }}/cmt.md
