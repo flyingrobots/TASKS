@@ -223,12 +223,16 @@ func applyLoggingDefaults(task *m.Task) {
         task.ExecutionLogging.RequiredFields = append(task.ExecutionLogging.RequiredFields, field)
     }
     lower := strings.ToLower(task.Title)
+    setupDB := strings.ToLower(TaskTitleSetupDB)
+    migrateSchema := strings.ToLower(TaskTitleMigrateSchema)
+    apiHandlers := strings.ToLower(TaskTitleImplementAPIHandlers)
     switch {
-    case strings.Contains(lower, "setup db"):
+    case lower == setupDB || strings.HasPrefix(lower, setupDB+" "):
         ensureField("db_response_time")
-    case strings.Contains(lower, "migrate schema"):
+    case lower == migrateSchema || strings.HasPrefix(lower, migrateSchema+" "):
         ensureField("migration_version")
-    case strings.Contains(lower, "api handler"):
+    case lower == apiHandlers || strings.HasPrefix(lower, apiHandlers+" "):
+        // API handlers prefer structured JSON for service logs; use JSON unless overridden.
         if wasEmpty { task.ExecutionLogging.Format = "JSON" }
         ensureField("service_version")
     }
