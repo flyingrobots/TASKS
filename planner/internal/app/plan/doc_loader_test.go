@@ -111,9 +111,9 @@ func TestMarkdownDocLoaderRejectsDuplicateTitles(t *testing.T) {
 }
 
 func TestApplyTaskDefaults(t *testing.T) {
-	task := m.Task{}
-	task.Duration = m.DurationPERT{Optimistic: 1, MostLikely: 2, Pessimistic: 3}
-	applyTaskDefaults(&task)
+    task := m.Task{}
+    task.Duration = m.DurationPERT{Optimistic: 1, MostLikely: 2, Pessimistic: 3}
+    applyTaskDefaults(&task)
 	if len(task.AcceptanceChecks) == 0 {
 		t.Fatalf("expected default acceptance check")
 	}
@@ -134,6 +134,23 @@ func TestApplyTaskDefaults(t *testing.T) {
 	if task.Duration.Optimistic > task.Duration.MostLikely || task.Duration.MostLikely > task.Duration.Pessimistic {
 		t.Fatalf("duration PERT out of order: %+v", task.Duration)
 	}
+}
+
+func TestApplyTaskDefaultsIdempotent(t *testing.T) {
+    task := m.Task{Title: TaskTitleImplementAPIHandlers}
+    task.Duration = m.DurationPERT{Optimistic: 2, MostLikely: 6, Pessimistic: 12}
+    applyTaskDefaults(&task)
+    // capture lengths
+    rf1 := len(task.ExecutionLogging.RequiredFields)
+    ev1 := len(task.Evidence)
+    // call twice
+    applyTaskDefaults(&task)
+    if len(task.ExecutionLogging.RequiredFields) != rf1 {
+        t.Fatalf("required fields duplicated: %d -> %d", rf1, len(task.ExecutionLogging.RequiredFields))
+    }
+    if len(task.Evidence) != ev1 {
+        t.Fatalf("evidence duplicated: %d -> %d", ev1, len(task.Evidence))
+    }
 }
 
 func TestResolveTaskIDAllowsLongerIDs(t *testing.T) {

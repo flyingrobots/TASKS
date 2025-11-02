@@ -8,6 +8,7 @@ import (
 	"os"
 
 	m "github.com/james/tasks-planner/internal/model"
+    "github.com/james/tasks-planner/internal/validate"
 )
 
 // ErrLoopNotImplemented is returned by the default loop placeholder.
@@ -20,15 +21,18 @@ type FilesystemCoordinatorLoader struct {
 
 // Load loads and decodes a coordinator artifact.
 func (l FilesystemCoordinatorLoader) Load(path string) (m.Coordinator, error) {
-	bs, err := l.read(path)
-	if err != nil {
-		return m.Coordinator{}, fmt.Errorf("read coordinator: %w", err)
-	}
-	var coord m.Coordinator
-	if err := json.Unmarshal(bs, &coord); err != nil {
-		return m.Coordinator{}, fmt.Errorf("decode coordinator: %w", err)
-	}
-	return coord, nil
+    bs, err := l.read(path)
+    if err != nil {
+        return m.Coordinator{}, fmt.Errorf("read coordinator: %w", err)
+    }
+    if err := validate.ValidateRaw("coordinator.json", bs); err != nil {
+        return m.Coordinator{}, fmt.Errorf("coordinator schema: %w", err)
+    }
+    var coord m.Coordinator
+    if err := json.Unmarshal(bs, &coord); err != nil {
+        return m.Coordinator{}, fmt.Errorf("decode coordinator: %w", err)
+    }
+    return coord, nil
 }
 
 func (l FilesystemCoordinatorLoader) read(path string) ([]byte, error) {
