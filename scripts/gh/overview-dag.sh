@@ -16,6 +16,7 @@ done
 # Outputs:
 # - docs/overview-dag.dot
 # - docs/overview-dag.svg (requires graphviz `dot`)
+# - docs/overview-dag.highlights.txt (optional; newline-separated issue numbers highlighted)
 #
 # Requirements:
 # - gh CLI authenticated (GITHUB_TOKEN in CI works)
@@ -38,6 +39,7 @@ fi
 mkdir -p docs
 dot_out=${1:-docs/overview-dag.dot}
 svg_out=${2:-docs/overview-dag.svg}
+hl_out="${dot_out%.*}.highlights.txt"
 
 # Fetch open issues (increase limit if needed)
 tmpdir=$(mktemp -d)
@@ -77,6 +79,25 @@ while :; do
   [[ "$hasNext" == "true" && -n "$after" ]] || break
 done
 
+# Optional: Detect PR-linked issues (e.g., "Closes #12") and highlight those nodes.
+PR_NUMBER=${PR_NUMBER:-}
+highlight_tmp="$tmpdir/highlights.txt"
+: >"$highlight_tmp"
+if [[ -n "$PR_NUMBER" ]]; then
+  prjson=$(gh pr view --repo "$REPO" "$PR_NUMBER" --json number,title,body 2>/dev/null || true)
+else
+  prjson=$(gh pr view --repo "$REPO" --json number,title,body 2>/dev/null || true)
+fi
+if [[ -n "$prjson" ]]; then
+  printf '%s' "$prjson" | jq -r '.body // ""' | grep -Eo '#[0-9]+' | tr -d '#' | sort -un > "$highlight_tmp" || true
+fi
+# Persist highlight list next to DOT for downstream consumers (e.g., PR comment step).
+if [[ -s "$highlight_tmp" ]]; then
+  cp -f "$highlight_tmp" "$hl_out" || true
+else
+  : >"$hl_out"
+fi
+
 # Derive edges from titles and bodies
 jq -r '.[] | @base64' "$tmpdir/all_nodes.json" | while read -r row; do
   _jq(){ echo "$row" | base64 --decode | jq -r "$1"; }
@@ -107,9 +128,21 @@ done
   echo '  node [shape=box, style="rounded,filled", fontname=Helvetica, fontsize=10, fillcolor=white];'
 
   # Nodes with labels (derive from the same GraphQL dataset used for edges)
+  # Load highlight set into an associative array for fast membership checks
+  declare -A HMAP=()
+  if [[ -s "$highlight_tmp" ]]; then
+    while read -r h; do [[ -n "$h" ]] && HMAP["$h"]=1; done < "$highlight_tmp"
+    echo "Highlighting issues: $(tr '\n' ' ' < "$highlight_tmp" | sed 's/ *$//')" >&2
+  else
+    echo "No PR issue references detected; rendering without highlight" >&2
+  fi
   jq -r '.[] | [.number, (.title|gsub("\""; "\\\""))] | @tsv' "$tmpdir/all_nodes.json" |
   while IFS=$'\t' read -r num title; do
-    printf '  I%s [label="#%s: %s"];\n' "$num" "$num" "$title"
+    if [[ -n "${HMAP[$num]:-}" ]]; then
+      printf '  I%s [label="#%s: %s", fillcolor="#FFF6E5", color="#F59E0B", penwidth=2.5, style="rounded,filled,bold"];\n' "$num" "$num" "$title"
+    else
+      printf '  I%s [label="#%s: %s"];\n' "$num" "$num" "$title"
+    fi
   done
 
   # Edges

@@ -22,6 +22,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           set -e
           bash scripts/gh/overview-dag.sh docs/overview-dag.dot docs/overview-dag.svg
@@ -115,12 +116,21 @@ jobs:
           RAW_BASE="https://raw.githubusercontent.com/${REPO}/${PREVIEW_BRANCH}/previews"
           NODES=$(grep -Eo '^\s*[A-Za-z0-9_]+\s*\[' docs/overview-dag.dot | wc -l | tr -d ' ')
           EDGES=$(grep -Eo '->' docs/overview-dag.dot | wc -l | tr -d ' ')
+          HFILE="docs/overview-dag.highlights.txt"
+          if test -s "$HFILE"; then
+            HIGHLIGHTS=$(tr '\n' ' ' < "$HFILE" | sed 's/ *$//')
+            HL_MSG="PR references: #${HIGHLIGHTS// /, #}"
+          else
+            HL_MSG="PR is not associated with an issue yet"
+          fi
           {
             echo "### Your GitHub Issues as a DAG"
             echo
             echo "Workflow run: ${RUN_URL}"
             echo
             echo "Summary: ${NODES} nodes, ${EDGES} edges"
+            echo
+            echo "Note: ${HL_MSG}"
             echo
             echo "<details><summary>SVG Preview</summary>"
             echo
