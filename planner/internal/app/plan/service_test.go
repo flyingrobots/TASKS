@@ -100,7 +100,13 @@ func TestServicePlanSuccess(t *testing.T) {
 }
 
 func TestServicePlanValidatorWarnings(t *testing.T) {
-	tasks := []m.Task{{ID: "T001", Title: "Do thing", AcceptanceChecks: []m.AcceptanceCheck{{Type: "command", Cmd: "echo ok"}}}}
+	tasks := []m.Task{{
+		ID:               "T001",
+		Title:            "Do thing",
+		AcceptanceChecks: []m.AcceptanceCheck{{Type: "command", Cmd: "echo ok"}},
+		Duration:         m.DurationPERT{Optimistic: 1, MostLikely: 2, Pessimistic: 3},
+		DurationUnit:     "hours",
+	}}
 
 	runner := &stubRunner{
 		reports: []validators.Report{{Name: "acceptance", Status: m.ValidatorStatusFail, Command: "accept", Detail: "broken"}},

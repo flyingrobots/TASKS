@@ -24,11 +24,15 @@ func TestFileArtifactWriterWritesArtifacts(t *testing.T) {
 	df.Edges = []m.DagEdge{}
 
 	waves := &m.WavesArtifact{Meta: m.WavesMeta{Version: "v8"}, Waves: [][]string{{"T001"}}}
+	features := &m.FeaturesArtifact{
+		Meta:     m.ArtifactMeta{Version: "v8"},
+		Features: []m.FeatureEntry{{ID: "F001", Title: "Feature"}},
+	}
 	bundle := ArtifactBundle{
 		TasksFile:   tf,
 		DagFile:     df,
 		Coordinator: &m.Coordinator{Version: "v8"},
-		Features:    makeFeaturesArtifact([]FeatureSummary{{ID: "F001", Title: "Feature"}}),
+		Features:    features,
 		Waves:       waves,
 		Titles:      taskTitles(tf.Tasks),
 		ValidatorReports: []m.ValidatorReport{{

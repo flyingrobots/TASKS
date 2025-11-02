@@ -2,9 +2,33 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "coordinator.json",
   "type": "object",
-  "required": ["version", "graph", "config"],
+  "required": ["version", "graph", "config", "meta"],
   "properties": {
     "version": {"type": "string", "minLength": 1},
+    "meta": {
+      "type": "object",
+      "required": ["version", "artifactHash"],
+      "properties": {
+        "version": {"type": "string", "minLength": 1},
+        "artifactHash": {"type": "string", "minLength": 64, "maxLength": 64, "pattern": "^[A-Fa-f0-9]{64}$"}
+      },
+      "additionalProperties": false
+    },
+    "metrics": {
+      "type": "object",
+      "properties": {
+        "estimates": {
+          "type": "object",
+          "properties": {
+            "longestPathLength": {"type": "integer"},
+            "p50TotalHours": {"type": "number"},
+            "widthApprox": {"type": "integer"}
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
     "graph": {
       "type": "object",
       "required": ["nodes", "edges"],
@@ -20,7 +44,29 @@
         }
       }
     },
-    "config": {"type": "object"}
+    "config": {
+      "type": "object",
+      "properties": {
+        "resources": {
+          "type": "object",
+          "properties": {
+            "catalog": {"type": "object"},
+            "profiles": {"type": "object"}
+          },
+          "additionalProperties": false
+        },
+        "policies": {
+          "type": "object",
+          "properties": {
+            "circuitBreakerThresholds": {"type": ["object","null"]},
+            "concurrencyMax": {"type": "integer"},
+            "lockOrdering": {"type": "array", "items": {"type": "string"}}
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
   },
-  "additionalProperties": true
+  "additionalProperties": false
 }

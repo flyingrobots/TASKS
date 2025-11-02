@@ -74,7 +74,7 @@ func ValidateRaw(schemaKey string, raw []byte) error {
     return nil
 }
 
-// CheckArtifactHash recomputes the artifact hash over canonical JSON with meta.artifact_hash blank.
+// CheckArtifactHash recomputes the artifact hash over canonical JSON with meta.artifactHash blank.
 // Returns (computedHash, storedHash, ok, error)
 func CheckArtifactHash(raw []byte) (string, string, bool, error) {
     var v any
@@ -83,8 +83,23 @@ func CheckArtifactHash(raw []byte) (string, string, bool, error) {
     if !ok { return "", "", false, fmt.Errorf("root not object") }
     meta, ok := mobj["meta"].(map[string]any)
     if !ok { return "", "", true, nil } // no meta; nothing to check
-    stored, _ := meta["artifact_hash"].(string)
-    meta["artifact_hash"] = ""
+    // Support both new camelCase (artifactHash) and legacy snake_case (artifact_hash)
+    // Reject conflicting hash fields if both are present
+    if _, hasCamel := meta["artifactHash"]; hasCamel {
+        if _, hasSnake := meta["artifact_hash"]; hasSnake {
+            return "", "", false, fmt.Errorf("conflicting artifact hash fields: both artifactHash and artifact_hash present")
+        }
+    }
+    stored := ""
+    if v, ok := meta["artifactHash"].(string); ok {
+        stored = v
+        meta["artifactHash"] = ""
+    } else if v, ok := meta["artifact_hash"].(string); ok {
+        stored = v
+        meta["artifact_hash"] = ""
+        // Soft deprecation path: artifact_hash is tolerated for migration but discouraged.
+        // (Deliberately not logging to stdout; keep validation pure.)
+    }
     raw2, err := json.Marshal(mobj)
     if err != nil { return "", stored, false, err }
     can, err := canonjson.ToCanonicalJSON(raw2)

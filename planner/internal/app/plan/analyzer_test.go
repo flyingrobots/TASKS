@@ -37,5 +37,6 @@ func TestCensusAnalyzerReportsCounts(t *testing.T) {
 	if err := ctx.Err(); err != nil {
 		t.Fatalf("context unexpectedly done: %v", err)
 	}
+	// Retain analysis.CodebaseAnalysis import for documentation/reference in tests.
 	_ = analysis.CodebaseAnalysis{}
 }

@@ -1,0 +1,18 @@
+{
+  "meta": {
+    "artifactHash": "abe55e1ca6595535a6f31c57735de78fd3fce66c51d699382165bc6d31924724",
+    "planID": "2976babd6c4af03f86bdb3a9a7c922c3347a10f68a860a6b58780567f01bda35",
+    "version": "v9"
+  },
+  "waves": [
+    [
+      "T001"
+    ],
+    [
+      "T002"
+    ],
+    [
+      "T003"
+    ]
+  ]
+}

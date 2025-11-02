@@ -1,0 +1,168 @@
+{
+  "dependencies": [
+    {
+      "confidence": 1,
+      "from": "T001",
+      "isHard": true,
+      "to": "T002",
+      "type": "sequential"
+    },
+    {
+      "confidence": 1,
+      "from": "T002",
+      "isHard": true,
+      "to": "T003",
+      "type": "technical"
+    }
+  ],
+  "meta": {
+    "artifactHash": "2976babd6c4af03f86bdb3a9a7c922c3347a10f68a860a6b58780567f01bda35",
+    "autonormalization": {
+      "merged": [],
+      "split": []
+    },
+    "codebaseAnalysis": {
+      "files": 2601,
+      "go_files": 53
+    },
+    "minConfidence": 0.7,
+    "version": "v9"
+  },
+  "tasks": [
+    {
+      "acceptanceChecks": [
+        {
+          "cmd": "sh -c 'test -n \"$DB_DSN\" && psql \"$DB_DSN\" -c \"\\\\conninfo\" >/dev/null 2>&1'",
+          "timeoutSeconds": 10,
+          "type": "command"
+        }
+      ],
+      "compensation": {
+        "idempotent": false
+      },
+      "duration": {
+        "mostLikely": 2.5,
+        "optimistic": 1,
+        "pessimistic": 4
+      },
+      "durationUnits": "hours",
+      "executionLogging": {
+        "format": "JSONL",
+        "requiredFields": [
+          "timestamp",
+          "task_id",
+          "step",
+          "status",
+          "message",
+          "error",
+          "error_type",
+          "error_details",
+          "db_response_time"
+        ]
+      },
+      "featureID": "F001",
+      "id": "T001",
+      "resources": {},
+      "sourceEvidence": [
+        {
+          "confidence": 0.9,
+          "excerpt": "DB setup defaults: acceptance check via psql; logging requires db_response_time",
+          "rationale": "stub default grounded in code defaults",
+          "source": "planner/internal/app/plan/doc_loader.go#applyTaskDefaults",
+          "type": "code_analysis"
+        }
+      ],
+      "title": "Setup DB"
+    },
+    {
+      "acceptanceChecks": [
+        {
+          "cmd": "sh -c 'command -v db/migrate >/dev/null 2>&1 && db/migrate status | grep -q Applied'",
+          "timeoutSeconds": 15,
+          "type": "command"
+        }
+      ],
+      "compensation": {
+        "idempotent": false
+      },
+      "duration": {
+        "mostLikely": 3.5,
+        "optimistic": 1,
+        "pessimistic": 8
+      },
+      "durationUnits": "hours",
+      "executionLogging": {
+        "format": "JSONL",
+        "requiredFields": [
+          "timestamp",
+          "task_id",
+          "step",
+          "status",
+          "message",
+          "error",
+          "error_type",
+          "error_details",
+          "migration_version"
+        ]
+      },
+      "featureID": "F001",
+      "id": "T002",
+      "resources": {},
+      "sourceEvidence": [
+        {
+          "confidence": 0.85,
+          "excerpt": "Migrations modeled as technical edges with ordering",
+          "rationale": "ordering requirement documented in architecture",
+          "source": "docs/go-architecture.md",
+          "type": "docs"
+        }
+      ],
+      "title": "Migrate Schema"
+    },
+    {
+      "acceptanceChecks": [
+        {
+          "cmd": "sh -c 'curl -fsS \"${API_BASE-http://localhost:8080}/healthz\" >/dev/null'",
+          "timeoutSeconds": 10,
+          "type": "command"
+        }
+      ],
+      "compensation": {
+        "idempotent": false
+      },
+      "duration": {
+        "mostLikely": 6,
+        "optimistic": 2,
+        "pessimistic": 12
+      },
+      "durationUnits": "hours",
+      "executionLogging": {
+        "format": "JSON",
+        "requiredFields": [
+          "timestamp",
+          "task_id",
+          "step",
+          "status",
+          "message",
+          "error",
+          "error_type",
+          "error_details",
+          "service_version"
+        ]
+      },
+      "featureID": "F001",
+      "id": "T003",
+      "resources": {},
+      "sourceEvidence": [
+        {
+          "confidence": 0.8,
+          "excerpt": "CLI/demo health endpoint used for acceptance (/healthz)",
+          "rationale": "acceptance derived from documented demo",
+          "source": "README.md",
+          "type": "docs"
+        }
+      ],
+      "title": "Implement API Handlers"
+    }
+  ]
+}

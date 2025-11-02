@@ -1,0 +1,151 @@
+name: Overview DAG
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-preview:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      svg_b64: ${{ steps.encode.outputs.svg_b64 }}
+      run_url: ${{ steps.meta.outputs.run_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Preflight checks
+        run: |
+          set -e
+          test -f scripts/gh/overview-dag.sh || { echo "missing scripts/gh/overview-dag.sh" >&2; exit 1; }
+      - name: Generate overview DAG
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -e
+          bash scripts/gh/overview-dag.sh docs/overview-dag.dot docs/overview-dag.svg
+      - name: Generate planner DAGs (T.A.S.K.S.)
+        run: |
+          set -e
+          bash scripts/gh/plan-dag.sh planner/plans docs
+      - name: Verify DAG outputs
+        run: |
+          test -f docs/overview-dag.dot || { echo "docs/overview-dag.dot missing" >&2; exit 1; }
+          if test -f docs/overview-dag.svg; then
+            if ! (head -c 5 docs/overview-dag.svg | grep -q '<?xml' || head -n1 docs/overview-dag.svg | grep -q '^<svg'); then
+              echo 'WARN: overview-dag.svg has invalid header; continuing (inline preview may be omitted)' >&2
+            fi
+          else
+            echo 'WARN: overview-dag.svg missing; continuing (artifact still uploaded)' >&2
+          fi
+      - name: Summarize DAG artifacts
+        run: |
+          set -e
+          if command -v dot >/dev/null 2>&1; then echo "Graphviz: $(dot -V 2>&1 | head -n1 | sed 's/\r$//')"; else echo "Graphviz: dot not installed (using viz.js if available)"; fi
+          echo "Sizes:"; ls -lh -- docs/overview-dag.dot docs/overview-dag.svg
+          # Quick node/edge counts (approximate; regex-based, not a DOT parser)
+          NODES=$(grep -Eo '^\s*[A-Za-z0-9_]+\s*\[' docs/overview-dag.dot | wc -l | tr -d ' ')
+          EDGES=$(grep -Eo '->' docs/overview-dag.dot | wc -l | tr -d ' ')
+          echo "Nodes (approx): ${NODES}  Edges (approx): ${EDGES}"
+      - name: Encode SVG (fallback for fork PRs)
+        id: encode
+        run: |
+          if [ -f docs/overview-dag.svg ]; then
+            echo "svg_b64=$(base64 -w0 docs/overview-dag.svg || base64 docs/overview-dag.svg)" >> $GITHUB_OUTPUT
+          else
+            echo "svg_b64=" >> $GITHUB_OUTPUT
+          fi
+      - name: Upload DAG artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: overview-dag
+          path: |
+            docs/overview-dag.dot
+            docs/overview-dag.svg
+            docs/plan-dag.svg
+            docs/runtime.svg
+      - name: Meta
+        id: meta
+        run: echo "run_url=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" >> $GITHUB_OUTPUT
+
+  publish-preview:
+    needs: build-preview
+    if: >
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      raw_url: ${{ steps.out.outputs.raw_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: overview-dag
+          path: ${{ runner.temp }}/artifacts
+      - name: Publish ci-preview branch
+        env:
+          PREVIEW_BRANCH: ci-preview-${{ github.run_id }}
+        run: |
+          set -e
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan "$PREVIEW_BRANCH"
+          git reset --hard
+          find . -mindepth 1 -maxdepth 1 -not -path './.git' -exec rm -rf {} +
+          mkdir -p previews
+          cp -f "$RUNNER_TEMP/artifacts/overview-dag.svg" previews/ || { echo "Required file missing: overview-dag.svg" >&2; exit 1; }
+          cp -f "$RUNNER_TEMP/artifacts/overview-dag.dot" previews/ || { echo "Required file missing: overview-dag.dot" >&2; exit 1; }
+          cp -f "$RUNNER_TEMP/artifacts/plan-dag.svg" previews/plan-dag.svg 2>/dev/null || true
+          cp -f "$RUNNER_TEMP/artifacts/runtime.svg" previews/runtime.svg 2>/dev/null || true
+          git add previews
+          git commit -m "ci: preview assets for run ${{ github.run_id }}"
+          git push -f origin "$PREVIEW_BRANCH"
+      - name: Output raw URL
+        id: out
+        run: |
+          RAW="https://raw.githubusercontent.com/${{ github.repository }}/ci-preview-${{ github.run_id }}/previews/overview-dag.svg"
+          echo "raw_url=$RAW" >> $GITHUB_OUTPUT
+
+  comment:
+    needs: [build-preview]
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Prepare comment
+        id: prep
+        run: |
+          RAW="${{ needs.publish-preview.outputs.raw_url }}"
+          RUN_URL="${{ needs.build-preview.outputs.run_url }}"
+          SVG_B64="${{ needs.build-preview.outputs.svg_b64 }}"
+          FILE="$RUNNER_TEMP/cmt.md"
+          if [ -n "$RAW" ]; then
+            printf '### Your GitHub Issues as a DAG\n\n' > "$FILE"
+            printf 'Preview (same-repo PR):\n' >> "$FILE"
+            printf '<img src="%s" alt="Overview DAG"/>\n' "$RAW" >> "$FILE"
+          elif [ -n "$SVG_B64" ]; then
+            printf '### Your GitHub Issues as a DAG\n\n' > "$FILE"
+            printf 'Preview (fork PR):\n' >> "$FILE"
+            printf '<img src="data:image/svg+xml;base64,%s" alt="Overview DAG"/>\n' "$SVG_B64" >> "$FILE"
+            printf '(If image doesn’t render, see run artifacts: %s)\n' "$RUN_URL" >> "$FILE"
+          else
+            printf '### Your GitHub Issues as a DAG\n\n' > "$FILE"
+            printf 'Preview (fork PR):\n' >> "$FILE"
+            printf 'Image not inlined. Download artifacts from the workflow run: %s\n' "$RUN_URL" >> "$FILE"
+          fi
+      - name: Comment DAG on PR
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          recreate: true
+          hide_and_recreate: true
+          header: Overview DAG
+          path: ${{ runner.temp }}/cmt.md

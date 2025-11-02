@@ -20,11 +20,11 @@ const (
 //   - RawOutput stores normalized JSON returned by the validator (quoted plain
 //     text when validators emit non-JSON output).
 type ValidatorReport struct {
-	Name      string          `json:"name"`
-	Status    string          `json:"status"`
-	Command   string          `json:"command,omitempty"`
-	InputHash string          `json:"input_hash"`
-	Cached    bool            `json:"cached"`
-	Detail    string          `json:"detail,omitempty"`
-	RawOutput json.RawMessage `json:"raw_output,omitempty"`
+    Name      string          `json:"name"`
+    Status    string          `json:"status"`
+    Command   string          `json:"command,omitempty"`
+    InputHash string          `json:"inputHash"`
+    Cached    bool            `json:"cached"`
+    Detail    string          `json:"detail,omitempty"`
+    RawOutput json.RawMessage `json:"rawOutput,omitempty"`
 }

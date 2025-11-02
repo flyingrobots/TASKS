@@ -6,10 +6,10 @@
   "properties": {
     "meta": {
       "type": "object",
-      "required": ["version", "artifact_hash"],
+      "required": ["version", "artifactHash"],
       "properties": {
         "version": {"type": "string"},
-        "artifact_hash": {"type": "string"}
+        "artifactHash": {"type": "string"}
       }
     },
     "features": {
