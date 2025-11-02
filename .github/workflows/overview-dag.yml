@@ -29,11 +29,35 @@ jobs:
         run: |
           set -e
           bash scripts/gh/plan-dag.sh planner/plans docs
-      - name: Stage DAG for commit
+      - name: Publish CI preview branch (no commits on PR branch)
         if: github.event_name == 'pull_request'
+        id: publish
+        env:
+          PREVIEW_BRANCH: ci-preview-${{ github.run_id }}
         run: |
-          cp -f docs/overview-dag.svg "$RUNNER_TEMP/overview-dag.svg"
-          cp -f docs/overview-dag.dot "$RUNNER_TEMP/overview-dag.dot"
+          set -e
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin --depth=1
+          # Create an orphan branch that only contains preview assets for this run
+          git checkout --orphan "$PREVIEW_BRANCH"
+          git reset --hard
+          git rm -rf . || true
+          mkdir -p previews
+          cp -f docs/overview-dag.svg previews/overview-dag.svg || true
+          cp -f docs/overview-dag.dot previews/overview-dag.dot || true
+          cp -f docs/plan-dag.svg previews/plan-dag.svg || true
+          cp -f docs/runtime.svg previews/runtime.svg || true
+          git add previews
+          if git diff --cached --quiet; then
+            echo "Nothing to publish for previews" >&2
+            echo "published=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git commit -m "ci: preview assets for run ${{ github.run_id }}"
+          git push -f origin "$PREVIEW_BRANCH"
+          echo "published=true" >> "$GITHUB_OUTPUT"
+          echo "branch=$PREVIEW_BRANCH" >> "$GITHUB_OUTPUT"
       - name: Verify DAG outputs
         run: |
           test -f docs/overview-dag.dot || { echo "docs/overview-dag.dot missing" >&2; exit 1; }
@@ -86,9 +110,9 @@ jobs:
           BRANCH: ${{ github.head_ref }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           TMPFILE: ${{ runner.temp }}/dag-comment.md
+          PREVIEW_BRANCH: ${{ steps.publish.outputs.branch || format('ci-preview-{0}', github.run_id) }}
         run: |
-          # Base64-inline the SVG to avoid 404s and make preview independent of branch commits
-          INLINE=$(base64 -w0 docs/overview-dag.svg || base64 docs/overview-dag.svg)
+          RAW_BASE="https://raw.githubusercontent.com/${REPO}/${PREVIEW_BRANCH}/previews"
           NODES=$(grep -Eo '^\s*[A-Za-z0-9_]+\s*\[' docs/overview-dag.dot | wc -l | tr -d ' ')
           EDGES=$(grep -Eo '->' docs/overview-dag.dot | wc -l | tr -d ' ')
           {
@@ -100,22 +124,20 @@ jobs:
             echo
             echo "<details><summary>SVG Preview</summary>"
             echo
-            echo "<img src=\"data:image/svg+xml;base64,${INLINE}\" alt=\"Overview DAG\"/>"
+            echo "<img src=\"${RAW_BASE}/overview-dag.svg\" alt=\"Overview DAG\"/>"
             echo
             echo "</details>"
             echo
             if test -f docs/plan-dag.svg; then
-            printf '\n### T.A.S.K.S. DAG\n'
+              printf '\n### T.A.S.K.S. DAG\n'
               echo
-              INLINE_PLAN=$(base64 -w0 docs/plan-dag.svg || base64 docs/plan-dag.svg)
               echo "<details open><summary>Plan DAG</summary>"
-              echo "<img src=\"data:image/svg+xml;base64,${INLINE_PLAN}\" alt=\"Plan DAG\"/>"
+              echo "<img src=\"${RAW_BASE}/plan-dag.svg\" alt=\"Plan DAG\"/>"
               echo "</details>"
             fi
             if test -f docs/runtime.svg; then
-              INLINE_RT=$(base64 -w0 docs/runtime.svg || base64 docs/runtime.svg)
               echo "<details><summary>Runtime (Coordinator) Graph</summary>"
-              echo "<img src=\"data:image/svg+xml;base64,${INLINE_RT}\" alt=\"Runtime DAG\"/>"
+              echo "<img src=\"${RAW_BASE}/runtime.svg\" alt=\"Runtime DAG\"/>"
               echo "</details>"
             fi
           } > "$TMPFILE"
