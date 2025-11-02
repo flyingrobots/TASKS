@@ -66,3 +66,4 @@ gha-creds-*.json
 planner/plans-*/
 examples/dot-export/*.dot
 examples/dot-export/*.svg
+planner/planner/
