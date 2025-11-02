@@ -176,10 +176,16 @@ func (s Service) Plan(ctx context.Context, req Request) (Result, error) {
         coord.Metrics.Estimates.LongestPathLength = dagFile.Metrics.LongestPathLength
         coord.Metrics.Estimates.WidthApprox = dagFile.Metrics.WidthApprox
 
-        // Deterministic seed derived from the canonical tasks preimage (empty artifactHash)
+        // Deterministic seed derived from the canonical tasks preimage
         // Ensure we don't mutate tf while hashing
-        preimage, _ := json.Marshal(tf)
-        can, _ := canonjson.ToCanonicalJSON(preimage)
+        preimage, err := json.Marshal(tf)
+        if err != nil {
+            return Result{}, fmt.Errorf("marshal tasks preimage: %w", err)
+        }
+        can, err := canonjson.ToCanonicalJSON(preimage)
+        if err != nil {
+            return Result{}, fmt.Errorf("canonicalize tasks preimage: %w", err)
+        }
         h := hash.HashCanonicalBytes(can) // hex string
         // Use first 8 bytes for a 64-bit seed
         var seed int64

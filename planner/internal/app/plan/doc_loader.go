@@ -152,16 +152,21 @@ func stubPlan() ([]m.Task, []FeatureSummary) {
         {"T003", "F001", "Implement API Handlers"},
     }
 	tasks := make([]m.Task, 0, len(base))
-	for _, spec := range base {
-		task := m.Task{
-			ID:        spec.id,
-			FeatureID: spec.featureID,
-			Title:     spec.title,
-			Duration:  m.DurationPERT{Optimistic: 1, MostLikely: 2, Pessimistic: 3},
-		}
-		applyTaskDefaults(&task)
-		tasks = append(tasks, task)
-	}
+    for _, spec := range base {
+        task := m.Task{ID: spec.id, FeatureID: spec.featureID, Title: spec.title}
+        switch strings.ToLower(spec.title) {
+        case "setup db":
+            task.Duration = m.DurationPERT{Optimistic: 1, MostLikely: 2.5, Pessimistic: 4}
+        case "migrate schema":
+            task.Duration = m.DurationPERT{Optimistic: 1, MostLikely: 3.5, Pessimistic: 8}
+        case "implement api handlers":
+            task.Duration = m.DurationPERT{Optimistic: 2, MostLikely: 6, Pessimistic: 12}
+        default:
+            task.Duration = m.DurationPERT{Optimistic: 1, MostLikely: 2, Pessimistic: 3}
+        }
+        applyTaskDefaults(&task)
+        tasks = append(tasks, task)
+    }
 	return tasks, []FeatureSummary{{ID: "F001", Title: "Core DB + API"}}
 }
 

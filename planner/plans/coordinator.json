@@ -42,9 +42,9 @@
           "idempotent": false
         },
         "duration": {
-          "mostLikely": 2,
+          "mostLikely": 2.5,
           "optimistic": 1,
-          "pessimistic": 3
+          "pessimistic": 4
         },
         "durationUnits": "hours",
         "executionLogging": {
@@ -87,9 +87,9 @@
           "idempotent": false
         },
         "duration": {
-          "mostLikely": 2,
+          "mostLikely": 3.5,
           "optimistic": 1,
-          "pessimistic": 3
+          "pessimistic": 8
         },
         "durationUnits": "hours",
         "executionLogging": {
@@ -132,9 +132,9 @@
           "idempotent": false
         },
         "duration": {
-          "mostLikely": 2,
-          "optimistic": 1,
-          "pessimistic": 3
+          "mostLikely": 6,
+          "optimistic": 2,
+          "pessimistic": 12
         },
         "durationUnits": "hours",
         "executionLogging": {
@@ -168,13 +168,13 @@
     ]
   },
   "meta": {
-    "artifactHash": "9ca3759dc00180e0e08abfb53df58e0f5b284039a5c8adcfbcc1f5aa4518f72e",
+    "artifactHash": "fbb4f6e8962e8f4ab6b49e45c6ef03cc688b918455a3a56ae0045fb99029a1c7",
     "version": "v8"
   },
   "metrics": {
     "estimates": {
       "longestPathLength": 3,
-      "p50TotalHours": 6.018612,
+      "p50TotalHours": 13.301041,
       "widthApprox": 1
     }
   },

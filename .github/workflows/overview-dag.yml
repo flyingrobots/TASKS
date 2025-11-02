@@ -45,10 +45,10 @@ jobs:
           git reset --hard
           git rm -rf . || true
           mkdir -p previews
-          cp -f docs/overview-dag.svg previews/overview-dag.svg || true
-          cp -f docs/overview-dag.dot previews/overview-dag.dot || true
-          cp -f docs/plan-dag.svg previews/plan-dag.svg || true
-          cp -f docs/runtime.svg previews/runtime.svg || true
+          cp -f docs/overview-dag.svg previews/ || { echo "Required file missing: overview-dag.svg" >&2; exit 1; }
+          cp -f docs/overview-dag.dot previews/ || { echo "Required file missing: overview-dag.dot" >&2; exit 1; }
+          cp -f docs/plan-dag.svg previews/plan-dag.svg || true  # optional
+          cp -f docs/runtime.svg previews/runtime.svg || true    # optional
           git add previews
           if git diff --cached --quiet; then
             echo "Nothing to publish for previews" >&2
@@ -74,36 +74,10 @@ jobs:
           set -e
           if command -v dot >/dev/null 2>&1; then echo "Graphviz: $(dot -V 2>&1 | head -n1 | sed 's/\r$//')"; else echo "Graphviz: dot not installed (using viz.js if available)"; fi
           echo "Sizes:"; ls -lh -- docs/overview-dag.dot docs/overview-dag.svg
-          # Quick node/edge counts (best-effort)
+          # Quick node/edge counts (approximate; regex-based, not a DOT parser)
           NODES=$(grep -Eo '^\s*[A-Za-z0-9_]+\s*\[' docs/overview-dag.dot | wc -l | tr -d ' ')
           EDGES=$(grep -Eo '->' docs/overview-dag.dot | wc -l | tr -d ' ')
-          echo "Nodes: ${NODES}  Edges: ${EDGES}"
-      - name: Commit DAG image to PR branch (same-repo PRs only)
-        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
-        id: commit_dag
-        env:
-          BRANCH: ${{ github.head_ref }}
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          set -e
-          git fetch origin "refs/heads/${BRANCH}:refs/heads/${BRANCH}" --depth=1
-          if ! git checkout "$BRANCH" 2>/dev/null; then
-            echo "checkout failed; creating $BRANCH" >&2
-            git checkout -B "$BRANCH"
-          fi
-          mkdir -p docs
-          # restore generated files from previous step
-          cp -f "$RUNNER_TEMP/overview-dag.svg" docs/overview-dag.svg || true
-          cp -f "$RUNNER_TEMP/overview-dag.dot" docs/overview-dag.dot || true
-          git add docs/overview-dag.svg docs/overview-dag.dot
-          if ! git diff --cached --quiet; then
-            git commit -m "docs: update overview DAG (CI)"
-            git push origin "$BRANCH"
-            echo "pushed=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "pushed=false" >> "$GITHUB_OUTPUT"
-          fi
+          echo "Nodes (approx): ${NODES}  Edges (approx): ${EDGES}"
       - name: Prepare PR comment content
         if: github.event_name == 'pull_request'
         env:
@@ -169,8 +143,3 @@ jobs:
           hide_and_recreate: true
           header: Overview DAG
           path: ${{ runner.temp }}/dag-comment.md
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: 1.25.x
-          cache: true

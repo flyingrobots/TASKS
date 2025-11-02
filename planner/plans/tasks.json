@@ -16,13 +16,13 @@
     }
   ],
   "meta": {
-    "artifactHash": "0989151328b247e8107f5905b8850bf90fc143ca613d466bab7e0f24f2d3bc4d",
+    "artifactHash": "0668ae96faf188f13a764cb45f21136127335665841e8eccf0afb41b9e8d9063",
     "autonormalization": {
       "merged": [],
       "split": []
     },
     "codebaseAnalysis": {
-      "files": 2529,
+      "files": 2569,
       "go_files": 53
     },
     "minConfidence": 0.7,
@@ -41,9 +41,9 @@
         "idempotent": false
       },
       "duration": {
-        "mostLikely": 2,
+        "mostLikely": 2.5,
         "optimistic": 1,
-        "pessimistic": 3
+        "pessimistic": 4
       },
       "durationUnits": "hours",
       "executionLogging": {
@@ -86,9 +86,9 @@
         "idempotent": false
       },
       "duration": {
-        "mostLikely": 2,
+        "mostLikely": 3.5,
         "optimistic": 1,
-        "pessimistic": 3
+        "pessimistic": 8
       },
       "durationUnits": "hours",
       "executionLogging": {
@@ -131,9 +131,9 @@
         "idempotent": false
       },
       "duration": {
-        "mostLikely": 2,
-        "optimistic": 1,
-        "pessimistic": 3
+        "mostLikely": 6,
+        "optimistic": 2,
+        "pessimistic": 12
       },
       "durationUnits": "hours",
       "executionLogging": {

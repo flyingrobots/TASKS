@@ -255,9 +255,46 @@ func Build(tasks []m.Task, edges []m.Edge, minConfidence float64) (*m.DagFile, e
 			maxW = depthCount[d]
 		}
 	}
-	df.Metrics.WidthApprox = maxW
-	df.Analysis.OK = true
-	return df, nil
+    df.Metrics.WidthApprox = maxW
+
+    // Quality metrics derived from task metadata
+    // Evidence coverage: fraction of tasks with >=1 evidence entries
+    if len(tasks) > 0 {
+        withEv := 0
+        verbFirst := 0
+        for _, t := range tasks {
+            if len(t.Evidence) > 0 { withEv++ }
+            if isVerbFirst(t.Title) { verbFirst++ }
+        }
+        df.Metrics.EvidenceCoverage = float64(withEv) / float64(len(tasks))
+        df.Metrics.VerbFirstPct = float64(verbFirst) / float64(len(tasks))
+    }
+
+    df.Analysis.OK = true
+    return df, nil
+}
+
+// isVerbFirst applies a lightweight heuristic: consider titles verb-first if
+// the first token matches a small set of common imperative verbs (lowercased).
+func isVerbFirst(title string) bool {
+    if strings.TrimSpace(title) == "" { return false }
+    s := strings.ToLower(strings.TrimSpace(title))
+    // Normalize common punctuation
+    s = strings.TrimLeft(s, "#- ")
+    fields := strings.Fields(s)
+    if len(fields) == 0 { return false }
+    first := fields[0]
+    verbs := map[string]struct{}{
+        "add":{}, "build":{}, "change":{}, "create":{}, "deploy":{}, "document":{},
+        "enable":{}, "ensure":{}, "extract":{}, "fix":{}, "implement":{}, "improve":{},
+        "migrate":{}, "optimize":{}, "refactor":{}, "remove":{}, "rename":{}, "replace":{},
+        "setup":{}, "set":{}, "test":{}, "update":{}, "upgrade":{}, "validate":{}, "verify":{},
+        "wire":{}, "simulate":{}, "analyze":{}, "export":{}, "render":{},
+    }
+    if _, ok := verbs[first]; ok { return true }
+    // Special-case "set up" as a two-word verb
+    if first == "set" && len(fields) > 1 && fields[1] == "up" { return true }
+    return false
 }
 
 func contains(a []string, s string) bool {

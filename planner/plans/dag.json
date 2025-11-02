@@ -20,8 +20,8 @@
     }
   ],
   "meta": {
-    "artifactHash": "6acbd2d6c8e1d27c2aa1fe0825cf87dd64cb60721baa6d902116c2adbd2af752",
-    "tasksHash": "0989151328b247e8107f5905b8850bf90fc143ca613d466bab7e0f24f2d3bc4d",
+    "artifactHash": "f47e69a43c50ba5901e49f3562412832dab2cf009c3c94b02056075563e2c66f",
+    "tasksHash": "0668ae96faf188f13a764cb45f21136127335665841e8eccf0afb41b9e8d9063",
     "version": "v8"
   },
   "metrics": {
@@ -33,7 +33,7 @@
     "droppedByType": {},
     "edgeDensity": 0,
     "edges": 2,
-    "evidenceCoverage": 0,
+    "evidenceCoverage": 1,
     "isolatedTasks": 0,
     "keptByType": {
       "sequential": 1,
@@ -42,7 +42,7 @@
     "longestPathLength": 3,
     "minConfidenceApplied": 0.7,
     "nodes": 3,
-    "verbFirstPct": 0,
+    "verbFirstPct": 1,
     "widthApprox": 1
   },
   "nodes": [
