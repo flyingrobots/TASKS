@@ -19,8 +19,8 @@ import (
 )
 
 const (
-	defaultMinConfidence = 0.7
-	schemaVersion        = "v8"
+    defaultMinConfidence = 0.7
+    schemaVersion        = "v9" // breaking contract changes: camelCase tags across artifacts
 )
 
 // FeatureSummary represents a lightweight feature descriptor produced by the spec loader.

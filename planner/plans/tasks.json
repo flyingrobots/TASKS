@@ -16,17 +16,17 @@
     }
   ],
   "meta": {
-    "artifactHash": "0668ae96faf188f13a764cb45f21136127335665841e8eccf0afb41b9e8d9063",
+    "artifactHash": "2976babd6c4af03f86bdb3a9a7c922c3347a10f68a860a6b58780567f01bda35",
     "autonormalization": {
       "merged": [],
       "split": []
     },
     "codebaseAnalysis": {
-      "files": 2569,
+      "files": 2601,
       "go_files": 53
     },
     "minConfidence": 0.7,
-    "version": "v8"
+    "version": "v9"
   },
   "tasks": [
     {

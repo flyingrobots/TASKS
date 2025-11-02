@@ -23,6 +23,8 @@ done
 # - jq, sed, awk, dot
 
 REPO=${REPO:-${GITHUB_REPOSITORY:-}}
+MAX_RETRIES=${MAX_RETRIES:-3}
+SLEEP_BASE=${SLEEP_BASE:-1}
 if [[ -z "${REPO}" ]]; then
   # Try from git remote
   remote=$(git remote get-url origin 2>/dev/null || true)
@@ -47,7 +49,17 @@ trap 'rm -rf "$tmpdir"' EXIT
 
 LIMIT=${GH_LIST_LIMIT:-300}
 echo "Fetching issues from $REPO (limit $LIMIT via GH_LIST_LIMIT) ..." >&2
-if ! gh issue list --repo "$REPO" --state open -L "$LIMIT" --json number,title,labels,url > "$tmpdir/issues.json"; then
+retry() { # retry <cmd...>
+  local attempt=0
+  while true; do
+    if "$@"; then return 0; fi
+    attempt=$((attempt+1))
+    if [ "$attempt" -ge "$MAX_RETRIES" ]; then return 1; fi
+    sleep $(( SLEEP_BASE * attempt ))
+  done
+}
+
+if ! retry gh issue list --repo "$REPO" --state open -L "$LIMIT" --json number,title,labels,url > "$tmpdir/issues.json"; then
   echo "ERROR: failed to list issues for $REPO" >&2
   exit 1
 fi
@@ -63,11 +75,12 @@ after=""
 while :; do
   if [[ -z "$after" ]]; then
     query='query($owner:String!,$name:String!){ repository(owner:$owner,name:$name){ issues(first:100, states:OPEN, orderBy:{field:CREATED_AT, direction:DESC}){ pageInfo{ hasNextPage endCursor } nodes { number title body } } } }'
-    res=$(gh api graphql -f owner="$owner" -f name="$name" -f query="$query")
+    retry gh api graphql -f owner="$owner" -f name="$name" -f query="$query" > "$tmpdir/page.json" || { echo "ERROR: GraphQL page fetch failed" >&2; exit 1; }
   else
     query='query($owner:String!,$name:String!,$after:String!){ repository(owner:$owner,name:$name){ issues(first:100, states:OPEN, orderBy:{field:CREATED_AT, direction:DESC}, after:$after){ pageInfo{ hasNextPage endCursor } nodes { number title body } } } }'
-    res=$(gh api graphql -f owner="$owner" -f name="$name" -f after="$after" -f query="$query")
+    retry gh api graphql -f owner="$owner" -f name="$name" -f after="$after" -f query="$query" > "$tmpdir/page.json" || { echo "ERROR: GraphQL page fetch failed" >&2; exit 1; }
   fi
+  res=$(cat "$tmpdir/page.json")
   if [[ -z "$res" ]]; then
     echo "ERROR: failed to fetch issue page via GraphQL" >&2
     exit 1

@@ -168,15 +168,15 @@
     ]
   },
   "meta": {
-    "artifactHash": "fbb4f6e8962e8f4ab6b49e45c6ef03cc688b918455a3a56ae0045fb99029a1c7",
-    "version": "v8"
+    "artifactHash": "b9f646209ca556f5f760d011f0436697bd38c095459678a3faa0d3096f67f07e",
+    "version": "v9"
   },
   "metrics": {
     "estimates": {
       "longestPathLength": 3,
-      "p50TotalHours": 13.301041,
+      "p50TotalHours": 13.307236,
       "widthApprox": 1
     }
   },
-  "version": "v8"
+  "version": "v9"
 }
