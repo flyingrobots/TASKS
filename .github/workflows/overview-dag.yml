@@ -35,6 +35,7 @@ jobs:
         id: publish
         env:
           PREVIEW_BRANCH: ci-preview-${{ github.run_id }}
+          ORIG_SHA: ${{ github.sha }}
         run: |
           set -e
           # Stash generated assets before switching to the orphan branch
@@ -68,6 +69,8 @@ jobs:
           git push -f origin "$PREVIEW_BRANCH"
           echo "published=true" >> "$GITHUB_OUTPUT"
           echo "branch=$PREVIEW_BRANCH" >> "$GITHUB_OUTPUT"
+          # Restore workspace to original commit so later steps can access docs/* again
+          git checkout -f "$ORIG_SHA" || true
       - name: Verify DAG outputs
         run: |
           test -f docs/overview-dag.dot || { echo "docs/overview-dag.dot missing" >&2; exit 1; }
